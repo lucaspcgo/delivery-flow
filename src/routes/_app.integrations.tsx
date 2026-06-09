@@ -39,9 +39,10 @@ function IntegrationsPage() {
             </div>
             <div className="p-5">
               <p className="text-sm text-muted-foreground">{i.description}</p>
-              <dl className="mt-4 grid grid-cols-2 gap-3 border-t pt-4 text-sm">
-                <div><dt className="text-xs text-muted-foreground">Pedidos hoje</dt><dd className="font-semibold">{i.ordersToday}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Versão API</dt><dd className="font-semibold">v2.1</dd></div>
+              <dl className="mt-4 grid grid-cols-3 gap-3 border-t pt-4 text-sm">
+                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Pedidos</dt><dd className="font-semibold">{i.ordersToday}</dd></div>
+                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Sync</dt><dd className="font-semibold truncate">{i.lastSync}</dd></div>
+                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold">{i.apiStatus}</dd></div>
               </dl>
               <Button onClick={() => toggle(i.id)} variant={i.connected ? "outline" : "default"} className="mt-5 w-full">
                 {i.connected ? "Desconectar" : "Conectar"}
