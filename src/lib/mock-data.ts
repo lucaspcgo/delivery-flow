@@ -94,9 +94,36 @@ export const dailyRevenue = Array.from({ length: 7 }, (_, i) => {
 });
 
 export const integrations = [
-  { id: "ifood", name: "iFood", description: "Maior marketplace de delivery do Brasil. Receba pedidos automaticamente.", color: "#EA1D2C", connected: true, ordersToday: 142 },
-  { id: "keeta", name: "Keeta", description: "Plataforma global de delivery em rápida expansão no mercado.", color: "#FFCD00", connected: false, ordersToday: 0 },
-  { id: "99food", name: "99Food", description: "Serviço de delivery da 99, integrado ao app de mobilidade.", color: "#FFD300", connected: true, ordersToday: 38 },
+  { 
+    id: "ifood", 
+    name: "iFood", 
+    description: "Maior marketplace de delivery do Brasil. Receba pedidos automaticamente.", 
+    color: "#EA1D2C", 
+    connected: true, 
+    ordersToday: 142,
+    lastSync: "2 min atrás",
+    apiStatus: "Online"
+  },
+  { 
+    id: "keeta", 
+    name: "Keeta", 
+    description: "Plataforma global de delivery em rápida expansão no mercado.", 
+    color: "#FFCD00", 
+    connected: false, 
+    ordersToday: 0,
+    lastSync: "N/A",
+    apiStatus: "Offline"
+  },
+  { 
+    id: "99food", 
+    name: "99Food", 
+    description: "Serviço de delivery da 99, integrado ao app de mobilidade.", 
+    color: "#FFD300", 
+    connected: true, 
+    ordersToday: 38,
+    lastSync: "5 min atrás",
+    apiStatus: "Online"
+  },
 ];
 
 export const statusLabel: Record<OrderStatus, string> = {
