@@ -13,6 +13,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRestaurantsRouteImport } from './routes/_app.restaurants'
 import { Route as AppOrdersRouteImport } from './routes/_app.orders'
+import { Route as AppIntegrationsRouteImport } from './routes/_app.integrations'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAutomationsRouteImport } from './routes/_app.automations'
 
@@ -35,6 +36,11 @@ const AppOrdersRoute = AppOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AppRoute,
 } as any)
+const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -50,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/automations': typeof AppAutomationsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/integrations': typeof AppIntegrationsRoute
   '/orders': typeof AppOrdersRoute
   '/restaurants': typeof AppRestaurantsRoute
 }
@@ -57,6 +64,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/automations': typeof AppAutomationsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/integrations': typeof AppIntegrationsRoute
   '/orders': typeof AppOrdersRoute
   '/restaurants': typeof AppRestaurantsRoute
 }
@@ -66,20 +74,34 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/automations': typeof AppAutomationsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/restaurants': typeof AppRestaurantsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/automations' | '/dashboard' | '/orders' | '/restaurants'
+  fullPaths:
+    | '/'
+    | '/automations'
+    | '/dashboard'
+    | '/integrations'
+    | '/orders'
+    | '/restaurants'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/automations' | '/dashboard' | '/orders' | '/restaurants'
+  to:
+    | '/'
+    | '/automations'
+    | '/dashboard'
+    | '/integrations'
+    | '/orders'
+    | '/restaurants'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/_app/automations'
     | '/_app/dashboard'
+    | '/_app/integrations'
     | '/_app/orders'
     | '/_app/restaurants'
   fileRoutesById: FileRoutesById
@@ -119,6 +141,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrdersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/integrations': {
+      id: '/_app/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof AppIntegrationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -139,6 +168,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAutomationsRoute: typeof AppAutomationsRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppRestaurantsRoute: typeof AppRestaurantsRoute
 }
@@ -146,6 +176,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAutomationsRoute: AppAutomationsRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppIntegrationsRoute: AppIntegrationsRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppRestaurantsRoute: AppRestaurantsRoute,
 }
