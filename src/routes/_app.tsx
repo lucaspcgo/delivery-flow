@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Bell, Search } from "lucide-react";
+import { StoreSelector } from "@/components/store-selector";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -16,7 +17,12 @@ function AppLayout() {
         <AppSidebar />
         <div className="flex flex-1 flex-col min-w-0">
           <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/95 px-3 backdrop-blur sm:px-6">
-            <SidebarTrigger />
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <div className="hidden sm:block">
+                <StoreSelector />
+              </div>
+            </div>
             <div className="relative hidden flex-1 max-w-md sm:block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar pedidos, lojas, clientes..." className="h-9 pl-9" />
