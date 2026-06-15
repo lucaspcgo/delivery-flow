@@ -142,12 +142,13 @@ export interface Restaurant {
 
 export interface Integration {
   id: string;
-  restaurant_id: string;
   platform: Platform;
+  name: string;
+  description: string;
   status: IntegrationStatus;
-  connected_at: string | null;
+  orders_count: number;
   last_sync_at: string | null;
-  error_message?: string | null;
+  api_status: "online" | "offline";
 }
 
 export interface Order {
@@ -213,23 +214,18 @@ export const restaurantsApi = {
 };
 
 export const integrationsApi = {
-  list: (restaurantId?: string) =>
-    http.get<Integration[]>("/integrations", {
-      query: { restaurant_id: restaurantId },
-    }),
-  connect: (
-    restaurantId: string,
-    platform: Platform,
-    credentials: Record<string, string>,
-  ) =>
-    http.post<Integration>("/integrations/connect", {
-      restaurant_id: restaurantId,
-      platform,
-      credentials,
-    }),
-  disconnect: (id: string) =>
-    http.post<Integration>(`/integrations/${id}/disconnect`),
+  list: () => http.get<Integration[]>("/integrations"),
+  connect: (platform: Platform) =>
+    http.post<Integration>(`/integrations/${platform}/connect`),
+  disconnect: (platform: Platform) =>
+    http.post<Integration>(`/integrations/${platform}/disconnect`),
 };
+
+export const getIntegrations = () => integrationsApi.list();
+export const connectIntegration = (platform: Platform) =>
+  integrationsApi.connect(platform);
+export const disconnectIntegration = (platform: Platform) =>
+  integrationsApi.disconnect(platform);
 
 export const ordersApi = {
   list: (params?: {
