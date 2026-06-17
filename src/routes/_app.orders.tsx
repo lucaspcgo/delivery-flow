@@ -33,11 +33,10 @@ const PLATFORM_LABEL: Record<string, string> = {
 
 type ColumnKey = "new" | "preparing" | "done";
 
-function columnOf(status: string, override?: Record<string, ColumnKey>): ColumnKey {
-  if (override && override[status]) return override[status];
-  const s = String(status).toLowerCase();
-  if (s === "100" || s === "new") return "new";
-  if (s === "confirmed" || s === "200" || s === "preparing") return "preparing";
+function columnOf(status: string): ColumnKey {
+  const s = String(status ?? "").toLowerCase();
+  if (s === "100" || s === "pending" || s === "new") return "new";
+  if (s === "confirmed") return "preparing";
   return "done";
 }
 
@@ -99,7 +98,6 @@ function OrdersKanban() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => new Date());
-  const [overrides, setOverrides] = useState<Record<string, ColumnKey>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
   const seenIds = useRef<Set<string>>(new Set());
@@ -140,19 +138,16 @@ function OrdersKanban() {
 
   const grouped = useMemo(() => {
     const g: Record<ColumnKey, ApiOrder[]> = { new: [], preparing: [], done: [] };
-    for (const o of orders) g[columnOf(o.status, overrides)].push(o);
+    for (const o of orders) g[columnOf(o.status)].push(o);
     return g;
-  }, [orders, overrides]);
-
-  const move = (id: string, to: ColumnKey) =>
-    setOverrides((p) => ({ ...p, [id]: to }));
+  }, [orders]);
 
   const handleAccept = async (order: ApiOrder) => {
     setBusyId(order.id);
     try {
       await confirmOrder(order.platform_order_id, order.app_shop_id ?? "");
-      move(order.id, "preparing");
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} aceito!`);
+      await load();
     } catch {
       toast.error("Erro ao aceitar pedido. Tente novamente.");
     } finally {
@@ -163,8 +158,8 @@ function OrdersKanban() {
   const handleReady = async (order: ApiOrder) => {
     setBusyId(order.id);
     try {
-      move(order.id, "done");
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} finalizado!`);
+      await load();
     } finally {
       setBusyId(null);
     }
@@ -176,9 +171,9 @@ function OrdersKanban() {
     setBusyId(order.id);
     try {
       await cancelOrder(order.platform_order_id, order.app_shop_id ?? "");
-      move(order.id, "done");
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} recusado`);
       setRefuseTarget(null);
+      await load();
     } catch {
       toast.error("Erro ao recusar pedido. Tente novamente.");
     } finally {
