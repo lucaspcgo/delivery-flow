@@ -30,11 +30,23 @@ function columnOf(status: string, override?: Record<string, ColumnKey>): ColumnK
   return "done";
 }
 
-const COLUMNS: { key: ColumnKey; title: string; color: string; emoji: string }[] = [
-  { key: "new", title: "NOVOS", color: "#FFD700", emoji: "🟡" },
-  { key: "preparing", title: "EM PREPARO", color: "#FF8C00", emoji: "🟠" },
-  { key: "done", title: "ENTREGUES", color: "#00C853", emoji: "✅" },
+const COLUMNS: {
+  key: ColumnKey;
+  title: string;
+  accent: string;
+  headerBg: string;
+  headerText: string;
+  emoji: string;
+}[] = [
+  { key: "new", title: "NOVOS", accent: "#F59E0B", headerBg: "#FFF9C4", headerText: "#92400E", emoji: "🟡" },
+  { key: "preparing", title: "EM PREPARO", accent: "#F97316", headerBg: "#FED7AA", headerText: "#92400E", emoji: "🟠" },
+  { key: "done", title: "ENTREGUES", accent: "#10B981", headerBg: "#D1FAE5", headerText: "#065F46", emoji: "✅" },
 ];
+
+function shortOrderId(s: string): string {
+  const clean = String(s ?? "");
+  return clean.length > 8 ? clean.slice(-8) : clean;
+}
 
 const centsToBRL = (cents: number) =>
   (cents / 100).toLocaleString("pt-BR", {
@@ -123,24 +135,25 @@ function OrdersKanban() {
     setOverrides((p) => ({ ...p, [id]: to }));
 
   return (
-    <div className="-m-6 min-h-[calc(100vh-3.5rem)]" style={{ background: "#0f1117" }}>
+    <div className="-m-6 min-h-[calc(100vh-3.5rem)]" style={{ background: "#F5F5F5" }}>
       <header
-        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/5 px-6 py-4"
-        style={{ background: "#0f1117" }}
+        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-6 py-4"
       >
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black text-white">Pedidos ao Vivo</h1>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-bold text-white">
+          <h1 className="text-2xl font-black" style={{ color: "#1a1a1a" }}>
+            Pedidos ao Vivo
+          </h1>
+          <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
             {orders.length}
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-mono text-xl font-bold text-white tabular-nums">
+          <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#6B7280" }}>
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
           <button
             onClick={load}
-            className="rounded-lg bg-white/10 p-2 text-white hover:bg-white/20"
+            className="rounded-lg bg-gray-100 p-2 text-gray-700 hover:bg-gray-200"
             aria-label="Atualizar"
           >
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
@@ -148,7 +161,7 @@ function OrdersKanban() {
         </div>
       </header>
 
-      <div className="flex gap-4 overflow-x-auto p-4">
+      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
         {COLUMNS.map((col) => (
           <Column key={col.key} col={col} orders={grouped[col.key]} onMove={move} now={now} />
         ))}
@@ -163,31 +176,34 @@ function Column({
   onMove,
   now,
 }: {
-  col: { key: ColumnKey; title: string; color: string; emoji: string };
+  col: { key: ColumnKey; title: string; accent: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
   onMove: (id: string, to: ColumnKey) => void;
   now: Date;
 }) {
   return (
-    <div className="flex w-[380px] shrink-0 flex-col" style={{ maxHeight: "calc(100vh - 8rem)" }}>
+    <div
+      className="flex min-w-0 flex-col rounded-lg p-3"
+      style={{ maxHeight: "calc(100vh - 8rem)", background: "#EFEFEF" }}
+    >
       <div
         className="mb-3 flex items-center justify-between rounded-lg px-4 py-3"
-        style={{ background: `${col.color}22`, borderTop: `3px solid ${col.color}` }}
+        style={{ background: col.headerBg, color: col.headerText }}
       >
         <div className="flex items-center gap-2">
           <span className="text-lg">{col.emoji}</span>
-          <h2 className="text-sm font-black tracking-wider text-white">{col.title}</h2>
+          <h2 className="text-sm font-black tracking-wider">{col.title}</h2>
         </div>
         <span
-          className="rounded-full px-2.5 py-0.5 text-xs font-bold text-black"
-          style={{ background: col.color }}
+          className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold"
+          style={{ color: col.headerText }}
         >
           {orders.length}
         </span>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1">
         {orders.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-sm text-gray-500">
+          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-400">
             Nenhum pedido
           </div>
         ) : (
@@ -220,8 +236,8 @@ function OrderCard({
 
   return (
     <div
-      className="rounded-lg p-4 shadow-lg"
-      style={{ background: "#1a1d27", borderLeft: `4px solid ${border}` }}
+      className="w-full rounded-lg bg-white p-4 shadow-sm"
+      style={{ borderLeft: `4px solid ${border}`, color: "#1a1a1a" }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -231,21 +247,25 @@ function OrderCard({
           >
             {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
           </span>
-          <span className="text-lg font-black text-white">
-            #{order.platform_order_id || order.id.slice(0, 6)}
+          <span className="text-lg font-black" style={{ color: "#1a1a1a" }}>
+            #{shortOrderId(order.platform_order_id || order.id)}
           </span>
         </div>
         <span
           className="text-sm font-bold tabular-nums"
-          style={{ color: urgent ? "#FF4444" : "#9CA3AF" }}
+          style={{ color: urgent ? "#FF4444" : "#6B7280" }}
         >
           há {mins} min
         </span>
       </div>
 
-      <div className="mt-2 font-bold text-white">{order.customer_name ?? "Cliente"}</div>
+      <div className="mt-2 font-bold" style={{ color: "#1a1a1a" }}>
+        {order.customer_name ?? "Cliente"}
+      </div>
       {order.app_shop_id && (
-        <div className="text-xs text-gray-400">{order.app_shop_id}</div>
+        <div className="text-xs" style={{ color: "#6B7280" }}>
+          {order.app_shop_id}
+        </div>
       )}
 
       <div className="mt-3 space-y-2">
@@ -254,22 +274,26 @@ function OrderCard({
         ))}
       </div>
 
-      <div className="mt-3 border-t border-white/5 pt-2 text-right text-base font-black text-white">
-        TOTAL {centsToBRL(subtotal)}
+      <div
+        className="mt-3 flex justify-between border-t border-gray-200 pt-2 text-base font-black"
+        style={{ color: "#1a1a1a" }}
+      >
+        <span>TOTAL</span>
+        <span>{centsToBRL(subtotal)}</span>
       </div>
 
       {colKey === "new" && (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button
             onClick={() => onMove(order.id, "preparing")}
-            className="flex items-center justify-center gap-1 rounded-md py-2 text-sm font-bold text-white"
+            className="flex w-full items-center justify-center gap-1 rounded-full py-2 text-sm font-bold text-white transition hover:opacity-90"
             style={{ background: "#00C853" }}
           >
             <Check className="h-4 w-4" /> ACEITAR
           </button>
           <button
             onClick={() => onMove(order.id, "done")}
-            className="flex items-center justify-center gap-1 rounded-md py-2 text-sm font-bold text-white"
+            className="flex w-full items-center justify-center gap-1 rounded-full py-2 text-sm font-bold text-white transition hover:opacity-90"
             style={{ background: "#EA1D2C" }}
           >
             <X className="h-4 w-4" /> RECUSAR
@@ -280,7 +304,7 @@ function OrderCard({
         <div className="mt-3">
           <button
             onClick={() => onMove(order.id, "done")}
-            className="flex w-full items-center justify-center gap-2 rounded-md py-2 text-sm font-bold text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-full py-2 text-sm font-bold text-white transition hover:opacity-90"
             style={{ background: "#2196F3" }}
           >
             <ChefHat className="h-4 w-4" /> PRONTO
@@ -295,12 +319,14 @@ function ItemRow({ item, index }: { item: OrderItem; index: number }) {
   return (
     <div className="text-sm">
       <div className="flex items-start gap-2">
-        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-700">
           {index}
         </span>
-        <div className="flex-1 text-white">
+        <div className="flex-1" style={{ color: "#1a1a1a" }}>
           <span className="font-semibold">{item.name}</span>
-          <span className="ml-1 text-gray-400">x{item.amount}</span>
+          <span className="ml-1" style={{ color: "#6B7280" }}>
+            x{item.amount}
+          </span>
         </div>
       </div>
       {item.sub_item_list && item.sub_item_list.length > 0 && (
@@ -317,10 +343,12 @@ function ItemRow({ item, index }: { item: OrderItem; index: number }) {
 function SubItem({ sub }: { sub: OrderSubItem }) {
   const price = sub.total_price || 0;
   return (
-    <li className="flex justify-between text-xs text-gray-300">
+    <li className="flex justify-between text-xs" style={{ color: "#6B7280" }}>
       <span>• {sub.name}</span>
       {price > 0 && (
-        <span className="font-semibold text-yellow-400">+{centsToBRL(price)}</span>
+        <span className="font-semibold" style={{ color: "#1a1a1a" }}>
+          +{centsToBRL(price)}
+        </span>
       )}
     </li>
   );
