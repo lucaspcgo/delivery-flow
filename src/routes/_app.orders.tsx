@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat } from "lucide-react";
-import { getOrders } from "@/lib/api";
+import { RefreshCw, Check, X, ChefHat, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { getOrders, confirmOrder, cancelOrder } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { ApiOrder, OrderItem, OrderSubItem } from "@/types/order";
 
 export const Route = createFileRoute("/_app/orders")({
@@ -89,6 +100,8 @@ function OrdersKanban() {
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => new Date());
   const [overrides, setOverrides] = useState<Record<string, ColumnKey>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
   const seenIds = useRef<Set<string>>(new Set());
   const firstLoad = useRef(true);
 
@@ -134,6 +147,45 @@ function OrdersKanban() {
   const move = (id: string, to: ColumnKey) =>
     setOverrides((p) => ({ ...p, [id]: to }));
 
+  const handleAccept = async (order: ApiOrder) => {
+    setBusyId(order.id);
+    try {
+      await confirmOrder(order.platform_order_id, order.app_shop_id ?? "");
+      move(order.id, "preparing");
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} aceito!`);
+    } catch {
+      toast.error("Erro ao aceitar pedido. Tente novamente.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleReady = async (order: ApiOrder) => {
+    setBusyId(order.id);
+    try {
+      move(order.id, "done");
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} finalizado!`);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleRefuseConfirm = async () => {
+    const order = refuseTarget;
+    if (!order) return;
+    setBusyId(order.id);
+    try {
+      await cancelOrder(order.platform_order_id, order.app_shop_id ?? "");
+      move(order.id, "done");
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} recusado`);
+      setRefuseTarget(null);
+    } catch {
+      toast.error("Erro ao recusar pedido. Tente novamente.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#F5F5F5" }}>
       <header
@@ -163,9 +215,46 @@ function OrdersKanban() {
 
       <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
         {COLUMNS.map((col) => (
-          <Column key={col.key} col={col} orders={grouped[col.key]} onMove={move} now={now} />
+          <Column
+            key={col.key}
+            col={col}
+            orders={grouped[col.key]}
+            now={now}
+            busyId={busyId}
+            onAccept={handleAccept}
+            onReady={handleReady}
+            onRefuse={(o) => setRefuseTarget(o)}
+          />
         ))}
       </div>
+
+      <AlertDialog open={!!refuseTarget} onOpenChange={(open) => !open && setRefuseTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Recusar pedido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja recusar o pedido #
+              {refuseTarget
+                ? shortOrderId(refuseTarget.platform_order_id || refuseTarget.id)
+                : ""}
+              ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busyId === refuseTarget?.id}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleRefuseConfirm();
+              }}
+              disabled={busyId === refuseTarget?.id}
+              className="bg-[#DC2626] hover:bg-[#DC2626]/90"
+            >
+              {busyId === refuseTarget?.id ? "Aguarde..." : "Confirmar recusa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -173,13 +262,19 @@ function OrdersKanban() {
 function Column({
   col,
   orders,
-  onMove,
   now,
+  busyId,
+  onAccept,
+  onReady,
+  onRefuse,
 }: {
   col: { key: ColumnKey; title: string; accent: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
-  onMove: (id: string, to: ColumnKey) => void;
   now: Date;
+  busyId: string | null;
+  onAccept: (o: ApiOrder) => void;
+  onReady: (o: ApiOrder) => void;
+  onRefuse: (o: ApiOrder) => void;
 }) {
   return (
     <div
@@ -212,7 +307,18 @@ function Column({
             Nenhum pedido
           </div>
         ) : (
-          orders.map((o) => <OrderCard key={o.id} order={o} colKey={col.key} onMove={onMove} now={now} />)
+          orders.map((o) => (
+            <OrderCard
+              key={o.id}
+              order={o}
+              colKey={col.key}
+              now={now}
+              busy={busyId === o.id}
+              onAccept={onAccept}
+              onReady={onReady}
+              onRefuse={onRefuse}
+            />
+          ))
         )}
       </div>
     </div>
@@ -222,13 +328,19 @@ function Column({
 function OrderCard({
   order,
   colKey,
-  onMove,
   now,
+  busy,
+  onAccept,
+  onReady,
+  onRefuse,
 }: {
   order: ApiOrder;
   colKey: ColumnKey;
-  onMove: (id: string, to: ColumnKey) => void;
   now: Date;
+  busy: boolean;
+  onAccept: (o: ApiOrder) => void;
+  onReady: (o: ApiOrder) => void;
+  onRefuse: (o: ApiOrder) => void;
 }) {
   void now; // re-render trigger
   const mins = minutesSince(order.created_at);
@@ -300,16 +412,42 @@ function OrderCard({
       {colKey === "new" && (
         <div className="mt-3 grid grid-cols-2" style={{ gap: 8 }}>
           <button
-            onClick={() => onMove(order.id, "preparing")}
-            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90"
-            style={{ background: "#16A34A", height: 40, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none" }}
+            onClick={() => onAccept(order)}
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+            style={{
+              background: "#16A34A",
+              height: 40,
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              border: "none",
+              opacity: busy ? 0.7 : 1,
+            }}
           >
-            <Check className="h-4 w-4" /> ACEITAR
+            {busy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" /> ACEITAR
+              </>
+            )}
           </button>
           <button
-            onClick={() => onMove(order.id, "done")}
-            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90"
-            style={{ background: "#DC2626", height: 40, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none" }}
+            onClick={() => onRefuse(order)}
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+            style={{
+              background: "#DC2626",
+              height: 40,
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              border: "none",
+              opacity: busy ? 0.7 : 1,
+            }}
           >
             <X className="h-4 w-4" /> RECUSAR
           </button>
@@ -318,11 +456,28 @@ function OrderCard({
       {colKey === "preparing" && (
         <div className="mt-3">
           <button
-            onClick={() => onMove(order.id, "done")}
-            className="flex w-full items-center justify-center gap-2 text-white transition hover:opacity-90"
-            style={{ background: "#2196F3", height: 40, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none" }}
+            onClick={() => onReady(order)}
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-2 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+            style={{
+              background: "#2196F3",
+              height: 40,
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              border: "none",
+              opacity: busy ? 0.7 : 1,
+            }}
           >
-            <ChefHat className="h-4 w-4" /> PRONTO
+            {busy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
+              </>
+            ) : (
+              <>
+                <ChefHat className="h-4 w-4" /> PRONTO
+              </>
+            )}
           </button>
         </div>
       )}
