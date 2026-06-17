@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRestaurantsRouteImport } from './routes/_app.restaurants'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
+import { Route as AppOrdersRouteImport } from './routes/_app.orders'
 import { Route as AppIntegrationsRouteImport } from './routes/_app.integrations'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAutomationsRouteImport } from './routes/_app.automations'
@@ -42,6 +43,11 @@ const AppReportsRoute = AppReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOrdersRoute = AppOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/automations': typeof AppAutomationsRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
+  '/orders': typeof AppOrdersRoute
   '/reports': typeof AppReportsRoute
   '/restaurants': typeof AppRestaurantsRoute
   '/settings': typeof AppSettingsRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/automations': typeof AppAutomationsRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
+  '/orders': typeof AppOrdersRoute
   '/reports': typeof AppReportsRoute
   '/restaurants': typeof AppRestaurantsRoute
   '/settings': typeof AppSettingsRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/_app/automations': typeof AppAutomationsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/integrations': typeof AppIntegrationsRoute
+  '/_app/orders': typeof AppOrdersRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/restaurants': typeof AppRestaurantsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/automations'
     | '/dashboard'
     | '/integrations'
+    | '/orders'
     | '/reports'
     | '/restaurants'
     | '/settings'
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/automations'
     | '/dashboard'
     | '/integrations'
+    | '/orders'
     | '/reports'
     | '/restaurants'
     | '/settings'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/_app/automations'
     | '/_app/dashboard'
     | '/_app/integrations'
+    | '/_app/orders'
     | '/_app/reports'
     | '/_app/restaurants'
     | '/_app/settings'
@@ -160,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/orders': {
+      id: '/_app/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AppOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/integrations': {
       id: '/_app/integrations'
       path: '/integrations'
@@ -188,6 +207,7 @@ interface AppRouteChildren {
   AppAutomationsRoute: typeof AppAutomationsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
+  AppOrdersRoute: typeof AppOrdersRoute
   AppReportsRoute: typeof AppReportsRoute
   AppRestaurantsRoute: typeof AppRestaurantsRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -197,6 +217,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAutomationsRoute: AppAutomationsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
+  AppOrdersRoute: AppOrdersRoute,
   AppReportsRoute: AppReportsRoute,
   AppRestaurantsRoute: AppRestaurantsRoute,
   AppSettingsRoute: AppSettingsRoute,
