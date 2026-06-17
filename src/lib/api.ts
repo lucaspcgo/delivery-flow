@@ -245,6 +245,36 @@ export const ordersApi = {
     http.post<Order>(`/orders/${id}/cancel`, { reason }),
 };
 
+// ---------- Pedidos reais vindos da API externa ----------
+
+import type { ApiOrder, OrderPlatform } from "@/types/order";
+
+function normalizeOrder(raw: ApiOrder): ApiOrder {
+  return {
+    ...raw,
+    total_price:
+      typeof raw.total_price === "string"
+        ? Number(raw.total_price)
+        : raw.total_price ?? 0,
+    items: Array.isArray(raw.items) ? raw.items : [],
+  };
+}
+
+export async function getOrders(platform?: string): Promise<ApiOrder[]> {
+  const p = platform && platform !== "all" ? platform : "99food";
+  const data = await http.get<ApiOrder[]>(`/orders/${p}/orders`, {
+    silent: true,
+  });
+  return (Array.isArray(data) ? data : []).map(normalizeOrder);
+}
+
+export async function getAllOrders(
+  platforms: OrderPlatform[] = ["99food"],
+): Promise<ApiOrder[]> {
+  const results = await Promise.allSettled(platforms.map((p) => getOrders(p)));
+  return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+}
+
 export const automationsApi = {
   list: (restaurantId?: string) =>
     http.get<Automation[]>("/automations", {
