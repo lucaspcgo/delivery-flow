@@ -268,6 +268,27 @@ export async function getOrders(platform?: string): Promise<ApiOrder[]> {
   return (Array.isArray(data) ? data : []).map(normalizeOrder);
 }
 
+export async function confirmOrder(
+  platformOrderId: string,
+  appShopId: string,
+): Promise<{ success: true }> {
+  await http.post(`/orders/99food/orders/${platformOrderId}/confirm`, {
+    app_shop_id: appShopId,
+  });
+  return { success: true };
+}
+
+export async function cancelOrder(
+  platformOrderId: string,
+  appShopId: string,
+): Promise<{ success: true }> {
+  await http.post(`/orders/99food/orders/${platformOrderId}/cancel`, {
+    app_shop_id: appShopId,
+    cancel_code: 1040,
+  });
+  return { success: true };
+}
+
 export async function getAllOrders(
   platforms: OrderPlatform[] = ["99food"],
 ): Promise<ApiOrder[]> {
