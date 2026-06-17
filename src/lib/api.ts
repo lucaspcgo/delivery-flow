@@ -272,7 +272,7 @@ export async function confirmOrder(
   platformOrderId: string,
   appShopId: string,
 ): Promise<{ success: true }> {
-  await http.post(`/orders/99food/orders/${platformOrderId}/confirm`, {
+  await http.post(`/orders/99food/${platformOrderId}/confirm`, {
     app_shop_id: appShopId,
   });
   return { success: true };
@@ -282,7 +282,7 @@ export async function cancelOrder(
   platformOrderId: string,
   appShopId: string,
 ): Promise<{ success: true }> {
-  await http.post(`/orders/99food/orders/${platformOrderId}/cancel`, {
+  await http.post(`/orders/99food/${platformOrderId}/cancel`, {
     app_shop_id: appShopId,
     cancel_code: 1040,
   });
