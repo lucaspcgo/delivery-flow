@@ -183,15 +183,20 @@ function Column({
 }) {
   return (
     <div
-      className="flex min-w-0 flex-col rounded-lg p-3"
-      style={{ maxHeight: "calc(100vh - 8rem)", background: "#EFEFEF" }}
+      className="flex min-w-0 flex-col p-3"
+      style={{
+        maxHeight: "calc(100vh - 8rem)",
+        background: "#EFEFEF",
+        borderRadius: 16,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+      }}
     >
       <div
-        className="mb-3 flex items-center justify-between rounded-lg px-4 py-3"
-        style={{ background: col.headerBg, color: col.headerText }}
+        className="mb-3 flex items-center justify-between px-4 py-3"
+        style={{ background: col.headerBg, color: col.headerText, borderRadius: 12 }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-lg">{col.emoji}</span>
+          <span className="text-2xl">{col.emoji}</span>
           <h2 className="text-sm font-black tracking-wider">{col.title}</h2>
         </div>
         <span
@@ -201,9 +206,9 @@ function Column({
           {orders.length}
         </span>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ rowGap: 12 }}>
         {orders.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-400">
+          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-400">
             Nenhum pedido
           </div>
         ) : (
@@ -236,24 +241,30 @@ function OrderCard({
 
   return (
     <div
-      className="w-full rounded-lg bg-white p-4 shadow-sm"
-      style={{ borderLeft: `4px solid ${border}`, color: "#1a1a1a" }}
+      className="w-full bg-white"
+      style={{
+        borderLeft: `4px solid ${border}`,
+        color: "#1a1a1a",
+        borderRadius: 12,
+        padding: 16,
+        boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+      }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span
-            className="rounded px-2 py-0.5 text-[10px] font-black text-black"
+            className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-black"
             style={{ background: border }}
           >
             {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
           </span>
-          <span className="text-lg font-black" style={{ color: "#1a1a1a" }}>
+          <span className="font-bold" style={{ color: "#1a1a1a", fontSize: 18 }}>
             #{shortOrderId(order.platform_order_id || order.id)}
           </span>
         </div>
         <span
-          className="text-sm font-bold tabular-nums"
-          style={{ color: urgent ? "#FF4444" : "#6B7280" }}
+          className="font-bold tabular-nums"
+          style={{ color: urgent ? "#FF4444" : "#6B7280", fontSize: 13 }}
         >
           há {mins} min
         </span>
@@ -275,26 +286,30 @@ function OrderCard({
       </div>
 
       <div
-        className="mt-3 flex justify-between border-t border-gray-200 pt-2 text-base font-black"
-        style={{ color: "#1a1a1a" }}
+        className="mt-3 flex items-center justify-between pt-2"
+        style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
       >
-        <span>TOTAL</span>
-        <span>{centsToBRL(subtotal)}</span>
+        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
+          Total
+        </span>
+        <span className="font-bold" style={{ fontSize: 18, color: "#1a1a1a" }}>
+          {centsToBRL(subtotal)}
+        </span>
       </div>
 
       {colKey === "new" && (
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-2" style={{ gap: 8 }}>
           <button
             onClick={() => onMove(order.id, "preparing")}
-            className="flex w-full items-center justify-center gap-1 rounded-full py-2 text-sm font-bold text-white transition hover:opacity-90"
-            style={{ background: "#00C853" }}
+            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90"
+            style={{ background: "#16A34A", height: 40, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none" }}
           >
             <Check className="h-4 w-4" /> ACEITAR
           </button>
           <button
             onClick={() => onMove(order.id, "done")}
-            className="flex w-full items-center justify-center gap-1 rounded-full py-2 text-sm font-bold text-white transition hover:opacity-90"
-            style={{ background: "#EA1D2C" }}
+            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90"
+            style={{ background: "#DC2626", height: 40, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none" }}
           >
             <X className="h-4 w-4" /> RECUSAR
           </button>
@@ -304,8 +319,8 @@ function OrderCard({
         <div className="mt-3">
           <button
             onClick={() => onMove(order.id, "done")}
-            className="flex w-full items-center justify-center gap-2 rounded-full py-2 text-sm font-bold text-white transition hover:opacity-90"
-            style={{ background: "#2196F3" }}
+            className="flex w-full items-center justify-center gap-2 text-white transition hover:opacity-90"
+            style={{ background: "#2196F3", height: 40, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none" }}
           >
             <ChefHat className="h-4 w-4" /> PRONTO
           </button>
@@ -322,9 +337,12 @@ function ItemRow({ item, index }: { item: OrderItem; index: number }) {
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-700">
           {index}
         </span>
-        <div className="flex-1" style={{ color: "#1a1a1a" }}>
-          <span className="font-semibold">{item.name}</span>
-          <span className="ml-1" style={{ color: "#6B7280" }}>
+        <div className="flex-1 flex items-center gap-2" style={{ color: "#1a1a1a" }}>
+          <span className="font-bold" style={{ fontSize: 14 }}>{item.name}</span>
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
+            style={{ background: "#F3F4F6", color: "#6B7280" }}
+          >
             x{item.amount}
           </span>
         </div>
@@ -343,10 +361,12 @@ function ItemRow({ item, index }: { item: OrderItem; index: number }) {
 function SubItem({ sub }: { sub: OrderSubItem }) {
   const price = sub.total_price || 0;
   return (
-    <li className="flex justify-between text-xs" style={{ color: "#6B7280" }}>
-      <span>• {sub.name}</span>
+    <li className="flex justify-between" style={{ fontSize: 13, color: "#6B7280" }}>
+      <span>
+        <span style={{ color: "#9CA3AF" }}>•</span> {sub.name}
+      </span>
       {price > 0 && (
-        <span className="font-semibold" style={{ color: "#1a1a1a" }}>
+        <span className="font-semibold" style={{ color: "#16A34A" }}>
           +{centsToBRL(price)}
         </span>
       )}
