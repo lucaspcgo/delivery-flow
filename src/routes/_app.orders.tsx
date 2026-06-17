@@ -466,27 +466,50 @@ function OrdersPage() {
                         </div>
                         {it.sub_item_list && it.sub_item_list.length > 0 && (
                           <ul className="mt-2 space-y-1 border-l-2 border-muted pl-4 text-xs text-muted-foreground">
-                            {it.sub_item_list.map((s, j) => (
-                              <li
-                                key={j}
-                                className="flex justify-between gap-2"
-                              >
-                                <span>{s.name}</span>
-                                {s.total_price > 0 && (
-                                  <span>
-                                    +{formatBRL((s.total_price ?? 0) / 100)}
-                                  </span>
-                                )}
-                              </li>
-                            ))}
+                            {it.sub_item_list.map((s, j) => {
+                              const showPrice =
+                                !isSizeOrBorder(s.name) &&
+                                (s.total_price ?? 0) > 0;
+                              return (
+                                <li
+                                  key={j}
+                                  className="flex justify-between gap-2"
+                                >
+                                  <span>→ {s.name}</span>
+                                  {showPrice && (
+                                    <span>+{centsToBRL(s.total_price)}</span>
+                                  )}
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
                     ))}
-                    <div className="mt-3 flex items-center justify-between border-t pt-3">
-                      <span className="text-sm font-bold text-muted-foreground">
-                        Total
+                  </div>
+                </section>
+
+                <section>
+                  <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Resumo
+                  </h4>
+                  <div className="space-y-2 rounded-xl border p-4 text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span>
+                        {centsToBRL(
+                          selected.items.reduce((acc, it) => {
+                            const sub = (it.sub_item_list ?? []).reduce(
+                              (a, s) => a + (s.total_price ?? 0),
+                              0,
+                            );
+                            return acc + (it.total_price ?? 0) + sub;
+                          }, 0),
+                        )}
                       </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t pt-2">
+                      <span className="font-bold">Total a pagar</span>
                       <span className="text-lg font-bold text-primary">
                         {formatBRL(selected.total_price)}
                       </span>
