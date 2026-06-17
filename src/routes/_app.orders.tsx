@@ -135,7 +135,7 @@ function OrdersKanban() {
     setOverrides((p) => ({ ...p, [id]: to }));
 
   return (
-    <div className="-m-6 min-h-[calc(100vh-3.5rem)]" style={{ background: "#F5F5F5" }}>
+    <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#F5F5F5" }}>
       <header
         className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-6 py-4"
       >
