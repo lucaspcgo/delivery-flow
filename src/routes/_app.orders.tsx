@@ -119,9 +119,21 @@ function shortOrderId(id: string): string {
   return id.length > 8 ? id.slice(-8) : id;
 }
 
-function itemsSummary(items: OrderItem[]): string {
-  if (!items?.length) return "Sem itens";
-  return items.map((it) => `${it.name} x${it.amount}`).join(", ");
+function centsToBRL(cents: number): string {
+  return formatBRL((cents ?? 0) / 100);
+}
+
+function isSizeOrBorder(name: string): boolean {
+  const n = name.toLowerCase();
+  return (
+    n.includes("pequen") ||
+    n.includes("médi") ||
+    n.includes("medi") ||
+    n.includes("grande") ||
+    n.includes("família") ||
+    n.includes("familia") ||
+    n.includes("borda")
+  );
 }
 
 function OrdersPage() {
@@ -306,9 +318,46 @@ function OrdersPage() {
                       <p className="text-sm font-medium">
                         {o.customer_name ?? "Cliente não identificado"}
                       </p>
-                      <p className="line-clamp-1 text-xs text-muted-foreground">
-                        {itemsSummary(o.items)}
-                      </p>
+                      <div className="space-y-2 pt-1">
+                        {o.items.map((it, i) => (
+                          <div key={i} className="text-xs">
+                            <div className="flex justify-between gap-2 font-medium text-foreground">
+                              <span>
+                                {it.name} x{it.amount}
+                              </span>
+                              <span>{centsToBRL(it.total_price)}</span>
+                            </div>
+                            {it.sub_item_list && it.sub_item_list.length > 0 && (
+                              <ul className="mt-1 space-y-0.5 pl-3 text-muted-foreground">
+                                {it.sub_item_list.map((s, j) => {
+                                  const showPrice =
+                                    !isSizeOrBorder(s.name) &&
+                                    (s.total_price ?? 0) > 0;
+                                  return (
+                                    <li
+                                      key={j}
+                                      className="flex justify-between gap-2"
+                                    >
+                                      <span>• {s.name}</span>
+                                      {showPrice && (
+                                        <span>+{centsToBRL(s.total_price)}</span>
+                                      )}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between border-t pt-2">
+                        <span className="text-xs font-bold uppercase text-muted-foreground">
+                          Total
+                        </span>
+                        <span className="text-base font-bold text-primary">
+                          {formatBRL(o.total_price)}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                         <Clock className="h-3 w-3" />
                         {timeAgo(o.created_at)}
@@ -316,9 +365,6 @@ function OrdersPage() {
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
-                      <span className="text-lg font-bold">
-                        {formatBRL(o.total_price)}
-                      </span>
                       {kind === "new" && (
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button
