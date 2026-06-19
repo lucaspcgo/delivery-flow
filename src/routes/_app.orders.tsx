@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { getOrders, confirmOrder, cancelOrder } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,7 +105,7 @@ function OrdersKanban() {
 
   const load = useCallback(async () => {
     try {
-      const data = await getOrders("99food");
+      const data = await getAllOrders(["99food", "ifood"]);
       setOrders(data);
       const ids = new Set(data.map((o) => o.id));
       if (!firstLoad.current) {
@@ -145,7 +145,11 @@ function OrdersKanban() {
   const handleAccept = async (order: ApiOrder) => {
     setBusyId(order.id);
     try {
-      await confirmOrder(order.platform_order_id, order.app_shop_id ?? "");
+      await confirmOrder(
+        order.platform_order_id,
+        order.app_shop_id ?? "",
+        order.platform,
+      );
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} aceito!`);
       await load();
     } catch {
@@ -170,7 +174,11 @@ function OrdersKanban() {
     if (!order) return;
     setBusyId(order.id);
     try {
-      await cancelOrder(order.platform_order_id, order.app_shop_id ?? "");
+      await cancelOrder(
+        order.platform_order_id,
+        order.app_shop_id ?? "",
+        order.platform,
+      );
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} recusado`);
       setRefuseTarget(null);
       await load();
