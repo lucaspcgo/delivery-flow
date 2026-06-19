@@ -1,12 +1,18 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Bell, Search } from "lucide-react";
 import { StoreSelector } from "@/components/store-selector";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { isAuthenticated } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && !isAuthenticated()) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: AppLayout,
 });
 
