@@ -375,6 +375,29 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   };
 }
 
+// ---------- Automações ----------
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  platform: "ifood" | "99food" | "keeta" | "all" | string;
+  enabled: boolean;
+  delay_seconds: number;
+}
+
+export async function getAutomations(): Promise<AutomationRule[]> {
+  const data = await http.get<AutomationRule[]>("/automations", { silent: true });
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateAutomation(
+  id: string,
+  data: Partial<Pick<AutomationRule, "enabled" | "delay_seconds">>,
+): Promise<AutomationRule> {
+  return http.put<AutomationRule>(`/automations/${id}`, data, { silent: true });
+}
+
 export function formatSaoPaulo(
   iso: string,
   opts: Intl.DateTimeFormatOptions = { dateStyle: "short", timeStyle: "short" },
