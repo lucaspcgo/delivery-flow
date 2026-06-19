@@ -271,29 +271,48 @@ export async function getOrders(platform?: string): Promise<ApiOrder[]> {
 export async function confirmOrder(
   platformOrderId: string,
   appShopId: string,
+  platform: OrderPlatform = "99food",
 ): Promise<{ success: true }> {
-  await http.post(`/orders/99food/${platformOrderId}/confirm`, {
-    app_shop_id: appShopId,
-  });
+  if (platform === "ifood") {
+    await http.post(`/orders/ifood/${platformOrderId}/confirm`, {});
+  } else {
+    await http.post(`/orders/${platform}/${platformOrderId}/confirm`, {
+      app_shop_id: appShopId,
+    });
+  }
   return { success: true };
 }
 
 export async function cancelOrder(
   platformOrderId: string,
   appShopId: string,
+  platform: OrderPlatform = "99food",
 ): Promise<{ success: true }> {
-  await http.post(`/orders/99food/${platformOrderId}/cancel`, {
-    app_shop_id: appShopId,
-    cancel_code: 1040,
-  });
+  if (platform === "ifood") {
+    await http.post(`/orders/ifood/${platformOrderId}/cancel`, {
+      reason: "INTERNAL_DIFFICULTIES",
+    });
+  } else {
+    await http.post(`/orders/${platform}/${platformOrderId}/cancel`, {
+      app_shop_id: appShopId,
+      cancel_code: 1040,
+    });
+  }
   return { success: true };
 }
 
 export async function getAllOrders(
-  platforms: OrderPlatform[] = ["99food"],
+  platforms: OrderPlatform[] = ["99food", "ifood"],
 ): Promise<ApiOrder[]> {
   const results = await Promise.allSettled(platforms.map((p) => getOrders(p)));
-  return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  const merged = results.flatMap((r) =>
+    r.status === "fulfilled" ? r.value : [],
+  );
+  merged.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+  return merged;
 }
 
 export const automationsApi = {
