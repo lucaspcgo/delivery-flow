@@ -332,6 +332,39 @@ export const reportsApi = {
     http.get<ReportSummary>("/reports/summary", { query: params }),
 };
 
+// ---------- Dashboard ----------
+
+export interface DashboardSummary {
+  pedidos_hoje: number;
+  var_pedidos: number;
+  pendentes: number;
+  cancelados: number;
+  var_cancelados: number;
+  ticket_medio: number;
+  faturamento: number;
+  var_faturamento: number;
+  ultimos_7_dias: { dia: string; faturamento: number; pedidos: number }[];
+  por_plataforma: { platform: string; total: number }[];
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const data = await http.get<Partial<DashboardSummary>>("/dashboard/summary", {
+    silent: true,
+  });
+  return {
+    pedidos_hoje: Number(data.pedidos_hoje ?? 0),
+    var_pedidos: Number(data.var_pedidos ?? 0),
+    pendentes: Number(data.pendentes ?? 0),
+    cancelados: Number(data.cancelados ?? 0),
+    var_cancelados: Number(data.var_cancelados ?? 0),
+    ticket_medio: Number(data.ticket_medio ?? 0),
+    faturamento: Number(data.faturamento ?? 0),
+    var_faturamento: Number(data.var_faturamento ?? 0),
+    ultimos_7_dias: Array.isArray(data.ultimos_7_dias) ? data.ultimos_7_dias : [],
+    por_plataforma: Array.isArray(data.por_plataforma) ? data.por_plataforma : [],
+  };
+}
+
 export function formatSaoPaulo(
   iso: string,
   opts: Intl.DateTimeFormatOptions = { dateStyle: "short", timeStyle: "short" },
