@@ -11,7 +11,8 @@ export const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
   "https://api.deliveryautopro.com.br/api/v1";
 
-const TOKEN_STORAGE_KEY = "dap.auth.token";
+const TOKEN_STORAGE_KEY = "auth_token";
+const USER_STORAGE_KEY = "auth_user";
 
 export const authToken = {
   get(): string | null {
@@ -25,6 +26,7 @@ export const authToken = {
   clear() {
     if (typeof window === "undefined") return;
     window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(USER_STORAGE_KEY);
   },
 };
 
@@ -97,7 +99,15 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
         ? String((payload as { message: unknown }).message)
         : null) ?? `Erro ${res.status} ao chamar ${path}`;
     if (!silent) toast.error("Erro na requisição", { description: message });
-    if (res.status === 401) authToken.clear();
+    if (res.status === 401) {
+      authToken.clear();
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login"
+      ) {
+        window.location.href = "/login";
+      }
+    }
     throw new ApiError(message, res.status, payload);
   }
 
