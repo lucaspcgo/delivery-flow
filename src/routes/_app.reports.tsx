@@ -65,6 +65,27 @@ const PLATFORM_BADGE: Record<string, string> = {
   keeta: "bg-violet-100 text-violet-700 border-violet-200",
 };
 
+const PLATFORM_LABEL: Record<string, string> = {
+  ifood: "iFood",
+  "99food": "99Food",
+  keeta: "Keeta",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  ready: "Pronto",
+  confirmed: "Confirmado",
+  cancelled: "Cancelado",
+  "100": "Novo",
+  pending: "Pendente",
+};
+
+function restaurantName(name?: string) {
+  if (!name || name.trim() === "" || name === "Loja sem nome") {
+    return "Loja não identificada";
+  }
+  return name;
+}
+
 const STATUS_COLOR: Record<string, string> = {
   ready: "#10b981",
   confirmed: "#3b82f6",
@@ -361,9 +382,12 @@ function ReportsPage() {
                   <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Pie
-                    data={data?.por_status ?? []}
+                    data={(data?.por_status ?? []).map((s) => ({
+                      ...s,
+                      statusLabel: STATUS_LABEL[s.status] ?? s.status,
+                    }))}
                     dataKey="total"
-                    nameKey="status"
+                    nameKey="statusLabel"
                     innerRadius={55}
                     outerRadius={95}
                     paddingAngle={2}
@@ -402,7 +426,7 @@ function ReportsPage() {
                 <TableRow key={p.platform}>
                   <TableCell>
                     <Badge variant="outline" className={PLATFORM_BADGE[p.platform] ?? ""}>
-                      {p.platform}
+                      {PLATFORM_LABEL[p.platform] ?? p.platform}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{p.pedidos}</TableCell>
@@ -473,10 +497,10 @@ function ReportsPage() {
               )}
               {(data?.por_restaurante ?? []).map((r, i) => (
                 <TableRow key={`${r.restaurante}-${i}`}>
-                  <TableCell className="font-medium">{r.restaurante}</TableCell>
+                  <TableCell className="font-medium">{restaurantName(r.restaurante)}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={PLATFORM_BADGE[r.platform] ?? ""}>
-                      {r.platform}
+                      {PLATFORM_LABEL[r.platform] ?? r.platform}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{r.pedidos}</TableCell>
