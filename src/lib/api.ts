@@ -536,6 +536,69 @@ export function formatSaoPaulo(
 // ---------- Relatórios ----------
 
 export interface ReportsSummary {
+  // placeholder anchor
+}
+
+// ---------- Configurações (Perfil/Empresa/Plano/Segurança/2FA) ----------
+
+export type UserPlan = "starter" | "pro" | "enterprise";
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+  company_name: string;
+  company_cnpj: string;
+  company_address: string;
+  plan: UserPlan;
+  totp_enabled: boolean;
+}
+
+export function getProfile(): Promise<UserProfile> {
+  return http.get<UserProfile>("/settings/profile", { silent: true });
+}
+
+export function updateProfile(
+  data: Pick<UserProfile, "name" | "email" | "phone">,
+): Promise<UserProfile> {
+  return http.put<UserProfile>("/settings/profile", data);
+}
+
+export function updateCompany(
+  data: Pick<UserProfile, "company_name" | "company_cnpj" | "company_address">,
+): Promise<UserProfile> {
+  return http.put<UserProfile>("/settings/company", data);
+}
+
+export function updatePlan(plan: UserPlan): Promise<UserProfile> {
+  return http.put<UserProfile>("/settings/plan", { plan });
+}
+
+export function changePassword(data: {
+  current_password: string;
+  new_password: string;
+}): Promise<{ success: true }> {
+  return http.put<{ success: true }>("/settings/password", data);
+}
+
+export interface TwoFactorSetup {
+  otpauth_url: string;
+  secret?: string;
+}
+
+export function setup2FA(): Promise<TwoFactorSetup> {
+  return http.post<TwoFactorSetup>("/settings/2fa/setup");
+}
+
+export function verify2FA(code: string): Promise<{ success: true }> {
+  return http.post<{ success: true }>("/settings/2fa/verify", { code });
+}
+
+export function disable2FA(): Promise<{ success: true }> {
+  return http.post<{ success: true }>("/settings/2fa/disable");
+}
+
+interface _ReportsSummaryAnchor {
   resumo: {
     total_pedidos: number;
     faturamento_total: number;
