@@ -188,10 +188,21 @@ function CheckoutPage() {
   }) {
     setSubmitting(true);
     try {
-      const res = await createCheckout({
+      const body = {
         plan: plan.key,
-        ...(userData ?? {}),
+        ...(userData
+          ? {
+              name: userData.name,
+              email: userData.email,
+              password: userData.password,
+            }
+          : {}),
+      };
+      console.log("[checkout] POST /checkout/create body:", {
+        ...body,
+        password: body.password ? "***" : undefined,
       });
+      const res = await createCheckout(body);
       setCheckout(res);
       setStep(3);
       setSecondsLeft(30 * 60);
