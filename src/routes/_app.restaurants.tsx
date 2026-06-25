@@ -101,6 +101,19 @@ function RestaurantsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState(false);
+
+  useEffect(() => {
+    getMeCached()
+      .then((me) => {
+        const expired =
+          me.plan === "free" &&
+          ((typeof me.trial_days_left === "number" && me.trial_days_left <= 0) ||
+            me.trial_expired === true);
+        setBlocked(expired);
+      })
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -140,13 +153,34 @@ function RestaurantsPage() {
         title="Restaurantes"
         description="Gerencie suas lojas e as plataformas conectadas"
         actions={
-          <Button
-            size="sm"
-            onClick={() => setCreateOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Novo Restaurante
-          </Button>
+          blocked ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      size="sm"
+                      disabled
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Novo Restaurante
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Assine um plano para cadastrar restaurantes
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => setCreateOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Novo Restaurante
+            </Button>
+          )
         }
       />
 
