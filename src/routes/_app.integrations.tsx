@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/integrations")({
-  head: () => ({ meta: [{ title: "Integrações — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Integrações — Zero Tempo" }] }),
   component: IntegrationsPage,
 });
 

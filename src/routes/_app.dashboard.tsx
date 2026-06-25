@@ -17,7 +17,7 @@ import {
 import { getDashboardSummary, type DashboardSummary } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Zero Tempo" }] }),
   component: DashboardPage,
 });
 

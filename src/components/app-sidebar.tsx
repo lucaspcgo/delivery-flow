@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, UtensilsCrossed, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut } from "lucide-react";
 import { getUser, logout } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import logoAsset from "@/assets/logo.webp.asset.json";
 import {
   Sidebar,
   SidebarContent,
@@ -39,11 +40,13 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <UtensilsCrossed className="h-5 w-5" />
-          </div>
+          <img
+            src={logoAsset.url}
+            alt="Zero Tempo"
+            className="h-9 w-9 rounded-lg object-contain"
+          />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold leading-tight">Delivery Auto Pro</span>
+            <span className="text-sm font-semibold leading-tight">Zero Tempo</span>
             <span className="text-[11px] text-muted-foreground">Painel do restaurante</span>
           </div>
         </div>
@@ -80,7 +83,7 @@ export function AppSidebar() {
           <div className="flex min-w-0 flex-col text-xs">
             <span className="truncate font-medium">{user?.name ?? "Restaurante Admin"}</span>
             <span className="truncate text-muted-foreground">
-              {user?.email ?? "admin@deliverypro.com"}
+              {user?.email ?? "admin@zerotempo.com"}
             </span>
           </div>
           <Button

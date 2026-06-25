@@ -16,7 +16,7 @@ import {
 import type { ApiOrder, OrderItem, OrderSubItem } from "@/types/order";
 
 export const Route = createFileRoute("/_app/orders")({
-  head: () => ({ meta: [{ title: "Pedidos ao Vivo · Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Pedidos ao Vivo · Zero Tempo" }] }),
   component: OrdersKanban,
 });
 

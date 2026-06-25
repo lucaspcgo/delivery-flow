@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 
 /**
- * Camada de serviço HTTP para a API REST externa do Delivery Auto Pro.
+ * Camada de serviço HTTP para a API REST externa do Zero Tempo.
  *
  * IMPORTANTE: este projeto NÃO usa Supabase. Todos os dados vêm de
  * https://api.deliveryautopro.com.br/api/v1 (configurável via VITE_API_URL).

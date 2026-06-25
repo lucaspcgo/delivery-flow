@@ -48,7 +48,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/reports")({
-  head: () => ({ meta: [{ title: "Relatórios — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Relatórios — Zero Tempo" }] }),
   component: ReportsPage,
 });
 

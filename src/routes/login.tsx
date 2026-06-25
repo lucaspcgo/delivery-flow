@@ -1,15 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { UtensilsCrossed, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { login, isAuthenticated } from "@/lib/auth";
+import logoAsset from "@/assets/logo.webp.asset.json";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Entrar — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Zero Tempo" }] }),
   component: LoginPage,
 });
 
@@ -40,11 +41,9 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-white px-4">
       <Card className="w-full max-w-md p-8 shadow-lg">
         <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <UtensilsCrossed className="h-6 w-6" />
-          </div>
+          <img src={logoAsset.url} alt="Zero Tempo" className="h-14 w-14 object-contain" />
           <div className="text-center">
-            <h1 className="text-lg font-semibold">Delivery Auto Pro</h1>
+            <h1 className="text-lg font-semibold">Zero Tempo</h1>
             <p className="text-sm text-muted-foreground">Entrar no painel</p>
           </div>
         </div>
@@ -76,7 +75,7 @@ function LoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white hover:bg-green-700"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {loading ? (
               <>
