@@ -18,7 +18,7 @@ import {
 } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/automations")({
-  head: () => ({ meta: [{ title: "Automações — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Automações — Zero Tempo" }] }),
   component: AutomationsPage,
 });
 

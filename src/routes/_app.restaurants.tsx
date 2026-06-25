@@ -52,7 +52,7 @@ import {
 import { Loader2, Search, CheckCircle2, Store } from "lucide-react";
 
 export const Route = createFileRoute("/_app/restaurants")({
-  head: () => ({ meta: [{ title: "Restaurantes — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Restaurantes — Zero Tempo" }] }),
   component: RestaurantsPage,
 });
 

@@ -43,7 +43,7 @@ export function AppSidebar() {
             <UtensilsCrossed className="h-5 w-5" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold leading-tight">Delivery Auto Pro</span>
+            <span className="text-sm font-semibold leading-tight">Zero Tempo</span>
             <span className="text-[11px] text-muted-foreground">Painel do restaurante</span>
           </div>
         </div>
@@ -80,7 +80,7 @@ export function AppSidebar() {
           <div className="flex min-w-0 flex-col text-xs">
             <span className="truncate font-medium">{user?.name ?? "Restaurante Admin"}</span>
             <span className="truncate text-muted-foreground">
-              {user?.email ?? "admin@deliverypro.com"}
+              {user?.email ?? "admin@zerotempo.com"}
             </span>
           </div>
           <Button

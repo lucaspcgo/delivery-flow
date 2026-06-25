@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { login, isAuthenticated } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Entrar — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Zero Tempo" }] }),
   component: LoginPage,
 });
 
@@ -44,7 +44,7 @@ function LoginPage() {
             <UtensilsCrossed className="h-6 w-6" />
           </div>
           <div className="text-center">
-            <h1 className="text-lg font-semibold">Delivery Auto Pro</h1>
+            <h1 className="text-lg font-semibold">Zero Tempo</h1>
             <p className="text-sm text-muted-foreground">Entrar no painel</p>
           </div>
         </div>

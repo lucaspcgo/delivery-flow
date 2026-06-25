@@ -11,7 +11,7 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/settings")({
-  head: () => ({ meta: [{ title: "Configurações — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Configurações — Zero Tempo" }] }),
   component: SettingsPage,
 });
 
@@ -32,7 +32,7 @@ function SettingsPage() {
             <Card className="max-w-2xl p-6">
               <div className="grid gap-4">
                 <div className="grid gap-2"><Label>Nome</Label><Input defaultValue="Restaurante Admin" /></div>
-                <div className="grid gap-2"><Label>Email</Label><Input defaultValue="admin@deliverypro.com" /></div>
+                <div className="grid gap-2"><Label>Email</Label><Input defaultValue="admin@zerotempo.com" /></div>
                 <div className="grid gap-2"><Label>Telefone</Label><Input defaultValue="(11) 99999-0000" /></div>
                 <Button className="w-fit" onClick={() => toast.success("Perfil atualizado")}>Salvar</Button>
               </div>
