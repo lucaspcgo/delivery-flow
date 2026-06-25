@@ -766,7 +766,44 @@ export const getPaymentStatus = (invoiceId: string) =>
 
 // ---------- Planos (DB) ----------
 
-export type PlanPeriod = "monthly" | "annual" | "one_time" | "free";
+export type PlanPeriod =
+  | "monthly"
+  | "yearly"
+  | "annual"
+  | "one_time"
+  | "free";
+
+export const PLAN_PERIOD_LABEL: Record<string, string> = {
+  monthly: "Mensal",
+  yearly: "Anual",
+  annual: "Anual",
+  one_time: "Único",
+  free: "Gratuito",
+};
+
+const PLAN_PERIOD_SUFFIX: Record<string, string> = {
+  monthly: "/mês",
+  yearly: "/ano",
+  annual: "/ano",
+  one_time: " (único)",
+  free: "",
+};
+
+export function formatPlanPrice(plan: {
+  price: number;
+  period?: string;
+  is_free?: boolean;
+  billing_period?: string;
+}): string {
+  const period = (plan.billing_period ?? plan.period ?? "") as string;
+  if (plan.is_free || period === "free") return "Grátis";
+  if (!plan.price || plan.price <= 0) return "Sob consulta";
+  const value = `R$ ${Number(plan.price).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+  })}`;
+  const suffix = PLAN_PERIOD_SUFFIX[period] ?? "";
+  return `${value}${suffix}`;
+}
 
 export interface DBPlan {
   id: string;
