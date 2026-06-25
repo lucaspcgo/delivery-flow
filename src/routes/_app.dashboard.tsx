@@ -7,6 +7,13 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getDashboardSummary, type DashboardSummary } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -39,13 +46,20 @@ const PLATFORM_META: Record<string, { label: string; color: string }> = {
 function DashboardPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const todayStr = () => {
+    const d = new Date();
+    const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60_000);
+    return tz.toISOString().slice(0, 10);
+  };
+  const [date, setDate] = useState<string>(todayStr());
+  const [platform, setPlatform] = useState<string>("all");
 
   useEffect(() => {
     let alive = true;
     const load = async (silent: boolean) => {
       if (!silent) setLoading(true);
       try {
-        const r = await getDashboardSummary();
+        const r = await getDashboardSummary({ date, platform });
         if (alive) setData(r);
       } catch {
         // erro tratado pelo http (silent=true não mostra toast)
@@ -59,14 +73,41 @@ function DashboardPage() {
       alive = false;
       clearInterval(id);
     };
-  }, []);
+  }, [date, platform]);
 
   return (
     <div>
       <PageHeader
         title="Dashboard"
         description="Visão geral operacional do seu restaurante hoje."
-        actions={<Button variant="outline" size="sm">Hoje</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-9 rounded-md border bg-background px-3 text-sm"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDate(todayStr())}
+            >
+              Hoje
+            </Button>
+            <Select value={platform} onValueChange={setPlatform}>
+              <SelectTrigger className="h-9 w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="ifood">iFood</SelectItem>
+                <SelectItem value="99food">99Food</SelectItem>
+                <SelectItem value="keeta">Keeta</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
       />
       <div className="space-y-6 p-4 sm:p-8">
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
