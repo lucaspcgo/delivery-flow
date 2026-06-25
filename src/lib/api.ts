@@ -380,6 +380,8 @@ export async function getDashboardSummary(params?: {
   if (params?.date) query.date = params.date;
   if (params?.platform && params.platform !== "all")
     query.platform = params.platform;
+  // Debug temporário: ver URL final chamada
+  console.log("[dashboard/summary] query:", query);
   const data = await http.get<Partial<DashboardSummary>>("/dashboard/summary", {
     silent: true,
     query,
