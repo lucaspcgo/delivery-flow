@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut } from "lucide-react";
-import { getUser, logout } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import { getUser, logout, type AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo.webp.asset.json";
 import {
@@ -28,7 +29,16 @@ const items = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const user = getUser();
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+  useEffect(() => {
+    const sync = () => setUser(getUser());
+    window.addEventListener("auth-user-updated", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("auth-user-updated", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
   const initials = (user?.name ?? "RA")
     .split(" ")
     .map((p) => p[0])
