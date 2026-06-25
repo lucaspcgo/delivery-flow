@@ -1,25 +1,10 @@
-import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Users, Receipt, Settings, ArrowLeft, Shield } from "lucide-react";
-import { isAuthenticated, getUser, logout } from "@/lib/auth";
-import { toast } from "sonner";
+import { logout } from "@/lib/auth";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
-  beforeLoad: () => {
-    if (typeof window === "undefined") return;
-    try {
-      if (!isAuthenticated()) {
-        throw redirect({ to: "/login" });
-      }
-      const u = getUser();
-      if (!u || (u as { is_admin?: boolean }).is_admin !== true) {
-        setTimeout(() => toast.error("Acesso negado"), 0);
-        throw redirect({ to: "/dashboard" });
-      }
-    } catch (e) {
-      throw e;
-    }
-  },
   component: AdminLayout,
 });
 
@@ -32,6 +17,35 @@ const menu = [
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [ok, setOk] = useState(false);
+
+  useEffect(() => {
+    try {
+      const token = window.localStorage.getItem("auth_token");
+      const raw = window.localStorage.getItem("auth_user");
+      const user = raw ? JSON.parse(raw) : null;
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!user?.is_admin) {
+        window.location.href = "/dashboard";
+        return;
+      }
+      setOk(true);
+    } catch {
+      window.location.href = "/dashboard";
+    }
+  }, []);
+
+  if (!ok) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
+        Carregando…
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen w-full bg-slate-50">
       <aside
