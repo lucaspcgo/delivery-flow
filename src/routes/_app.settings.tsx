@@ -29,6 +29,7 @@ import {
   disable2FA,
   getProfile,
   getPlansPublic,
+  formatPlanPrice,
   setup2FA,
   updateCompany,
   updatePlan,
@@ -352,12 +353,7 @@ function PlansSection({
     (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0),
   );
 
-  const priceLabel = (p: DBPlan) =>
-    p.is_free
-      ? "Grátis"
-      : p.price > 0
-        ? `R$ ${Number(p.price).toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`
-        : "Sob consulta";
+  const priceLabel = (p: DBPlan) => formatPlanPrice(p);
 
   return (
     <>
@@ -380,14 +376,7 @@ function PlansSection({
                   </Badge>
                 )}
               </div>
-              <p className="mt-4 text-2xl font-semibold">
-                {priceLabel(p)}
-                {!p.is_free && p.price > 0 && (
-                  <span className="text-sm font-normal text-muted-foreground">
-                    /mês
-                  </span>
-                )}
-              </p>
+              <p className="mt-4 text-2xl font-semibold">{priceLabel(p)}</p>
               <ul className="mt-4 flex-1 space-y-2 text-sm">
                 {(p.features ?? []).map((f) => (
                   <li key={f} className="flex items-center gap-2">
