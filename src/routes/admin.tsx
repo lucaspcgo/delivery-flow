@@ -7,13 +7,17 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/admin")({
   beforeLoad: () => {
     if (typeof window === "undefined") return;
-    if (!isAuthenticated()) {
-      throw redirect({ to: "/login" });
-    }
-    const u = getUser();
-    if (!u || (u as { is_admin?: boolean }).is_admin !== true) {
-      toast.error("Acesso negado");
-      throw redirect({ to: "/dashboard" });
+    try {
+      if (!isAuthenticated()) {
+        throw redirect({ to: "/login" });
+      }
+      const u = getUser();
+      if (!u || (u as { is_admin?: boolean }).is_admin !== true) {
+        setTimeout(() => toast.error("Acesso negado"), 0);
+        throw redirect({ to: "/dashboard" });
+      }
+    } catch (e) {
+      throw e;
     }
   },
   component: AdminLayout,
