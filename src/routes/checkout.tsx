@@ -187,6 +187,16 @@ function CheckoutPage() {
         password: userData?.password ? "***" : undefined,
       });
       const res = await createCheckout(body);
+      // Plano gratuito: API retorna type="free_trial" com token+user → auto-login
+      if (res.type === "free_trial" && res.token && res.user) {
+        window.localStorage.setItem("auth_token", res.token);
+        window.localStorage.setItem("auth_user", JSON.stringify(res.user));
+        toast.success("Conta criada!", {
+          description: "Seu teste grátis de 7 dias começou.",
+        });
+        navigate({ to: "/dashboard" });
+        return;
+      }
       setCheckout(res);
       setStep(3);
       setSecondsLeft(30 * 60);
@@ -217,6 +227,19 @@ function CheckoutPage() {
                 .join(" • ")
             : null) ||
           err.message;
+
+        // Email já usou trial grátis
+        if (
+          /e-?mail.*(já|ja).*(utiliz|usad)/i.test(apiMsg) ||
+          /already.*used.*trial/i.test(apiMsg) ||
+          p.code === "trial_email_used"
+        ) {
+          toast.error("Este email já utilizou o período gratuito.", {
+            description: "Escolha um plano pago.",
+            duration: 8000,
+          });
+          return;
+        }
 
         if (status === 0) {
           title = "Erro de conexão";
@@ -410,6 +433,12 @@ function CheckoutPage() {
                 {selectedPlanDetails?.name}
               </span>
             </p>
+            {selectedPlanDetails?.is_free && (
+              <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
+                Teste grátis por 7 dias. Após o período, será necessário
+                assinar um plano pago.
+              </div>
+            )}
             <form onSubmit={handleSubmitData} className="mt-6 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nome completo</Label>

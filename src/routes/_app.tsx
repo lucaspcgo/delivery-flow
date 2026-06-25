@@ -6,6 +6,7 @@ import { StoreSelector } from "@/components/store-selector";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated } from "@/lib/auth";
+import { TrialBanner } from "@/components/trial-banner";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: () => {
@@ -40,6 +41,7 @@ function AppLayout() {
               </Button>
             </div>
           </header>
+          <TrialBanner />
           <main className="flex-1">
             <Outlet />
           </main>

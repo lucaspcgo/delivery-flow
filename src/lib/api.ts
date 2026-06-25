@@ -98,8 +98,26 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
       (payload && typeof payload === "object" && "message" in payload
         ? String((payload as { message: unknown }).message)
         : null) ?? `Erro ${res.status} ao chamar ${path}`;
-    if (!silent) toast.error("Erro na requisição", { description: message });
-    if (res.status === 401) {
+    // Bloqueio por trial expirado: aplica-se a qualquer chamada autenticada
+    const p = (payload ?? {}) as Record<string, unknown>;
+    const trialExpired =
+      res.status === 403 && (p.trial_expired === true || p.code === "trial_expired");
+    const paymentSuspended =
+      res.status === 403 &&
+      (p.payment_suspended === true || p.code === "payment_suspended");
+    if (!silent && !trialExpired && !paymentSuspended) {
+      toast.error("Erro na requisição", { description: message });
+    }
+    if (trialExpired || paymentSuspended) {
+      authToken.clear();
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login"
+      ) {
+        const flag = trialExpired ? "trial_expired" : "payment_suspended";
+        window.location.href = `/login?${flag}=1`;
+      }
+    } else if (res.status === 401) {
       authToken.clear();
       if (
         typeof window !== "undefined" &&
@@ -201,15 +219,53 @@ export const auth = {
     const data = await http.post<{
       token: string;
       user: { id: string; email: string };
-    }>("/auth/login", { email, password });
+    }>("/auth/login", { email, password }, { silent: true });
     authToken.set(data.token);
     return data;
   },
   logout() {
     authToken.clear();
   },
-  me: () => http.get<{ id: string; email: string; name: string }>("/auth/me"),
+  me: () => http.get<MeResponse>("/auth/me", { silent: true }),
 };
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  name: string;
+  plan?: string;
+  trial_days_left?: number;
+  trial_expired?: boolean;
+  payment_suspended?: boolean;
+  is_admin?: boolean;
+}
+
+// Cache em módulo para evitar refetch em todo lugar
+let _meCache: MeResponse | null = null;
+let _mePromise: Promise<MeResponse> | null = null;
+
+export function getMeCached(force = false): Promise<MeResponse> {
+  if (!force && _meCache) return Promise.resolve(_meCache);
+  if (!_mePromise) {
+    _mePromise = auth
+      .me()
+      .then((r) => {
+        _meCache = r;
+        _mePromise = null;
+        return r;
+      })
+      .catch((e) => {
+        _mePromise = null;
+        throw e;
+      });
+  }
+  return _mePromise;
+}
+
+export function clearMeCache() {
+  _meCache = null;
+  _mePromise = null;
+}
 
 // ---------- Recursos ----------
 
@@ -740,8 +796,11 @@ export interface CheckoutCreateResponse {
   invoice_id: string;
   pix_qr_code?: string;
   pix_copy_paste?: string;
-  amount: number;
+  amount?: number;
   expires_at?: string;
+  type?: "paid" | "free_trial";
+  token?: string;
+  user?: { id: string; name: string; email: string; is_admin?: boolean };
 }
 
 export interface CheckoutConfirmResponse {
