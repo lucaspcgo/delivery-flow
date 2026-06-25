@@ -162,6 +162,9 @@ function OrdersKanban() {
   const handleReady = async (order: ApiOrder) => {
     setBusyId(order.id);
     try {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, status: "ready" } : o)),
+      );
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} finalizado!`);
       await load();
     } finally {
