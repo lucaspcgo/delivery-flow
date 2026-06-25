@@ -219,15 +219,53 @@ export const auth = {
     const data = await http.post<{
       token: string;
       user: { id: string; email: string };
-    }>("/auth/login", { email, password });
+    }>("/auth/login", { email, password }, { silent: true });
     authToken.set(data.token);
     return data;
   },
   logout() {
     authToken.clear();
   },
-  me: () => http.get<{ id: string; email: string; name: string }>("/auth/me"),
+  me: () => http.get<MeResponse>("/auth/me", { silent: true }),
 };
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  name: string;
+  plan?: string;
+  trial_days_left?: number;
+  trial_expired?: boolean;
+  payment_suspended?: boolean;
+  is_admin?: boolean;
+}
+
+// Cache em módulo para evitar refetch em todo lugar
+let _meCache: MeResponse | null = null;
+let _mePromise: Promise<MeResponse> | null = null;
+
+export function getMeCached(force = false): Promise<MeResponse> {
+  if (!force && _meCache) return Promise.resolve(_meCache);
+  if (!_mePromise) {
+    _mePromise = auth
+      .me()
+      .then((r) => {
+        _meCache = r;
+        _mePromise = null;
+        return r;
+      })
+      .catch((e) => {
+        _mePromise = null;
+        throw e;
+      });
+  }
+  return _mePromise;
+}
+
+export function clearMeCache() {
+  _meCache = null;
+  _mePromise = null;
+}
 
 // ---------- Recursos ----------
 
