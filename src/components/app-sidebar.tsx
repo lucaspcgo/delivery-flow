@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUser, logout, type AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,20 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+              {(user as { is_admin?: boolean } | null)?.is_admin === true && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/admin")}
+                    tooltip="Admin"
+                  >
+                    <Link to="/admin/dashboard" className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      <span>Admin</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
