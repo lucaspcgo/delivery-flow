@@ -372,15 +372,7 @@ export interface DashboardSummary {
   por_plataforma: { platform: string; total: number }[];
 }
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
-  return getDashboardSummary._impl();
-}
-
-getDashboardSummary._impl = async function () {
-  return {} as DashboardSummary;
-};
-
-export async function fetchDashboardSummary(params?: {
+export async function getDashboardSummary(params?: {
   date?: string;
   platform?: string;
 }): Promise<DashboardSummary> {
