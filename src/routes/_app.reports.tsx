@@ -65,6 +65,27 @@ const PLATFORM_BADGE: Record<string, string> = {
   keeta: "bg-violet-100 text-violet-700 border-violet-200",
 };
 
+const PLATFORM_LABEL: Record<string, string> = {
+  ifood: "iFood",
+  "99food": "99Food",
+  keeta: "Keeta",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  ready: "Pronto",
+  confirmed: "Confirmado",
+  cancelled: "Cancelado",
+  "100": "Novo",
+  pending: "Pendente",
+};
+
+function restaurantName(name?: string) {
+  if (!name || name.trim() === "" || name === "Loja sem nome") {
+    return "Loja não identificada";
+  }
+  return name;
+}
+
 const STATUS_COLOR: Record<string, string> = {
   ready: "#10b981",
   confirmed: "#3b82f6",
