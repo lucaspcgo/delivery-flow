@@ -108,10 +108,11 @@ function todayISO(offsetDays = 0) {
 
 function formatDayLabel(iso: string) {
   if (!iso) return "";
-  const [y, m, d] = iso.split("-");
-  if (!d) return iso;
-  return `${d}/${m}`;
-  void y;
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}`;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function ReportsPage() {
