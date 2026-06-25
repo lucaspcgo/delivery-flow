@@ -382,7 +382,10 @@ function ReportsPage() {
                   <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Pie
-                    data={data?.por_status ?? []}
+                    data={(data?.por_status ?? []).map((s) => ({
+                      ...s,
+                      statusLabel: STATUS_LABEL[s.status] ?? s.status,
+                    }))}
                     dataKey="total"
                     nameKey="statusLabel"
                     innerRadius={55}
