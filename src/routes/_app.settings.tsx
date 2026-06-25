@@ -58,15 +58,14 @@ function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    getProfile()
-      .then((p) => {
-        if (alive) setProfile(p);
-      })
-      .catch(() => {
-        if (alive)
-          setProfile({
+  const refetch = async () => {
+    try {
+      const p = await getProfile();
+      setProfile(p);
+      return p;
+    } catch {
+      setProfile((prev) =>
+        prev ?? {
             name: "",
             email: "",
             phone: "",
@@ -75,12 +74,22 @@ function SettingsPage() {
             company_address: "",
             plan: "starter",
             totp_enabled: false,
-          });
-      })
-      .finally(() => alive && setLoading(false));
+        },
+      );
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      await refetch();
+      if (alive) setLoading(false);
+    })();
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -109,11 +118,11 @@ function SettingsPage() {
               <>
                 <ProfileSection
                   profile={profile}
-                  onSaved={(p) => setProfile(p)}
+                  onSaved={refetch}
                 />
                 <CompanySection
                   profile={profile}
-                  onSaved={(p) => setProfile(p)}
+                  onSaved={refetch}
                 />
               </>
             )}
