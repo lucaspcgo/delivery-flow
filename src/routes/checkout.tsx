@@ -215,16 +215,7 @@ function CheckoutPage() {
         email: userData?.email,
         password: userData?.password ? "***" : undefined,
       });
-      const res = await createCheckout({
-        plan: body.plan,
-        ...(userData
-          ? {
-              name: body.name,
-              email: body.email,
-              password: body.password,
-            }
-          : {}),
-      };
+      const res = await createCheckout(body);
       setCheckout(res);
       setStep(3);
       setSecondsLeft(30 * 60);
@@ -352,7 +343,7 @@ function CheckoutPage() {
             </div>
             <h2 className="text-xl font-semibold">Pagamento confirmado!</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Seu acesso ao plano {selectedPlan?.name} foi liberado.
+              Seu acesso ao plano {selectedPlanDetails?.name} foi liberado.
             </p>
             <Button
               className="mt-6 w-full"
@@ -526,7 +517,7 @@ function CheckoutPage() {
               <div className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Plano</span>
-                  <span className="font-medium">{selectedPlan?.name}</span>
+                  <span className="font-medium">{selectedPlanDetails?.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor</span>
