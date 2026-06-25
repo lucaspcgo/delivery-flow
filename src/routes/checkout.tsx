@@ -10,11 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
-  getPlans,
+  getPlansPublic,
   createCheckout,
   confirmPayment,
   authToken,
-  type CheckoutPlan,
+  type DBPlan,
   type CheckoutCreateResponse,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api";
@@ -26,48 +26,7 @@ export const Route = createFileRoute("/checkout")({
 
 type Step = 1 | 2 | 3 | 4;
 
-const FALLBACK_PLANS: CheckoutPlan[] = [
-  {
-    id: "starter",
-    key: "starter",
-    name: "Starter",
-    price: 99,
-    features: [
-      "Até 1 restaurante",
-      "Integração com iFood e 99Food",
-      "Pedidos em tempo real",
-      "Suporte por email",
-    ],
-  },
-  {
-    id: "pro",
-    key: "pro",
-    name: "Pro",
-    price: 249,
-    highlighted: true,
-    features: [
-      "Até 5 restaurantes",
-      "Todas as integrações",
-      "Automações ilimitadas",
-      "Relatórios avançados",
-      "Suporte prioritário",
-    ],
-  },
-  {
-    id: "enterprise",
-    key: "enterprise",
-    name: "Enterprise",
-    price: null,
-    price_label: "Sob consulta",
-    features: [
-      "Restaurantes ilimitados",
-      "API dedicada",
-      "Gerente de conta",
-      "SLA personalizado",
-    ],
-    cta: "Falar com vendas",
-  },
-];
+const FALLBACK_PLANS: DBPlan[] = [];
 
 function formatBRL(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -76,8 +35,14 @@ function formatBRL(value: number) {
   }).format(value);
 }
 
-function getPlanKey(plan: CheckoutPlan) {
-  return plan.key || plan.id;
+function getPlanKey(plan: DBPlan) {
+  return plan.slug || plan.id;
+}
+
+function planButtonLabel(plan: DBPlan) {
+  if (plan.is_free) return "Começar grátis";
+  if (plan.price === 0) return "Falar com vendas";
+  return "Selecionar";
 }
 
 function Stepper({ step }: { step: Step }) {
@@ -130,7 +95,7 @@ function Stepper({ step }: { step: Step }) {
 function CheckoutPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
-  const [plans, setPlans] = useState<CheckoutPlan[]>(FALLBACK_PLANS);
+  const [plans, setPlans] = useState<DBPlan[]>(FALLBACK_PLANS);
   const [selectedPlan, setSelectedPlan] = useState("");
 
   const [name, setName] = useState("");
@@ -154,9 +119,14 @@ function CheckoutPage() {
   );
 
   useEffect(() => {
-    getPlans()
+    getPlansPublic()
       .then((data) => {
-        if (Array.isArray(data) && data.length) setPlans(data);
+        if (Array.isArray(data) && data.length) {
+          const sorted = [...data]
+            .filter((p) => p.active !== false)
+            .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+          setPlans(sorted);
+        }
       })
       .catch(() => {});
   }, []);
@@ -175,11 +145,11 @@ function CheckoutPage() {
     return `${m}:${s}`;
   }, [secondsLeft]);
 
-  function handleSelectPlan(plan: CheckoutPlan) {
+  function handleSelectPlan(plan: DBPlan) {
     const planKey = getPlanKey(plan);
-    if (planKey === "enterprise") {
+    if (!plan.is_free && plan.price === 0) {
       const msg = encodeURIComponent(
-        "Olá! Tenho interesse no plano Enterprise do Zero Tempo.",
+        `Olá! Tenho interesse no plano ${plan.name} do Zero Tempo.`,
       );
       window.open(`https://wa.me/5511999999999?text=${msg}`, "_blank");
       return;
@@ -378,7 +348,8 @@ function CheckoutPage() {
             </div>
             <div className="grid gap-6 md:grid-cols-3">
               {plans.map((plan) => {
-                const highlighted = plan.highlighted || plan.key === "pro";
+                const highlighted = plan.popular;
+                const isContactSales = !plan.is_free && plan.price === 0;
                 return (
                   <Card
                     key={plan.id}
@@ -394,7 +365,11 @@ function CheckoutPage() {
                     )}
                     <h3 className="text-lg font-semibold">{plan.name}</h3>
                     <div className="mt-3">
-                      {plan.price != null ? (
+                      {plan.is_free ? (
+                        <span className="text-3xl font-bold text-green-600">
+                          Grátis
+                        </span>
+                      ) : plan.price > 0 ? (
                         <div className="flex items-baseline gap-1">
                           <span className="text-3xl font-bold">
                             {formatBRL(plan.price)}
@@ -405,7 +380,7 @@ function CheckoutPage() {
                         </div>
                       ) : (
                         <span className="text-2xl font-bold">
-                          {plan.price_label ?? "Sob consulta"}
+                          Sob consulta
                         </span>
                       )}
                     </div>
@@ -418,15 +393,17 @@ function CheckoutPage() {
                       ))}
                     </ul>
                     <Button
-                      className="mt-6 w-full"
-                      variant={highlighted ? "default" : "outline"}
+                      className={cn(
+                        "mt-6 w-full",
+                        plan.is_free && "bg-green-600 text-white hover:bg-green-700",
+                      )}
+                      variant={
+                        plan.is_free ? "default" : highlighted ? "default" : "outline"
+                      }
                       onClick={() => handleSelectPlan(plan)}
                       disabled={submitting}
                     >
-                      {plan.cta ??
-                        (plan.key === "enterprise"
-                          ? "Falar com vendas"
-                          : "Selecionar")}
+                      {isContactSales ? "Falar com vendas" : planButtonLabel(plan)}
                     </Button>
                   </Card>
                 );
@@ -522,9 +499,11 @@ function CheckoutPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor</span>
                   <span className="font-medium">
-                    {selectedPlanDetails?.price != null
-                      ? formatBRL(selectedPlanDetails.price)
-                      : selectedPlanDetails?.price_label}
+                    {selectedPlanDetails?.is_free
+                      ? "Grátis"
+                      : selectedPlanDetails && selectedPlanDetails.price > 0
+                        ? formatBRL(selectedPlanDetails.price)
+                        : "Sob consulta"}
                   </span>
                 </div>
                 {!isLogged && (

@@ -24,9 +24,11 @@ import { toast } from "sonner";
 import {
   type UserPlan,
   type UserProfile,
+  type DBPlan,
   changePassword,
   disable2FA,
   getProfile,
+  getPlansPublic,
   setup2FA,
   updateCompany,
   updatePlan,
@@ -315,6 +317,15 @@ function PlansSection({
   onChanged: (p: UserProfile) => void;
 }) {
   const [pending, setPending] = useState<UserPlan | null>(null);
+  const [plans, setPlans] = useState<DBPlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
+
+  useEffect(() => {
+    getPlansPublic()
+      .then((d) => setPlans(Array.isArray(d) ? d.filter((p) => p.active !== false) : []))
+      .catch(() => setPlans([]))
+      .finally(() => setLoadingPlans(false));
+  }, []);
 
   const confirm = async () => {
     if (!pending) return;
@@ -327,49 +338,38 @@ function PlansSection({
     }
   };
 
-  const plans: {
-    id: UserPlan;
-    name: string;
-    price: string;
-    features: string[];
-    highlight?: boolean;
-  }[] = [
-    {
-      id: "starter",
-      name: "Starter",
-      price: "R$ 99",
-      features: ["1 loja", "300 pedidos/mês", "Integrações básicas"],
-    },
-    {
-      id: "pro",
-      name: "Pro",
-      price: "R$ 249",
-      features: [
-        "5 lojas",
-        "Pedidos ilimitados",
-        "Todas as automações",
-        "Suporte prioritário",
-      ],
-      highlight: true,
-    },
-    {
-      id: "enterprise",
-      name: "Enterprise",
-      price: "Sob consulta",
-      features: ["Lojas ilimitadas", "API dedicada", "Gerente de conta"],
-    },
-  ];
+  if (loadingPlans) {
+    return (
+      <div className="grid gap-4 md:grid-cols-3">
+        <Skeleton className="h-64" />
+        <Skeleton className="h-64" />
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  const sorted = [...plans].sort(
+    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0),
+  );
+
+  const priceLabel = (p: DBPlan) =>
+    p.is_free
+      ? "Grátis"
+      : p.price > 0
+        ? `R$ ${Number(p.price).toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`
+        : "Sob consulta";
 
   return (
     <>
       <div className="grid gap-4 md:grid-cols-3">
-        {plans.map((p) => {
-          const current = profile.plan === p.id;
+        {sorted.map((p) => {
+          const current = profile.plan === (p.slug as UserPlan);
+          const highlight = p.popular;
           return (
             <Card
               key={p.id}
               className={`flex flex-col p-6 ${
-                p.highlight ? "border-primary ring-2 ring-primary/20" : ""
+                highlight ? "border-primary ring-2 ring-primary/20" : ""
               }`}
             >
               <div className="flex items-center justify-between">
@@ -381,13 +381,15 @@ function PlansSection({
                 )}
               </div>
               <p className="mt-4 text-2xl font-semibold">
-                {p.price}
-                <span className="text-sm font-normal text-muted-foreground">
-                  /mês
-                </span>
+                {priceLabel(p)}
+                {!p.is_free && p.price > 0 && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    /mês
+                  </span>
+                )}
               </p>
               <ul className="mt-4 flex-1 space-y-2 text-sm">
-                {p.features.map((f) => (
+                {(p.features ?? []).map((f) => (
                   <li key={f} className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-600" />
                     {f}
@@ -400,7 +402,7 @@ function PlansSection({
                   current ? "border-emerald-600 text-emerald-700" : ""
                 }`}
                 disabled={current}
-                onClick={() => setPending(p.id)}
+                onClick={() => setPending(p.slug as UserPlan)}
               >
                 {current ? "Plano atual" : "Selecionar"}
               </Button>
@@ -418,7 +420,7 @@ function PlansSection({
             <AlertDialogTitle>Confirmar mudança de plano</AlertDialogTitle>
             <AlertDialogDescription>
               Deseja mudar para o plano{" "}
-              {pending ? PLAN_LABELS[pending] : ""}?
+              {pending ?? ""}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
