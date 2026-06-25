@@ -764,6 +764,42 @@ export const getPaymentStatus = (invoiceId: string) =>
     silent: true,
   });
 
+// ---------- Planos (DB) ----------
+
+export type PlanPeriod = "monthly" | "annual" | "one_time" | "free";
+
+export interface DBPlan {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  period: PlanPeriod;
+  features: string[];
+  popular: boolean;
+  is_free: boolean;
+  active: boolean;
+  max_restaurants: number;
+  max_orders_per_month: number;
+  display_order: number;
+}
+
+export type DBPlanInput = Partial<Omit<DBPlan, "id">>;
+
+export const getPlansPublic = () =>
+  http.get<DBPlan[]>("/plans", { silent: true });
+
+export const getPlansAdmin = () =>
+  http.get<DBPlan[]>("/plans/all", { silent: true });
+
+export const createPlan = (data: DBPlanInput) =>
+  http.post<DBPlan>("/plans", data);
+
+export const updatePlanDB = (id: string, data: DBPlanInput) =>
+  http.put<DBPlan>(`/plans/${id}`, data);
+
+export const deletePlan = (id: string) =>
+  http.delete<void>(`/plans/${id}`);
+
 // ---------- Relatórios ----------
 
 export async function getReports(params: {
