@@ -143,12 +143,20 @@ function LoginPage() {
             )}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Ainda não tem conta?{" "}
-          <a href="/checkout" className="font-medium text-primary hover:underline">
-            Assine agora
-          </a>
-        </p>
+        <div className="mt-6 space-y-2 text-center text-sm text-muted-foreground">
+          <p>
+            Não tem conta?{" "}
+            <a href="/register" className="font-medium text-primary hover:underline">
+              Crie grátis
+            </a>
+          </p>
+          <p>
+            Quer assinar um plano?{" "}
+            <a href="/checkout" className="font-medium text-primary hover:underline">
+              Assine agora
+            </a>
+          </p>
+        </div>
       </Card>
     </div>
   );
