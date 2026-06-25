@@ -87,7 +87,7 @@ export function AppSidebar() {
                     isActive={pathname.startsWith("/admin")}
                     tooltip="Admin"
                   >
-                    <Link to="/admin/dashboard" className="flex items-center gap-2">
+                    <Link to="/admin" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
                       <span>Admin</span>
                     </Link>
