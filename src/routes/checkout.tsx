@@ -76,6 +76,10 @@ function formatBRL(value: number) {
   }).format(value);
 }
 
+function getPlanKey(plan: CheckoutPlan) {
+  return plan.key || plan.id;
+}
+
 function Stepper({ step }: { step: Step }) {
   const items = [
     { n: 1, label: "Escolher Plano" },
@@ -127,7 +131,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
   const [plans, setPlans] = useState<CheckoutPlan[]>(FALLBACK_PLANS);
-  const [selectedPlan, setSelectedPlan] = useState<CheckoutPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState("");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -143,6 +147,11 @@ function CheckoutPage() {
   const [secondsLeft, setSecondsLeft] = useState(30 * 60);
 
   const isLogged = typeof window !== "undefined" && !!authToken.get();
+
+  const selectedPlanDetails = useMemo(
+    () => plans.find((plan) => getPlanKey(plan) === selectedPlan) ?? null,
+    [plans, selectedPlan],
+  );
 
   useEffect(() => {
     getPlans()
@@ -167,43 +176,55 @@ function CheckoutPage() {
   }, [secondsLeft]);
 
   function handleSelectPlan(plan: CheckoutPlan) {
-    if (plan.key === "enterprise") {
+    const planKey = getPlanKey(plan);
+    if (planKey === "enterprise") {
       const msg = encodeURIComponent(
         "Olá! Tenho interesse no plano Enterprise do Zero Tempo.",
       );
       window.open(`https://wa.me/5511999999999?text=${msg}`, "_blank");
       return;
     }
-    setSelectedPlan(plan);
+    setSelectedPlan(planKey);
     if (isLogged) {
-      void startCheckout(plan);
+      void startCheckout(planKey);
     } else {
       setStep(2);
     }
   }
 
-  async function startCheckout(plan: CheckoutPlan, userData?: {
+  async function startCheckout(plan: string, userData?: {
     name: string;
     email: string;
     password: string;
   }) {
     setSubmitting(true);
     try {
-      const body = {
-        plan: plan.key,
+      const body = userData
+        ? {
+            plan,
+            name: userData.name,
+            email: userData.email,
+            password: userData.password,
+          }
+        : {
+            plan,
+          };
+      console.log("checkout body:", {
+        plan,
+        name: userData?.name,
+        email: userData?.email,
+        password: userData?.password ? "***" : undefined,
+      });
+      const res = await createCheckout({
+        plan: body.plan,
         ...(userData
           ? {
-              name: userData.name,
-              email: userData.email,
-              password: userData.password,
+              name: body.name,
+              email: body.email,
+              password: body.password,
             }
           : {}),
       };
-      console.log("[checkout] POST /checkout/create body:", {
-        ...body,
-        password: body.password ? "***" : undefined,
-      });
-      const res = await createCheckout(body);
       setCheckout(res);
       setStep(3);
       setSecondsLeft(30 * 60);
@@ -427,7 +448,7 @@ function CheckoutPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Plano selecionado:{" "}
               <span className="font-medium text-foreground">
-                {selectedPlan?.name}
+                {selectedPlanDetails?.name}
               </span>
             </p>
             <form onSubmit={handleSubmitData} className="mt-6 space-y-4">
@@ -510,9 +531,9 @@ function CheckoutPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor</span>
                   <span className="font-medium">
-                    {selectedPlan?.price != null
-                      ? formatBRL(selectedPlan.price)
-                      : selectedPlan?.price_label}
+                    {selectedPlanDetails?.price != null
+                      ? formatBRL(selectedPlanDetails.price)
+                      : selectedPlanDetails?.price_label}
                   </span>
                 </div>
                 {!isLogged && (
