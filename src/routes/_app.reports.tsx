@@ -426,7 +426,7 @@ function ReportsPage() {
                 <TableRow key={p.platform}>
                   <TableCell>
                     <Badge variant="outline" className={PLATFORM_BADGE[p.platform] ?? ""}>
-                      {p.platform}
+                      {PLATFORM_LABEL[p.platform] ?? p.platform}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{p.pedidos}</TableCell>
@@ -497,10 +497,10 @@ function ReportsPage() {
               )}
               {(data?.por_restaurante ?? []).map((r, i) => (
                 <TableRow key={`${r.restaurante}-${i}`}>
-                  <TableCell className="font-medium">{r.restaurante}</TableCell>
+                  <TableCell className="font-medium">{restaurantName(r.restaurante)}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={PLATFORM_BADGE[r.platform] ?? ""}>
-                      {r.platform}
+                      {PLATFORM_LABEL[r.platform] ?? r.platform}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{r.pedidos}</TableCell>
