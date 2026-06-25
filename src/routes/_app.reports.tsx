@@ -384,7 +384,7 @@ function ReportsPage() {
                   <Pie
                     data={data?.por_status ?? []}
                     dataKey="total"
-                    nameKey="status"
+                    nameKey="statusLabel"
                     innerRadius={55}
                     outerRadius={95}
                     paddingAngle={2}
