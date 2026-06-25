@@ -124,7 +124,7 @@ function CheckoutPage() {
       .then((data) => {
         if (Array.isArray(data) && data.length) {
           const sorted = [...data]
-            .filter((p) => p.active !== false)
+            .filter((p) => p.active !== false && p.is_free !== true)
             .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
           setPlans(sorted);
         }
@@ -328,6 +328,15 @@ function CheckoutPage() {
           <div className="mb-10">
             <Stepper step={step} />
           </div>
+        )}
+
+        {!paymentResult && step === 1 && (
+          <p className="mb-6 text-center text-sm text-muted-foreground">
+            Quer testar antes?{" "}
+            <a href="/register" className="font-medium text-primary hover:underline">
+              Crie uma conta grátis
+            </a>
+          </p>
         )}
 
         {paymentResult === "success" ? (
