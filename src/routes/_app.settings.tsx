@@ -58,15 +58,14 @@ function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    getProfile()
-      .then((p) => {
-        if (alive) setProfile(p);
-      })
-      .catch(() => {
-        if (alive)
-          setProfile({
+  const refetch = async () => {
+    try {
+      const p = await getProfile();
+      setProfile(p);
+      return p;
+    } catch {
+      setProfile((prev) =>
+        prev ?? {
             name: "",
             email: "",
             phone: "",
@@ -75,12 +74,22 @@ function SettingsPage() {
             company_address: "",
             plan: "starter",
             totp_enabled: false,
-          });
-      })
-      .finally(() => alive && setLoading(false));
+        },
+      );
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      await refetch();
+      if (alive) setLoading(false);
+    })();
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -109,11 +118,11 @@ function SettingsPage() {
               <>
                 <ProfileSection
                   profile={profile}
-                  onSaved={(p) => setProfile(p)}
+                  onSaved={refetch}
                 />
                 <CompanySection
                   profile={profile}
-                  onSaved={(p) => setProfile(p)}
+                  onSaved={refetch}
                 />
               </>
             )}
@@ -161,19 +170,40 @@ function ProfileSection({
   onSaved,
 }: {
   profile: UserProfile;
-  onSaved: (p: UserProfile) => void;
+  onSaved: () => Promise<UserProfile | null>;
 }) {
-  const [name, setName] = useState(profile.name ?? "");
-  const [email, setEmail] = useState(profile.email ?? "");
-  const [phone, setPhone] = useState(profile.phone ?? "");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(profile.name ?? "");
+    setEmail(profile.email ?? "");
+    setPhone(profile.phone ?? "");
+  }, [profile.name, profile.email, profile.phone]);
 
   const save = async () => {
     setSaving(true);
     try {
-      const p = await updateProfile({ name, email, phone });
-      onSaved({ ...profile, ...p });
+      await updateProfile({ name, email, phone });
+      await onSaved();
+      if (typeof window !== "undefined") {
+        try {
+          const raw = window.localStorage.getItem("auth_user");
+          const u = raw ? JSON.parse(raw) : {};
+          window.localStorage.setItem(
+            "auth_user",
+            JSON.stringify({ ...u, name, email }),
+          );
+          window.dispatchEvent(new Event("auth-user-updated"));
+        } catch {
+          /* ignore */
+        }
+      }
       toast.success("Perfil atualizado!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar perfil");
     } finally {
       setSaving(false);
     }
@@ -212,23 +242,31 @@ function CompanySection({
   onSaved,
 }: {
   profile: UserProfile;
-  onSaved: (p: UserProfile) => void;
+  onSaved: () => Promise<UserProfile | null>;
 }) {
-  const [companyName, setCompanyName] = useState(profile.company_name ?? "");
-  const [cnpj, setCnpj] = useState(maskCnpj(profile.company_cnpj ?? ""));
-  const [address, setAddress] = useState(profile.company_address ?? "");
+  const [companyName, setCompanyName] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [address, setAddress] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setCompanyName(profile.company_name ?? "");
+    setCnpj(maskCnpj(profile.company_cnpj ?? ""));
+    setAddress(profile.company_address ?? "");
+  }, [profile.company_name, profile.company_cnpj, profile.company_address]);
 
   const save = async () => {
     setSaving(true);
     try {
-      const p = await updateCompany({
+      await updateCompany({
         company_name: companyName,
         company_cnpj: cnpj,
         company_address: address,
       });
-      onSaved({ ...profile, ...p });
+      await onSaved();
       toast.success("Dados da empresa atualizados!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar empresa");
     } finally {
       setSaving(false);
     }
