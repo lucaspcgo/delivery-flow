@@ -16,6 +16,7 @@ import {
   authToken,
   type DBPlan,
   type CheckoutCreateResponse,
+  formatPlanPrice,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api";
 
