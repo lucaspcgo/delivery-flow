@@ -796,8 +796,11 @@ export interface CheckoutCreateResponse {
   invoice_id: string;
   pix_qr_code?: string;
   pix_copy_paste?: string;
-  amount: number;
+  amount?: number;
   expires_at?: string;
+  type?: "paid" | "free_trial";
+  token?: string;
+  user?: { id: string; name: string; email: string; is_admin?: boolean };
 }
 
 export interface CheckoutConfirmResponse {
