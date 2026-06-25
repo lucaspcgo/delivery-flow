@@ -536,7 +536,31 @@ export function formatSaoPaulo(
 // ---------- Relatórios ----------
 
 export interface ReportsSummary {
-  // placeholder anchor
+  resumo: {
+    total_pedidos: number;
+    faturamento_total: number;
+    ticket_medio: number;
+    taxa_aceite: number;
+    aceitos: number;
+    cancelados: number;
+    taxa_cancelamento: number;
+  };
+  por_dia: { dia: string; faturamento: number; pedidos: number }[];
+  por_hora: { hora: number; pedidos: number }[];
+  por_plataforma: {
+    platform: string;
+    pedidos: number;
+    faturamento: number;
+    ticket_medio: number;
+  }[];
+  top_itens: { nome: string; quantidade: number; valor_total: number }[];
+  por_restaurante: {
+    restaurante: string;
+    platform: string;
+    pedidos: number;
+    faturamento: number;
+  }[];
+  por_status: { status: string; total: number }[];
 }
 
 // ---------- Configurações (Perfil/Empresa/Plano/Segurança/2FA) ----------
