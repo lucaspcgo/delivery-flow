@@ -270,10 +270,14 @@ function normalizeOrder(raw: ApiOrder): ApiOrder {
   };
 }
 
-export async function getOrders(platform?: string): Promise<ApiOrder[]> {
+export async function getOrders(
+  platform?: string,
+  date?: string,
+): Promise<ApiOrder[]> {
   const p = platform && platform !== "all" ? platform : "99food";
   const data = await http.get<ApiOrder[]>(`/orders/${p}/orders`, {
     silent: true,
+    query: date ? { date } : undefined,
   });
   return (Array.isArray(data) ? data : []).map(normalizeOrder);
 }
@@ -321,8 +325,11 @@ export async function readyOrder(
 
 export async function getAllOrders(
   platforms: OrderPlatform[] = ["99food", "ifood"],
+  date?: string,
 ): Promise<ApiOrder[]> {
-  const results = await Promise.allSettled(platforms.map((p) => getOrders(p)));
+  const results = await Promise.allSettled(
+    platforms.map((p) => getOrders(p, date)),
+  );
   const merged = results.flatMap((r) =>
     r.status === "fulfilled" ? r.value : [],
   );
