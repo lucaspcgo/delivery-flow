@@ -499,9 +499,11 @@ function CheckoutPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor</span>
                   <span className="font-medium">
-                    {selectedPlanDetails?.price != null
-                      ? formatBRL(selectedPlanDetails.price)
-                      : selectedPlanDetails?.price_label}
+                    {selectedPlanDetails?.is_free
+                      ? "Grátis"
+                      : selectedPlanDetails && selectedPlanDetails.price > 0
+                        ? formatBRL(selectedPlanDetails.price)
+                        : "Sob consulta"}
                   </span>
                 </div>
                 {!isLogged && (
