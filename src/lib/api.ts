@@ -622,6 +622,100 @@ export function disable2FA(): Promise<{ success: true }> {
   return http.post<{ success: true }>("/settings/2fa/disable");
 }
 
+// ---------- Admin ----------
+
+export interface AdminStats {
+  total_users: number;
+  active_users: number;
+  revenue_total: number;
+  invoices_pending: number;
+  total_restaurants: number;
+  total_orders: number;
+  gmv: number;
+  users_by_plan: { plan: UserPlan; total: number }[];
+}
+
+export type PaymentStatus = "active" | "pending" | "suspended" | "cancelled";
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  plan: UserPlan;
+  payment_status: PaymentStatus;
+  is_admin: boolean;
+  active: boolean;
+  created_at?: string;
+  phone?: string;
+}
+
+export interface AdminInvoice {
+  id: string;
+  user_id: string;
+  user_name?: string;
+  user_email?: string;
+  plan: UserPlan;
+  amount: number;
+  status: "pending" | "paid" | "failed";
+  due_date: string;
+  paid_at?: string | null;
+}
+
+export interface AdminSetting {
+  key: string;
+  value: string;
+}
+
+export const getAdminStats = () =>
+  http.get<AdminStats>("/admin/stats", { silent: true });
+
+export const getAdminUsers = () =>
+  http.get<AdminUser[]>("/admin/users", { silent: true });
+
+export const getAdminUser = (id: string) =>
+  http.get<AdminUser & { invoices?: AdminInvoice[] }>(`/admin/users/${id}`, {
+    silent: true,
+  });
+
+export const updateAdminUser = (id: string, data: Partial<AdminUser>) =>
+  http.put<AdminUser>(`/admin/users/${id}`, data);
+
+export const createAdminUser = (data: {
+  name: string;
+  email: string;
+  password: string;
+  plan: UserPlan;
+  is_admin?: boolean;
+}) => http.post<AdminUser>("/admin/users", data);
+
+export const deleteAdminUser = (id: string) =>
+  http.delete<void>(`/admin/users/${id}`);
+
+export const getAdminInvoices = (filters?: {
+  status?: string;
+  email?: string;
+}) =>
+  http.get<AdminInvoice[]>("/admin/invoices", {
+    silent: true,
+    query: filters,
+  });
+
+export const createAdminInvoice = (data: {
+  user_id: string;
+  plan: UserPlan;
+  amount: number;
+  due_date: string;
+}) => http.post<AdminInvoice>("/admin/invoices", data);
+
+export const updateAdminInvoice = (id: string, data: Partial<AdminInvoice>) =>
+  http.put<AdminInvoice>(`/admin/invoices/${id}`, data);
+
+export const getAdminSettings = () =>
+  http.get<AdminSetting[]>("/admin/settings", { silent: true });
+
+export const updateAdminSetting = (key: string, value: string) =>
+  http.put<AdminSetting>(`/admin/settings/${key}`, { value });
+
 // ---------- Relatórios ----------
 
 export async function getReports(params: {
