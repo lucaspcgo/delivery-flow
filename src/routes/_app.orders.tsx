@@ -100,12 +100,18 @@ function OrdersKanban() {
   const [now, setNow] = useState(() => new Date());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
+  const todayStr = () => {
+    const d = new Date();
+    const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return tz.toISOString().slice(0, 10);
+  };
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr());
   const seenIds = useRef<Set<string>>(new Set());
   const firstLoad = useRef(true);
 
   const load = useCallback(async () => {
     try {
-      const data = await getAllOrders(["99food", "ifood"]);
+      const data = await getAllOrders(["99food", "ifood"], selectedDate);
       setOrders(data);
       const ids = new Set(data.map((o) => o.id));
       if (!firstLoad.current) {
@@ -123,11 +129,12 @@ function OrdersKanban() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => {
+    firstLoad.current = true;
     load();
-    const i = setInterval(load, 20000);
+    const i = setInterval(load, 1000);
     return () => clearInterval(i);
   }, [load]);
 
@@ -207,6 +214,18 @@ function OrdersKanban() {
           <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
             {orders.length}
           </span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 focus:border-blue-500 focus:outline-none"
+          />
+          <button
+            onClick={() => setSelectedDate(todayStr())}
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700"
+          >
+            Hoje
+          </button>
         </div>
         <div className="flex items-center gap-4">
           <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#6B7280" }}>
