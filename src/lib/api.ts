@@ -98,8 +98,26 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
       (payload && typeof payload === "object" && "message" in payload
         ? String((payload as { message: unknown }).message)
         : null) ?? `Erro ${res.status} ao chamar ${path}`;
-    if (!silent) toast.error("Erro na requisição", { description: message });
-    if (res.status === 401) {
+    // Bloqueio por trial expirado: aplica-se a qualquer chamada autenticada
+    const p = (payload ?? {}) as Record<string, unknown>;
+    const trialExpired =
+      res.status === 403 && (p.trial_expired === true || p.code === "trial_expired");
+    const paymentSuspended =
+      res.status === 403 &&
+      (p.payment_suspended === true || p.code === "payment_suspended");
+    if (!silent && !trialExpired && !paymentSuspended) {
+      toast.error("Erro na requisição", { description: message });
+    }
+    if (trialExpired || paymentSuspended) {
+      authToken.clear();
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login"
+      ) {
+        const flag = trialExpired ? "trial_expired" : "payment_suspended";
+        window.location.href = `/login?${flag}=1`;
+      }
+    } else if (res.status === 401) {
       authToken.clear();
       if (
         typeof window !== "undefined" &&
