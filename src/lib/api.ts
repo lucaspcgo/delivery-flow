@@ -311,6 +311,14 @@ export async function cancelOrder(
   return { success: true };
 }
 
+export async function readyOrder(
+  platform: string,
+  orderId: string,
+): Promise<{ success: true }> {
+  await http.post(`/orders/${platform}/${orderId}/ready`, {});
+  return { success: true };
+}
+
 export async function getAllOrders(
   platforms: OrderPlatform[] = ["99food", "ifood"],
 ): Promise<ApiOrder[]> {
