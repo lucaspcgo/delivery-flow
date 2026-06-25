@@ -29,6 +29,12 @@ import { Plus, Trash2, RefreshCw, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   getRestaurants,
   createRestaurant,
   updateRestaurant,
@@ -36,6 +42,7 @@ import {
   connectPlatform,
   disconnectPlatform,
   authorizeStore,
+  getMeCached,
   type ApiRestaurant,
   type RestaurantInput,
   type RestaurantPlatform,
