@@ -716,6 +716,54 @@ export const getAdminSettings = () =>
 export const updateAdminSetting = (key: string, value: string) =>
   http.put<AdminSetting>(`/admin/settings/${key}`, { value });
 
+// ---------- Checkout (público) ----------
+
+export interface CheckoutPlan {
+  id: string;
+  key: "starter" | "pro" | "enterprise";
+  name: string;
+  price: number | null;
+  price_label?: string;
+  features: string[];
+  highlighted?: boolean;
+  cta?: string;
+}
+
+export interface CheckoutCreateInput {
+  plan: string;
+  name?: string;
+  email?: string;
+  password?: string;
+}
+
+export interface CheckoutCreateResponse {
+  invoice_id: string;
+  pix_qr_code?: string;
+  pix_copy_paste?: string;
+  amount: number;
+  expires_at?: string;
+}
+
+export interface CheckoutConfirmResponse {
+  status: "paid" | "pending" | "failed";
+  token?: string;
+  user?: { id: string; name: string; email: string; is_admin?: boolean };
+}
+
+export const getPlans = () =>
+  http.get<CheckoutPlan[]>("/checkout/plans", { silent: true });
+
+export const createCheckout = (data: CheckoutCreateInput) =>
+  http.post<CheckoutCreateResponse>("/checkout/create", data, { silent: true });
+
+export const confirmPayment = (data: { invoice_id: string }) =>
+  http.post<CheckoutConfirmResponse>("/checkout/confirm", data, { silent: true });
+
+export const getPaymentStatus = (invoiceId: string) =>
+  http.get<CheckoutConfirmResponse>(`/checkout/status/${invoiceId}`, {
+    silent: true,
+  });
+
 // ---------- Relatórios ----------
 
 export async function getReports(params: {
