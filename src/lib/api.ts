@@ -532,3 +532,75 @@ export function formatSaoPaulo(
     ...opts,
   }).format(new Date(iso));
 }
+
+// ---------- Relatórios ----------
+
+export interface ReportsSummary {
+  resumo: {
+    total_pedidos: number;
+    faturamento_total: number;
+    ticket_medio: number;
+    taxa_aceite: number;
+    aceitos: number;
+    cancelados: number;
+    taxa_cancelamento: number;
+  };
+  por_dia: { dia: string; faturamento: number; pedidos: number }[];
+  por_hora: { hora: number; pedidos: number }[];
+  por_plataforma: {
+    platform: string;
+    pedidos: number;
+    faturamento: number;
+    ticket_medio: number;
+  }[];
+  top_itens: { nome: string; quantidade: number; valor_total: number }[];
+  por_restaurante: {
+    restaurante: string;
+    platform: string;
+    pedidos: number;
+    faturamento: number;
+  }[];
+  por_status: { status: string; total: number }[];
+}
+
+export async function getReports(params: {
+  start_date: string;
+  end_date: string;
+  platform?: string;
+  restaurant_id?: string;
+}): Promise<ReportsSummary> {
+  const query: Record<string, string> = {
+    start_date: params.start_date,
+    end_date: params.end_date,
+  };
+  if (params.platform && params.platform !== "all")
+    query.platform = params.platform;
+  if (params.restaurant_id && params.restaurant_id !== "all")
+    query.restaurant_id = params.restaurant_id;
+  const data = await http.get<Partial<ReportsSummary>>("/reports/summary", {
+    silent: true,
+    query,
+  });
+  const r = (data?.resumo ?? {}) as Partial<ReportsSummary["resumo"]>;
+  return {
+    resumo: {
+      total_pedidos: Number(r.total_pedidos ?? 0),
+      faturamento_total: Number(r.faturamento_total ?? 0),
+      ticket_medio: Number(r.ticket_medio ?? 0),
+      taxa_aceite: Number(r.taxa_aceite ?? 0),
+      aceitos: Number(r.aceitos ?? 0),
+      cancelados: Number(r.cancelados ?? 0),
+      taxa_cancelamento: Number(r.taxa_cancelamento ?? 0),
+    },
+    por_dia: Array.isArray(data?.por_dia) ? data.por_dia : [],
+    por_hora: Array.isArray(data?.por_hora) ? data.por_hora : [],
+    por_plataforma: Array.isArray(data?.por_plataforma)
+      ? data.por_plataforma
+      : [],
+    top_itens: Array.isArray(data?.top_itens) ? data.top_itens : [],
+    por_restaurante: Array.isArray(data?.por_restaurante)
+      ? data.por_restaurante
+      : [],
+    por_status: Array.isArray(data?.por_status) ? data.por_status : [],
+  };
+}
