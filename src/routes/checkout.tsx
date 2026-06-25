@@ -17,6 +17,7 @@ import {
   type CheckoutPlan,
   type CheckoutCreateResponse,
 } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Assinar — Zero Tempo" }] }),
@@ -207,16 +208,65 @@ function CheckoutPage() {
       setStep(3);
       setSecondsLeft(30 * 60);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      if (/email/i.test(message) && /cadastrad/i.test(message)) {
-        toast.error("Email já cadastrado", {
-          description: "Faça login para continuar.",
-        });
-      } else {
-        toast.error("Não foi possível iniciar o checkout", {
-          description: message,
-        });
+      console.error("[checkout] erro ao criar checkout:", err);
+      let title = "Não foi possível iniciar o checkout";
+      let description = "Erro desconhecido. Tente novamente em instantes.";
+      let status: number | null = null;
+      let payload: unknown = null;
+
+      if (err instanceof ApiError) {
+        status = err.status;
+        payload = err.payload;
+        const p = (payload ?? {}) as Record<string, unknown>;
+        const apiMsg =
+          (typeof p.message === "string" && p.message) ||
+          (typeof p.error === "string" && p.error) ||
+          (typeof p.detail === "string" && p.detail) ||
+          (Array.isArray(p.errors) && p.errors.length
+            ? p.errors
+                .map((e) =>
+                  typeof e === "string"
+                    ? e
+                    : e && typeof e === "object" && "message" in e
+                      ? String((e as { message: unknown }).message)
+                      : JSON.stringify(e),
+                )
+                .join(" • ")
+            : null) ||
+          err.message;
+
+        if (status === 0) {
+          title = "Erro de conexão";
+          description =
+            "Não foi possível contatar a API. Verifique sua internet ou tente novamente.";
+        } else if (status === 400 || status === 422) {
+          title = "Dados inválidos";
+          description = apiMsg;
+        } else if (status === 401 || status === 403) {
+          title = "Não autorizado";
+          description = apiMsg;
+        } else if (status === 404) {
+          title = "Endpoint não encontrado";
+          description = `A rota /checkout/create não existe na API (${apiMsg}).`;
+        } else if (status === 409) {
+          title = "Email já cadastrado";
+          description = apiMsg || "Faça login para continuar.";
+        } else if (status >= 500) {
+          title = `Erro do servidor (${status})`;
+          description = apiMsg;
+        } else {
+          description = `[${status}] ${apiMsg}`;
+        }
+
+        if (/email/i.test(apiMsg) && /cadastrad|exist|registered/i.test(apiMsg)) {
+          title = "Email já cadastrado";
+          description = "Faça login para continuar.";
+        }
+      } else if (err instanceof Error) {
+        description = err.message;
       }
+
+      toast.error(title, { description, duration: 8000 });
     } finally {
       setSubmitting(false);
     }
