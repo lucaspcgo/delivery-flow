@@ -501,6 +501,28 @@ export function disconnectPlatform(
   );
 }
 
+export interface AuthorizeStoreResponse {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  responsible_name?: string;
+  platform_store_id?: string;
+  platform_merchant_id?: string;
+  app_shop_id?: string;
+  [key: string]: unknown;
+}
+
+export function authorizeStore(
+  platform: RestaurantPlatformCode | string,
+  platform_id: string,
+): Promise<AuthorizeStoreResponse> {
+  return http.post<AuthorizeStoreResponse>("/restaurants/authorize", {
+    platform,
+    platform_id,
+  });
+}
+
 export function formatSaoPaulo(
   iso: string,
   opts: Intl.DateTimeFormatOptions = { dateStyle: "short", timeStyle: "short" },
