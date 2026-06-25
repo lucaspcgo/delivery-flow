@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -162,11 +162,14 @@ function OrdersKanban() {
   const handleReady = async (order: ApiOrder) => {
     setBusyId(order.id);
     try {
+      await readyOrder(order.platform, order.platform_order_id || order.id);
       setOrders((prev) =>
         prev.map((o) => (o.id === order.id ? { ...o, status: "ready" } : o)),
       );
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} finalizado!`);
       await load();
+    } catch {
+      toast.error("Erro ao finalizar pedido. Tente novamente.");
     } finally {
       setBusyId(null);
     }
