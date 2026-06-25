@@ -373,8 +373,24 @@ export interface DashboardSummary {
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
+  return getDashboardSummary._impl();
+}
+
+getDashboardSummary._impl = async function () {
+  return {} as DashboardSummary;
+};
+
+export async function fetchDashboardSummary(params?: {
+  date?: string;
+  platform?: string;
+}): Promise<DashboardSummary> {
+  const query: Record<string, string> = {};
+  if (params?.date) query.date = params.date;
+  if (params?.platform && params.platform !== "all")
+    query.platform = params.platform;
   const data = await http.get<Partial<DashboardSummary>>("/dashboard/summary", {
     silent: true,
+    query,
   });
   return {
     pedidos_hoje: Number(data.pedidos_hoje ?? 0),
