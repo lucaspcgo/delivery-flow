@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -19,7 +20,16 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { http } from "@/lib/api";
+import {
+  http,
+  getPlansAdmin,
+  createPlan,
+  updatePlanDB,
+  deletePlan,
+  type DBPlan,
+  type DBPlanInput,
+  type PlanPeriod,
+} from "@/lib/api";
 
 export const Route = createFileRoute("/_app/admin")({
   head: () => ({ meta: [{ title: "Painel Administrativo — Zero Tempo" }] }),
@@ -142,11 +152,13 @@ export default function AdminPage() {
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="invoices">Faturas</TabsTrigger>
+            <TabsTrigger value="plans">Planos</TabsTrigger>
             <TabsTrigger value="settings">Config. API</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="invoices"><InvoicesTab /></TabsContent>
+          <TabsContent value="plans"><PlansTab /></TabsContent>
           <TabsContent value="settings"><SettingsTab /></TabsContent>
         </Tabs>
       </div>
