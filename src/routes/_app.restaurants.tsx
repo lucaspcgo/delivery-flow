@@ -35,11 +35,21 @@ import {
   deleteRestaurant,
   connectPlatform,
   disconnectPlatform,
+  authorizeStore,
   type ApiRestaurant,
   type RestaurantInput,
   type RestaurantPlatform,
   type RestaurantPlatformCode,
+  type AuthorizeStoreResponse,
 } from "@/lib/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Search, CheckCircle2, Store } from "lucide-react";
 
 export const Route = createFileRoute("/_app/restaurants")({
   head: () => ({ meta: [{ title: "Restaurantes — Delivery Auto Pro" }] }),
@@ -301,74 +311,211 @@ function CreateRestaurantDialog({
   onOpenChange: (o: boolean) => void;
   onCreated: () => void;
 }) {
-  const [form, setForm] = useState<RestaurantInput>(EMPTY_FORM);
+  const [platform, setPlatform] = useState<RestaurantPlatformCode>("ifood");
+  const [platformId, setPlatformId] = useState("");
+  const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [found, setFound] = useState<AuthorizeStoreResponse | null>(null);
 
   useEffect(() => {
-    if (open) setForm(EMPTY_FORM);
+    if (open) {
+      setPlatform("ifood");
+      setPlatformId("");
+      setFound(null);
+      setSearching(false);
+      setSaving(false);
+    }
   }, [open]);
 
-  const save = async () => {
-    if (!form.name?.trim()) {
-      toast.error("Informe o nome do restaurante");
+  useEffect(() => {
+    setFound(null);
+    setPlatformId("");
+  }, [platform]);
+
+  const fieldConfig: Record<
+    RestaurantPlatformCode,
+    { label: string; placeholder: string; hint: string }
+  > = {
+    ifood: {
+      label: "Merchant ID *",
+      placeholder: "Ex: b71abedf-3ccd-4440-90b9-a2f3385e6e24",
+      hint: "Encontre no portal iFood Developer → Meus aplicativos → Permissões → Ver detalhes da loja",
+    },
+    "99food": {
+      label: "App Shop ID *",
+      placeholder: "Ex: loja_teste_001",
+      hint: "Encontre no portal 99Food Developer → Gerenciamento da loja → coluna AppShopID",
+    },
+    keeta: {
+      label: "Store ID *",
+      placeholder: "Ex: store_123",
+      hint: "Informe o Store ID fornecido pela Keeta.",
+    },
+  };
+
+  const cfg = fieldConfig[platform];
+
+  const handleSearch = async () => {
+    if (!platformId.trim()) {
+      toast.error("Informe o ID da loja");
       return;
     }
+    setSearching(true);
+    setFound(null);
+    try {
+      const data = await authorizeStore(platform, platformId.trim());
+      setFound(data);
+    } catch {
+      toast.error("Loja não encontrada. Verifique o ID informado.");
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!found) return;
     setSaving(true);
     try {
-      await createRestaurant(form);
-      toast.success("Restaurante cadastrado!");
+      const created = await createRestaurant({
+        name: found.name ?? "Loja sem nome",
+        responsible_name: found.responsible_name ?? "",
+        phone: found.phone ?? "",
+        email: found.email ?? "",
+        address: found.address ?? "",
+      });
+      const connectData: Record<string, string> = { platform };
+      if (platform === "ifood") {
+        connectData.platform_merchant_id = platformId.trim();
+      } else if (platform === "99food") {
+        connectData.app_shop_id = platformId.trim();
+        if (found.platform_store_id)
+          connectData.platform_store_id = String(found.platform_store_id);
+      } else {
+        connectData.platform_store_id = platformId.trim();
+      }
+      try {
+        await connectPlatform(created.id, connectData as never);
+      } catch {
+        // o restaurante já foi criado; seguimos
+      }
+      toast.success("Restaurante cadastrado e conectado!");
       onOpenChange(false);
       onCreated();
     } catch {
-      toast.error("Não foi possível cadastrar");
+      toast.error("Não foi possível cadastrar o restaurante");
     } finally {
       setSaving(false);
     }
   };
 
+  const badge = PLATFORM_BADGE[platform];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Novo Restaurante</DialogTitle>
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "h-10 w-10 rounded-lg border flex items-center justify-center",
+                badge.className,
+              )}
+            >
+              <Store className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle>Novo Restaurante</DialogTitle>
+              <DialogDescription>
+                Busque a loja na plataforma para cadastrar automaticamente.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <div className="grid gap-4 py-2">
-          <Field
-            label="Nome *"
-            value={form.name ?? ""}
-            onChange={(v) => setForm({ ...form, name: v })}
-          />
-          <Field
-            label="Responsável"
-            value={form.responsible_name ?? ""}
-            onChange={(v) => setForm({ ...form, responsible_name: v })}
-          />
-          <Field
-            label="Telefone"
-            value={form.phone ?? ""}
-            onChange={(v) => setForm({ ...form, phone: v })}
-          />
-          <Field
-            label="Email"
-            value={form.email ?? ""}
-            onChange={(v) => setForm({ ...form, email: v })}
-          />
-          <Field
-            label="Endereço"
-            value={form.address ?? ""}
-            onChange={(v) => setForm({ ...form, address: v })}
-          />
+
+        <div className="space-y-5 py-2">
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-medium">Plataforma *</Label>
+            <Select
+              value={platform}
+              onValueChange={(v) =>
+                setPlatform(v as RestaurantPlatformCode)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ifood">iFood</SelectItem>
+                <SelectItem value="99food">99Food</SelectItem>
+                <SelectItem value="keeta">Keeta</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-medium">{cfg.label}</Label>
+            <Input
+              value={platformId}
+              onChange={(e) => {
+                setPlatformId(e.target.value);
+                setFound(null);
+              }}
+              placeholder={cfg.placeholder}
+            />
+            <p className="text-xs text-muted-foreground">{cfg.hint}</p>
+          </div>
+
+          {!found && (
+            <Button
+              onClick={handleSearch}
+              disabled={searching || !platformId.trim()}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {searching ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4 mr-2" />
+              )}
+              Buscar Loja
+            </Button>
+          )}
+
+          {found && (
+            <Card className="p-4 space-y-2 border-green-200 bg-green-50">
+              <div className="flex items-center gap-2 text-green-700 font-medium text-sm">
+                <CheckCircle2 className="h-4 w-4" /> Loja encontrada!
+              </div>
+              <div className="text-sm">
+                <p className="font-semibold">
+                  {found.name ?? "Loja sem nome"}
+                </p>
+                {found.address && (
+                  <p className="text-muted-foreground">{found.address}</p>
+                )}
+                {found.phone && (
+                  <p className="text-muted-foreground">{found.phone}</p>
+                )}
+              </div>
+              <Button
+                onClick={handleConfirm}
+                disabled={saving}
+                size="lg"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                )}
+                Confirmar e Cadastrar
+              </Button>
+            </Card>
+          )}
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
-          </Button>
-          <Button
-            onClick={save}
-            disabled={saving}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>
