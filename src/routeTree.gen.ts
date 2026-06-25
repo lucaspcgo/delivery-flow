@@ -13,7 +13,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppRestaurantsRouteImport } from './routes/_app.restaurants'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppOrdersRouteImport } from './routes/_app.orders'
 import { Route as AppIntegrationsRouteImport } from './routes/_app.integrations'
@@ -37,11 +36,6 @@ const IndexRoute = IndexRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRestaurantsRoute = AppRestaurantsRouteImport.update({
-  id: '/restaurants',
-  path: '/restaurants',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
@@ -78,7 +72,6 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AppIntegrationsRoute
   '/orders': typeof AppOrdersRoute
   '/reports': typeof AppReportsRoute
-  '/restaurants': typeof AppRestaurantsRoute
   '/settings': typeof AppSettingsRoute
 }
 export interface FileRoutesByTo {
@@ -89,7 +82,6 @@ export interface FileRoutesByTo {
   '/integrations': typeof AppIntegrationsRoute
   '/orders': typeof AppOrdersRoute
   '/reports': typeof AppReportsRoute
-  '/restaurants': typeof AppRestaurantsRoute
   '/settings': typeof AppSettingsRoute
 }
 export interface FileRoutesById {
@@ -102,7 +94,6 @@ export interface FileRoutesById {
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/reports': typeof AppReportsRoute
-  '/_app/restaurants': typeof AppRestaurantsRoute
   '/_app/settings': typeof AppSettingsRoute
 }
 export interface FileRouteTypes {
@@ -115,7 +106,6 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/orders'
     | '/reports'
-    | '/restaurants'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -126,7 +116,6 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/orders'
     | '/reports'
-    | '/restaurants'
     | '/settings'
   id:
     | '__root__'
@@ -138,7 +127,6 @@ export interface FileRouteTypes {
     | '/_app/integrations'
     | '/_app/orders'
     | '/_app/reports'
-    | '/_app/restaurants'
     | '/_app/settings'
   fileRoutesById: FileRoutesById
 }
@@ -176,13 +164,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/restaurants': {
-      id: '/_app/restaurants'
-      path: '/restaurants'
-      fullPath: '/restaurants'
-      preLoaderRoute: typeof AppRestaurantsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/reports': {
@@ -229,7 +210,6 @@ interface AppRouteChildren {
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppReportsRoute: typeof AppReportsRoute
-  AppRestaurantsRoute: typeof AppRestaurantsRoute
   AppSettingsRoute: typeof AppSettingsRoute
 }
 
@@ -239,7 +219,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppReportsRoute: AppReportsRoute,
-  AppRestaurantsRoute: AppRestaurantsRoute,
   AppSettingsRoute: AppSettingsRoute,
 }
 
