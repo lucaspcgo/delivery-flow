@@ -19,7 +19,7 @@ import {
 } from "@/lib/api";
 
 export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Assinar — Delivery Auto Pro" }] }),
+  head: () => ({ meta: [{ title: "Assinar — Zero Tempo" }] }),
   component: CheckoutPage,
 });
 
@@ -168,7 +168,7 @@ function CheckoutPage() {
   function handleSelectPlan(plan: CheckoutPlan) {
     if (plan.key === "enterprise") {
       const msg = encodeURIComponent(
-        "Olá! Tenho interesse no plano Enterprise do Delivery Auto Pro.",
+        "Olá! Tenho interesse no plano Enterprise do Zero Tempo.",
       );
       window.open(`https://wa.me/5511999999999?text=${msg}`, "_blank");
       return;
@@ -253,7 +253,7 @@ function CheckoutPage() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-foreground">
-            Delivery Auto Pro
+            Zero Tempo
           </h1>
         </div>
 
