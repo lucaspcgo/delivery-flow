@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminInvoicesRouteImport } from './routes/admin.invoices'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRestaurantsRouteImport } from './routes/_app.restaurants'
@@ -51,6 +52,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInvoicesRoute = AdminInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/restaurants': typeof AppRestaurantsRoute
   '/settings': typeof AppSettingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/invoices': typeof AdminInvoicesRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/restaurants': typeof AppRestaurantsRoute
   '/settings': typeof AppSettingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/invoices': typeof AdminInvoicesRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/_app/restaurants': typeof AppRestaurantsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/invoices': typeof AdminInvoicesRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/settings'
     | '/admin/dashboard'
+    | '/admin/invoices'
     | '/admin/users'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/settings'
     | '/admin/dashboard'
+    | '/admin/invoices'
     | '/admin/users'
     | '/admin'
   id:
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/_app/restaurants'
     | '/_app/settings'
     | '/admin/dashboard'
+    | '/admin/invoices'
     | '/admin/users'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -237,6 +249,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/invoices': {
+      id: '/admin/invoices'
+      path: '/invoices'
+      fullPath: '/admin/invoices'
+      preLoaderRoute: typeof AdminInvoicesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/dashboard': {
@@ -322,12 +341,14 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminInvoicesRoute: typeof AdminInvoicesRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminInvoicesRoute: AdminInvoicesRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
