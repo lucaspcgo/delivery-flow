@@ -365,24 +365,14 @@ function CheckoutPage() {
                     )}
                     <h3 className="text-lg font-semibold">{plan.name}</h3>
                     <div className="mt-3">
-                      {plan.is_free ? (
-                        <span className="text-3xl font-bold text-green-600">
-                          Grátis
-                        </span>
-                      ) : plan.price > 0 ? (
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-bold">
-                            {formatBRL(plan.price)}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            /mês
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-2xl font-bold">
-                          Sob consulta
-                        </span>
-                      )}
+                      <span
+                        className={cn(
+                          "text-3xl font-bold",
+                          plan.is_free && "text-green-600",
+                        )}
+                      >
+                        {formatPlanPrice(plan)}
+                      </span>
                     </div>
                     <ul className="mt-6 flex-1 space-y-3 text-sm">
                       {plan.features.map((f) => (
