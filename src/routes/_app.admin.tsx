@@ -645,6 +645,304 @@ function SettingsSection({ title, fields, settings, onSave }: {
   );
 }
 
+// ---------------- PLANOS ----------------
+const PERIOD_LABEL: Record<PlanPeriod, string> = {
+  monthly: "Mensal",
+  annual: "Anual",
+  one_time: "Único",
+  free: "Gratuito",
+};
+
+const emptyPlanForm: DBPlanInput = {
+  name: "",
+  slug: "",
+  price: 0,
+  period: "monthly",
+  max_restaurants: 0,
+  max_orders_per_month: 0,
+  popular: false,
+  is_free: false,
+  active: true,
+  features: [],
+  display_order: 0,
+};
+
+function PlansTab() {
+  const [plans, setPlans] = useState<DBPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<DBPlan | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    getPlansAdmin()
+      .then((d) => setPlans(Array.isArray(d) ? d : []))
+      .catch(() => toast.error("Erro ao carregar planos"))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  const formatPrice = (p: DBPlan) =>
+    p.is_free ? "Grátis" : `R$ ${Number(p.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button onClick={() => setCreateOpen(true)}>Novo Plano</Button>
+      </div>
+
+      <Card className="rounded-xl shadow-sm">
+        <CardContent className="p-0">
+          {loading ? (
+            <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead>Período</TableHead>
+                  <TableHead>Popular</TableHead>
+                  <TableHead>Gratuito</TableHead>
+                  <TableHead>Ativo</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {plans.map((p, i) => (
+                  <TableRow key={p.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{p.slug}</TableCell>
+                    <TableCell>{formatPrice(p)}</TableCell>
+                    <TableCell>{PERIOD_LABEL[p.period] ?? p.period}</TableCell>
+                    <TableCell>
+                      {p.popular ? <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Popular</span> : <span className="text-muted-foreground text-xs">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      {p.is_free ? <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Grátis</span> : <span className="text-muted-foreground text-xs">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.active ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}`}>
+                        {p.active ? "Ativo" : "Inativo"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm" onClick={() => setEditing(p)}>Editar</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {plans.length === 0 && (
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum plano.</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {plans.length > 0 && (
+        <Card className="rounded-xl shadow-sm">
+          <CardHeader><CardTitle>Preview no Checkout</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              {plans.filter((p) => p.active).sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)).map((p) => (
+                <div key={p.id} className={`relative rounded-2xl border p-4 ${p.popular ? "border-2 border-primary" : ""}`}>
+                  {p.popular && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">Mais popular</span>
+                  )}
+                  <h4 className="font-semibold">{p.name}</h4>
+                  <p className="mt-2 text-2xl font-bold">{formatPrice(p)}{!p.is_free && p.price > 0 && <span className="text-xs font-normal text-muted-foreground">/{PERIOD_LABEL[p.period]?.toLowerCase()}</span>}</p>
+                  <ul className="mt-3 space-y-1 text-xs">
+                    {(p.features ?? []).slice(0, 5).map((f) => (
+                      <li key={f} className="flex gap-1.5"><span className="text-green-600">✓</span>{f}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <PlanDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSaved={load}
+        initial={null}
+      />
+      <PlanDialog
+        open={!!editing}
+        onOpenChange={(v) => !v && setEditing(null)}
+        onSaved={load}
+        initial={editing}
+      />
+    </div>
+  );
+}
+
+function PlanDialog({ open, onOpenChange, onSaved, initial }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSaved: () => void;
+  initial: DBPlan | null;
+}) {
+  const [form, setForm] = useState<DBPlanInput>(emptyPlanForm);
+  const [featuresText, setFeaturesText] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (initial) {
+      setForm({
+        name: initial.name,
+        slug: initial.slug,
+        price: initial.price,
+        period: initial.period,
+        max_restaurants: initial.max_restaurants ?? 0,
+        max_orders_per_month: initial.max_orders_per_month ?? 0,
+        popular: initial.popular,
+        is_free: initial.is_free,
+        active: initial.active,
+        features: initial.features ?? [],
+        display_order: initial.display_order ?? 0,
+      });
+      setFeaturesText((initial.features ?? []).join("\n"));
+    } else if (open) {
+      setForm(emptyPlanForm);
+      setFeaturesText("");
+    }
+  }, [initial, open]);
+
+  const update = <K extends keyof DBPlanInput>(k: K, v: DBPlanInput[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.name || !form.slug) {
+      toast.error("Nome e slug são obrigatórios");
+      return;
+    }
+    if (/\s/.test(form.slug ?? "")) {
+      toast.error("Slug não pode ter espaços");
+      return;
+    }
+    setSaving(true);
+    try {
+      const features = featuresText.split("\n").map((s) => s.trim()).filter(Boolean);
+      const payload: DBPlanInput = {
+        ...form,
+        features,
+        price: form.is_free ? 0 : Number(form.price ?? 0),
+        max_restaurants: Number(form.max_restaurants ?? 0),
+        max_orders_per_month: Number(form.max_orders_per_month ?? 0),
+        display_order: Number(form.display_order ?? 0),
+      };
+      if (initial) {
+        await updatePlanDB(initial.id, payload);
+        toast.success("Plano atualizado!");
+      } else {
+        await createPlan(payload);
+        toast.success("Plano criado!");
+      }
+      onSaved();
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!initial) return;
+    if (!confirm(`Desativar o plano "${initial.name}"?`)) return;
+    setSaving(true);
+    try {
+      await deletePlan(initial.id);
+      toast.success("Plano desativado!");
+      onSaved();
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{initial ? "Editar Plano" : "Novo Plano"}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label>Nome</Label>
+            <Input value={form.name ?? ""} onChange={(e) => update("name", e.target.value)} />
+          </div>
+          <div>
+            <Label>Slug</Label>
+            <Input value={form.slug ?? ""} onChange={(e) => update("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"))} placeholder="basic" />
+          </div>
+          <div>
+            <Label>Período</Label>
+            <Select value={form.period} onValueChange={(v) => update("period", v as PlanPeriod)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monthly">Mensal</SelectItem>
+                <SelectItem value="annual">Anual</SelectItem>
+                <SelectItem value="one_time">Único</SelectItem>
+                <SelectItem value="free">Gratuito</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Preço (R$)</Label>
+            <Input type="number" step="0.01" disabled={form.is_free} value={form.is_free ? 0 : (form.price ?? 0)} onChange={(e) => update("price", Number(e.target.value))} />
+          </div>
+          <div>
+            <Label>Ordem de Exibição</Label>
+            <Input type="number" value={form.display_order ?? 0} onChange={(e) => update("display_order", Number(e.target.value))} />
+          </div>
+          <div>
+            <Label>Máx Restaurantes (0 = ilimitado)</Label>
+            <Input type="number" value={form.max_restaurants ?? 0} onChange={(e) => update("max_restaurants", Number(e.target.value))} />
+          </div>
+          <div>
+            <Label>Máx Pedidos/Mês (0 = ilimitado)</Label>
+            <Input type="number" value={form.max_orders_per_month ?? 0} onChange={(e) => update("max_orders_per_month", Number(e.target.value))} />
+          </div>
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <Label>Popular</Label>
+            <Switch checked={!!form.popular} onCheckedChange={(v) => update("popular", v)} />
+          </div>
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <Label>Gratuito</Label>
+            <Switch checked={!!form.is_free} onCheckedChange={(v) => { update("is_free", v); if (v) update("price", 0); }} />
+          </div>
+          {initial && (
+            <div className="flex items-center justify-between rounded-md border p-3 sm:col-span-2">
+              <Label>Ativo</Label>
+              <Switch checked={!!form.active} onCheckedChange={(v) => update("active", v)} />
+            </div>
+          )}
+          <div className="sm:col-span-2">
+            <Label>Funcionalidades (uma por linha)</Label>
+            <Textarea rows={5} value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} placeholder={"Até 1 restaurante\nSuporte por email"} />
+          </div>
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+          {initial ? (
+            <Button variant="destructive" onClick={onDelete} disabled={saving}>Desativar</Button>
+          ) : <div />}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button onClick={submit} disabled={saving}>
+              {saving ? "Salvando..." : initial ? "Salvar" : "Criar Plano"}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function SettingField({ fieldKey, label, secret, initial, onSave }: {
   fieldKey: string; label: string; secret?: boolean; initial: string;
   onSave: (key: string, value: string) => Promise<void>;
