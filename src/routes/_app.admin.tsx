@@ -29,6 +29,8 @@ import {
   type DBPlan,
   type DBPlanInput,
   type PlanPeriod,
+  formatPlanPrice,
+  PLAN_PERIOD_LABEL,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/admin")({
@@ -646,12 +648,7 @@ function SettingsSection({ title, fields, settings, onSave }: {
 }
 
 // ---------------- PLANOS ----------------
-const PERIOD_LABEL: Record<PlanPeriod, string> = {
-  monthly: "Mensal",
-  annual: "Anual",
-  one_time: "Único",
-  free: "Gratuito",
-};
+const PERIOD_LABEL = PLAN_PERIOD_LABEL;
 
 const emptyPlanForm: DBPlanInput = {
   name: "",
@@ -683,8 +680,7 @@ function PlansTab() {
 
   useEffect(load, []);
 
-  const formatPrice = (p: DBPlan) =>
-    p.is_free ? "Grátis" : `R$ ${Number(p.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const formatPrice = (p: DBPlan) => formatPlanPrice(p);
 
   return (
     <div className="space-y-6">
@@ -753,7 +749,7 @@ function PlansTab() {
                     <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">Mais popular</span>
                   )}
                   <h4 className="font-semibold">{p.name}</h4>
-                  <p className="mt-2 text-2xl font-bold">{formatPrice(p)}{!p.is_free && p.price > 0 && <span className="text-xs font-normal text-muted-foreground">/{PERIOD_LABEL[p.period]?.toLowerCase()}</span>}</p>
+                  <p className="mt-2 text-2xl font-bold">{formatPrice(p)}</p>
                   <ul className="mt-3 space-y-1 text-xs">
                     {(p.features ?? []).slice(0, 5).map((f) => (
                       <li key={f} className="flex gap-1.5"><span className="text-green-600">✓</span>{f}</li>
