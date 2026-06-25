@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { login, isAuthenticated } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
 import logoAsset from "@/assets/logo.webp.asset.json";
 
 export const Route = createFileRoute("/login")({
@@ -19,18 +20,54 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [blockType, setBlockType] = useState<
+    "trial_expired" | "payment_suspended" | null
+  >(null);
+  const [blockMessage, setBlockMessage] = useState<string>("");
 
   useEffect(() => {
     if (isAuthenticated()) navigate({ to: "/dashboard" });
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("trial_expired") === "1") {
+        setBlockType("trial_expired");
+        setBlockMessage("Seu período gratuito de 7 dias expirou");
+      } else if (params.get("payment_suspended") === "1") {
+        setBlockType("payment_suspended");
+        setBlockMessage("Acesso suspenso. Regularize seu pagamento.");
+      }
+    }
   }, [navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setBlockType(null);
     try {
       await login(email, password);
       navigate({ to: "/dashboard" });
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        const p = (err.payload ?? {}) as Record<string, unknown>;
+        if (p.trial_expired === true || p.code === "trial_expired") {
+          setBlockType("trial_expired");
+          setBlockMessage(
+            typeof p.message === "string"
+              ? p.message
+              : "Seu período gratuito de 7 dias expirou",
+          );
+          return;
+        }
+        if (p.payment_suspended === true || p.code === "payment_suspended") {
+          setBlockType("payment_suspended");
+          setBlockMessage(
+            typeof p.message === "string"
+              ? p.message
+              : "Acesso suspenso. Regularize seu pagamento.",
+          );
+          return;
+        }
+      }
       toast.error("Email ou senha inválidos");
     } finally {
       setLoading(false);
@@ -47,6 +84,25 @@ function LoginPage() {
             <p className="text-sm text-muted-foreground">Entrar no painel</p>
           </div>
         </div>
+        {blockType && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+              <div className="flex-1">
+                <p className="font-medium">{blockMessage}</p>
+                <Button
+                  size="sm"
+                  className="mt-3 bg-red-600 text-white hover:bg-red-700"
+                  onClick={() => navigate({ to: "/checkout" })}
+                >
+                  {blockType === "trial_expired"
+                    ? "Assinar um plano"
+                    : "Ir para pagamento"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
