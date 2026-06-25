@@ -423,6 +423,84 @@ export async function updateAutomation(
   return http.put<AutomationRule>(`/automations/${id}`, data, { silent: true });
 }
 
+// ---------- Restaurantes (API real) ----------
+
+export type RestaurantPlatformCode = "ifood" | "99food" | "keeta";
+
+export interface RestaurantPlatform {
+  platform: RestaurantPlatformCode | string;
+  status: string; // "authorized" quando conectado
+  platform_store_id?: string | null;
+  platform_merchant_id?: string | null;
+  app_shop_id?: string | null;
+}
+
+export interface ApiRestaurant {
+  id: string;
+  name: string;
+  responsible_name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  platforms?: RestaurantPlatform[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type RestaurantInput = Partial<
+  Pick<ApiRestaurant, "name" | "responsible_name" | "phone" | "email" | "address">
+>;
+
+export interface ConnectPlatformInput {
+  platform: RestaurantPlatformCode | string;
+  platform_store_id?: string;
+  platform_merchant_id?: string;
+  app_shop_id?: string;
+}
+
+export async function getRestaurants(): Promise<ApiRestaurant[]> {
+  const data = await http.get<ApiRestaurant[]>("/restaurants", { silent: true });
+  return Array.isArray(data) ? data : [];
+}
+
+export function getRestaurant(id: string): Promise<ApiRestaurant> {
+  return http.get<ApiRestaurant>(`/restaurants/${id}`, { silent: true });
+}
+
+export function createRestaurant(data: RestaurantInput): Promise<ApiRestaurant> {
+  return http.post<ApiRestaurant>("/restaurants", data);
+}
+
+export function updateRestaurant(
+  id: string,
+  data: RestaurantInput,
+): Promise<ApiRestaurant> {
+  return http.put<ApiRestaurant>(`/restaurants/${id}`, data);
+}
+
+export function deleteRestaurant(id: string): Promise<void> {
+  return http.delete<void>(`/restaurants/${id}`);
+}
+
+export function connectPlatform(
+  restaurantId: string,
+  data: ConnectPlatformInput,
+): Promise<RestaurantPlatform> {
+  return http.post<RestaurantPlatform>(
+    `/restaurants/${restaurantId}/platforms`,
+    data,
+  );
+}
+
+export function disconnectPlatform(
+  restaurantId: string,
+  platform: string,
+): Promise<void> {
+  return http.delete<void>(
+    `/restaurants/${restaurantId}/platforms/${platform}`,
+  );
+}
+
 export function formatSaoPaulo(
   iso: string,
   opts: Intl.DateTimeFormatOptions = { dateStyle: "short", timeStyle: "short" },
