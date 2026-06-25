@@ -153,12 +153,13 @@ function ReportsPage() {
       <PageHeader
         title="Relatórios"
         description="Indicadores operacionais e financeiros."
-      >
-        <Button variant="outline" onClick={() => toast.info("Em breve: exportação PDF")}>
-          <Download className="mr-2 h-4 w-4" />
-          Exportar PDF
-        </Button>
-      </PageHeader>
+        actions={
+          <Button variant="outline" onClick={() => toast.info("Em breve: exportação PDF")}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar PDF
+          </Button>
+        }
+      />
 
       <div className="space-y-6 p-4 sm:p-8">
         {/* Filtros */}
