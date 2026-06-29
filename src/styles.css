@@ -151,6 +151,25 @@
   scrollbar-width: none;
 }
 
+/* Global responsive safety: prevent unintended horizontal scroll
+   and ensure media never overflow their containers. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+iframe {
+  height: revert;
+}
+
 /* Hide Lovable badge */
 #lovable-badge,
 #lovable-badge-v2,

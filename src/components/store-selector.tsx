@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function StoreSelector() {
   return (
     <Select defaultValue="all">
-      <SelectTrigger className="w-[180px] h-9">
+      <SelectTrigger className="h-9 w-full sm:w-[180px]">
         <SelectValue placeholder="Selecione a loja" />
       </SelectTrigger>
       <SelectContent>
