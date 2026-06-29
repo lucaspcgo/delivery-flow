@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getPlansPublic, formatPlanPrice, type DBPlan } from "@/lib/api";
+import { getPlansPublic, getPlansAdmin, formatPlanPrice, type DBPlan } from "@/lib/api";
 import {
   Layers,
   Zap,
@@ -71,15 +71,25 @@ function LandingPage() {
   const [plansLoading, setPlansLoading] = useState(true);
 
   useEffect(() => {
-    getPlansPublic()
-      .then((list) => {
-        const active = (list ?? [])
-          .filter((p) => p.active)
-          .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
-        setPlans(active);
-      })
-      .catch(() => setPlans([]))
-      .finally(() => setPlansLoading(false));
+    const normalize = (list: DBPlan[] | null | undefined) =>
+      (list ?? [])
+        .filter((p) => p.active !== false)
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+    (async () => {
+      try {
+        const pub = await getPlansPublic().catch(() => [] as DBPlan[]);
+        let result = normalize(pub);
+        if (result.length === 0) {
+          // Fallback: usa o mesmo endpoint do admin (apenas planos ativos)
+          const all = await getPlansAdmin().catch(() => [] as DBPlan[]);
+          result = normalize(all);
+        }
+        setPlans(result);
+      } finally {
+        setPlansLoading(false);
+      }
+    })();
   }, []);
 
   return (
