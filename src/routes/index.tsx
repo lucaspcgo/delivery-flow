@@ -187,7 +187,7 @@ function LandingPage() {
               }}
             >
               <iframe
-                src="https://www.youtube.com/embed/FTrje4NmSxg?autoplay=0&rel=0&modestbranding=1"
+                src="https://www.youtube.com/embed/FTrje4NmSxg?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1"
                 title="Zero Tempo — Veja como funciona"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
