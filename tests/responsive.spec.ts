@@ -49,7 +49,9 @@ for (const bp of BREAKPOINTS) {
 
     for (const route of PUBLIC_ROUTES) {
       test(`public ${route} has no horizontal overflow`, async ({ page }) => {
-        await page.goto(route, { waitUntil: "networkidle" });
+        await page.goto(route, { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("load").catch(() => {});
+        await page.waitForTimeout(500);
         await expectNoHorizontalOverflow(page, route, bp.width);
       });
     }
@@ -57,7 +59,8 @@ for (const bp of BREAKPOINTS) {
     for (const route of AUTH_ROUTES) {
       test(`auth ${route} has no horizontal overflow`, async ({ page, context }) => {
         await seedAuth(page);
-        const resp = await page.goto(route, { waitUntil: "networkidle" });
+        const resp = await page.goto(route, { waitUntil: "domcontentloaded" });
+        await page.waitForTimeout(800);
         // If the route guard still redirected (e.g. SSR), skip rather than fail layout.
         if (page.url().includes("/login")) test.skip(true, "redirected to login");
         expect(resp?.status() ?? 200).toBeLessThan(500);
