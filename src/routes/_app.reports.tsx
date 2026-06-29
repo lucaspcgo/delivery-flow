@@ -476,11 +476,13 @@ function ReportsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </Card>
 
         {/* Desempenho por restaurante */}
         <Card className="p-5">
           <h3 className="mb-4 text-sm font-semibold">Desempenho por Restaurante</h3>
+          <div className="w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -513,6 +515,7 @@ function ReportsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </Card>
       </div>
     </div>
