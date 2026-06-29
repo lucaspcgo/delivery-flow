@@ -232,52 +232,63 @@ function LandingPage() {
             <h2 className="text-3xl font-extrabold sm:text-4xl">Preços simples e transparentes</h2>
             <p className="mt-3 text-white/60">Comece grátis. Cresça quando precisar.</p>
           </div>
-          <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {plans.map((p) => (
-              <div
-                key={p.name}
-                className="relative flex flex-col rounded-2xl border p-8 transition hover:-translate-y-1"
-                style={{
-                  background: BG,
-                  borderColor: p.highlight ? BRAND : "rgba(255,255,255,0.08)",
-                  boxShadow: p.highlight ? `0 20px 60px -20px ${BRAND}` : undefined,
-                }}
-              >
-                {p.highlight && (
-                  <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-bold tracking-wider text-black"
-                    style={{ background: BRAND }}
+          {plansLoading ? (
+            <p className="mt-10 text-center text-sm text-white/50">Carregando planos…</p>
+          ) : plans.length === 0 ? (
+            <p className="mt-10 text-center text-sm text-white/50">Nenhum plano disponível no momento.</p>
+          ) : (
+            <div
+              className="mt-14 grid grid-cols-1 gap-6"
+              style={{ gridTemplateColumns: `repeat(${Math.min(plans.length, 3)}, minmax(0, 1fr))` }}
+            >
+              {plans.map((p) => {
+                const highlight = p.popular;
+                return (
+                  <div
+                    key={p.id}
+                    className="relative flex flex-col rounded-2xl border p-8 transition hover:-translate-y-1"
+                    style={{
+                      background: BG,
+                      borderColor: highlight ? BRAND : "rgba(255,255,255,0.08)",
+                      boxShadow: highlight ? `0 20px 60px -20px ${BRAND}` : undefined,
+                    }}
                   >
-                    {p.badge}
-                  </span>
-                )}
-                <h3 className="text-lg font-bold">{p.name}</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold">{p.price}</span>
-                  <span className="text-sm text-white/50">{p.period}</span>
-                </div>
-                <ul className="mt-6 flex-1 space-y-3">
-                  {p.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2 text-sm text-white/80">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: BRAND }} />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/register"
-                  className="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-bold transition hover:brightness-110"
-                  style={
-                    p.highlight
-                      ? { background: BRAND, color: "#000" }
-                      : { border: "1px solid rgba(255,255,255,0.18)", color: "#fff" }
-                  }
-                >
-                  {p.cta}
-                </Link>
-              </div>
-            ))}
-          </div>
+                    {highlight && (
+                      <span
+                        className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-bold tracking-wider text-black"
+                        style={{ background: BRAND }}
+                      >
+                        MAIS POPULAR
+                      </span>
+                    )}
+                    <h3 className="text-lg font-bold">{p.name}</h3>
+                    <div className="mt-4 flex items-baseline gap-1">
+                      <span className="text-3xl font-extrabold">{formatPlanPrice(p)}</span>
+                    </div>
+                    <ul className="mt-6 flex-1 space-y-3">
+                      {(p.features ?? []).map((feat) => (
+                        <li key={feat} className="flex items-start gap-2 text-sm text-white/80">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: BRAND }} />
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to="/register"
+                      className="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-bold transition hover:brightness-110"
+                      style={
+                        highlight
+                          ? { background: BRAND, color: "#000" }
+                          : { border: "1px solid rgba(255,255,255,0.18)", color: "#fff" }
+                      }
+                    >
+                      {p.is_free ? "Começar Grátis" : "Assinar"}
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
