@@ -238,6 +238,7 @@ function UsersTab() {
           {loading ? (
             <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
           ) : (
+            <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
