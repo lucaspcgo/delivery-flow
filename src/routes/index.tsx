@@ -28,8 +28,8 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-const BRAND = "#97C459";
-const BRAND_DARK = "#7FAE45";
+const BRAND = "#F8DA55";
+const BRAND_DARK = "#D9BB3A";
 const BG = "#0F1117";
 const BG_2 = "#1a1d27";
 
