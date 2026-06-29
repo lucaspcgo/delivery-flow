@@ -28,8 +28,8 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-const BRAND = "#97C459";
-const BRAND_DARK = "#7FAE45";
+const BRAND = "#F8DA55";
+const BRAND_DARK = "#D9BB3A";
 const BG = "#0F1117";
 const BG_2 = "#1a1d27";
 
@@ -141,13 +141,13 @@ function LandingPage() {
         id="top"
         className="relative overflow-hidden px-6 pt-20 pb-24"
         style={{
-          background: `radial-gradient(1200px 600px at 50% -100px, rgba(151,196,89,0.18), transparent 60%), linear-gradient(180deg, ${BG} 0%, ${BG_2} 100%)`,
+          background: `radial-gradient(1200px 600px at 50% -100px, rgba(248,218,85,0.18), transparent 60%), linear-gradient(180deg, ${BG} 0%, ${BG_2} 100%)`,
         }}
       >
         <div className="mx-auto max-w-4xl text-center">
           <span
             className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
-            style={{ borderColor: "rgba(151,196,89,0.3)", color: BRAND, background: "rgba(151,196,89,0.08)" }}
+            style={{ borderColor: "rgba(248,218,85,0.3)", color: BRAND, background: "rgba(248,218,85,0.08)" }}
           >
             <Star className="h-3 w-3" /> Novo: integração com Keeta disponível
           </span>
@@ -181,7 +181,7 @@ function LandingPage() {
             <div
               className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
               style={{
-                borderColor: "rgba(151,196,89,0.25)",
+                borderColor: "rgba(248,218,85,0.25)",
                 boxShadow: `0 30px 80px -30px ${BRAND}`,
                 aspectRatio: "16 / 9",
               }}
@@ -228,12 +228,12 @@ function LandingPage() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="group rounded-2xl border p-6 transition-all hover:-translate-y-1 hover:border-[rgba(151,196,89,0.4)]"
+                className="group rounded-2xl border p-6 transition-all hover:-translate-y-1 hover:border-[rgba(248,218,85,0.4)]"
                 style={{ background: BG_2, borderColor: "rgba(255,255,255,0.06)" }}
               >
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-xl transition group-hover:scale-110"
-                  style={{ background: "rgba(151,196,89,0.12)", color: BRAND }}
+                  style={{ background: "rgba(248,218,85,0.12)", color: BRAND }}
                 >
                   <f.icon className="h-6 w-6" />
                 </div>
@@ -375,8 +375,8 @@ function LandingPage() {
         <div
           className="mx-auto max-w-4xl rounded-3xl border p-12 text-center"
           style={{
-            background: `radial-gradient(600px 300px at 50% 0%, rgba(151,196,89,0.2), transparent 70%), ${BG_2}`,
-            borderColor: "rgba(151,196,89,0.25)",
+            background: `radial-gradient(600px 300px at 50% 0%, rgba(248,218,85,0.2), transparent 70%), ${BG_2}`,
+            borderColor: "rgba(248,218,85,0.25)",
           }}
         >
           <h2 className="text-3xl font-extrabold sm:text-4xl">Pronto para aumentar suas vendas?</h2>
