@@ -268,6 +268,7 @@ function UsersTab() {
                 )}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
