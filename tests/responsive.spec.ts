@@ -31,11 +31,21 @@ async function seedAuth(page: Page) {
 }
 
 async function expectNoHorizontalOverflow(page: Page, route: string, width: number) {
-  const metrics = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    clientWidth: document.documentElement.clientWidth,
-    bodyScrollWidth: document.body.scrollWidth,
-  }));
+  // Retry once if a late client-side navigation destroys the execution context.
+  let metrics: { scrollWidth: number; clientWidth: number; bodyScrollWidth: number } | null = null;
+  for (let i = 0; i < 2; i++) {
+    try {
+      metrics = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        bodyScrollWidth: document.body.scrollWidth,
+      }));
+      break;
+    } catch {
+      await page.waitForTimeout(300);
+    }
+  }
+  if (!metrics) throw new Error(`${route} @ ${width}px: could not read layout metrics`);
   expect(
     metrics.scrollWidth,
     `${route} @ ${width}px should not scroll horizontally (scrollW=${metrics.scrollWidth}, clientW=${metrics.clientWidth})`,
