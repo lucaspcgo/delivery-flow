@@ -166,13 +166,6 @@ function LandingPage() {
             >
               7 dias Grátis
             </Link>
-            <a
-              href="#features"
-              className="rounded-xl border px-7 py-3.5 text-base font-semibold text-white/90 transition hover:bg-white/5"
-              style={{ borderColor: "rgba(255,255,255,0.15)" }}
-            >
-              Ver Demo
-            </a>
           </div>
           <p className="mt-4 text-sm text-white/50">Sem cartão de crédito necessário</p>
 
