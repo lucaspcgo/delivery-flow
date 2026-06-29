@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getPlansPublic, formatPlanPrice, type DBPlan } from "@/lib/api";
 import {
   Layers,
   Zap,
@@ -42,34 +43,6 @@ const features = [
   { icon: Headphones, title: "Suporte 24/7", desc: "Chat, email e telefone sempre que você precisar." },
 ];
 
-const plans = [
-  {
-    name: "Grátis",
-    price: "R$ 0",
-    period: "/mês",
-    highlight: false,
-    cta: "Começar Grátis",
-    features: ["1 restaurante", "1 plataforma", "Dashboard básico", "Suporte por email"],
-  },
-  {
-    name: "PRO",
-    price: "R$ 99",
-    period: "/mês",
-    highlight: true,
-    badge: "MAIS POPULAR",
-    cta: "Assinar PRO",
-    features: ["Até 3 restaurantes", "Todas as plataformas", "Auto-accept", "Relatórios avançados", "Suporte prioritário"],
-  },
-  {
-    name: "Enterprise",
-    price: "Sob consulta",
-    period: "",
-    highlight: false,
-    cta: "Falar com Vendas",
-    features: ["Restaurantes ilimitados", "Integrações customizadas", "API dedicada", "SLA garantido", "Gerente de conta"],
-  },
-];
-
 const testimonials = [
   {
     quote: "Zero Tempo aumentou nossas vendas em 30% nos primeiros 2 meses. A automação mudou nossa operação.",
@@ -94,6 +67,20 @@ const faqs = [
 function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [plans, setPlans] = useState<DBPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  useEffect(() => {
+    getPlansPublic()
+      .then((list) => {
+        const active = (list ?? [])
+          .filter((p) => p.active)
+          .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+        setPlans(active);
+      })
+      .catch(() => setPlans([]))
+      .finally(() => setPlansLoading(false));
+  }, []);
 
   return (
     <div style={{ background: BG, color: "#fff" }} className="min-h-screen scroll-smooth">
