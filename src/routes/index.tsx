@@ -177,9 +177,9 @@ function LandingPage() {
           <p className="mt-4 text-sm text-white/50">Sem cartão de crédito necessário</p>
 
           {/* VSL — YouTube embed */}
-          <div className="mx-auto mt-12 max-w-3xl">
+          <div className="mx-auto mt-10 w-full max-w-3xl px-2 sm:mt-12 sm:px-0">
             <div
-              className="relative overflow-hidden rounded-2xl border shadow-2xl"
+              className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
               style={{
                 borderColor: "rgba(151,196,89,0.25)",
                 boxShadow: `0 30px 80px -30px ${BRAND}`,
