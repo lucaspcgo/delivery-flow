@@ -186,14 +186,14 @@ function ReportsPage() {
       <div className="space-y-6 p-4 sm:p-8">
         {/* Filtros */}
         <Card className="p-4">
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-muted-foreground">Data início</label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-[160px]"
+                className="w-full sm:w-[160px]"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -202,13 +202,13 @@ function ReportsPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-[160px]"
+                className="w-full sm:w-[160px]"
               />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-muted-foreground">Plataforma</label>
               <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-full sm:w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -220,10 +220,10 @@ function ReportsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
               <label className="text-xs font-medium text-muted-foreground">Restaurante</label>
               <Select value={restaurantId} onValueChange={setRestaurantId}>
-                <SelectTrigger className="w-[220px]">
+                <SelectTrigger className="w-full sm:w-[220px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -236,7 +236,7 @@ function ReportsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={load} disabled={loading}>
+            <Button onClick={load} disabled={loading} className="col-span-2 w-full sm:col-span-1 sm:w-auto">
               {loading ? "Carregando..." : "Gerar Relatório"}
             </Button>
           </div>
@@ -406,6 +406,7 @@ function ReportsPage() {
         {/* Desempenho por plataforma */}
         <Card className="p-5">
           <h3 className="mb-4 text-sm font-semibold">Desempenho por Plataforma</h3>
+          <div className="w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -437,11 +438,13 @@ function ReportsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </Card>
 
         {/* Top 10 itens */}
         <Card className="p-5">
           <h3 className="mb-4 text-sm font-semibold">Top 10 Itens Mais Pedidos</h3>
+          <div className="w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
