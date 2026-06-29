@@ -20,21 +20,21 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-muted/30">
+      <div className="flex min-h-screen w-full overflow-x-hidden bg-muted/30">
         <AppSidebar />
-        <div className="flex flex-1 flex-col min-w-0">
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/95 px-3 backdrop-blur sm:px-6">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur sm:gap-3 sm:px-6">
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               <div className="hidden sm:block">
                 <StoreSelector />
               </div>
             </div>
-            <div className="relative hidden flex-1 max-w-md sm:block">
+            <div className="relative hidden max-w-md flex-1 md:block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar pedidos, lojas, clientes..." className="h-9 pl-9" />
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-4 w-4" />
                 <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
@@ -42,7 +42,7 @@ function AppLayout() {
             </div>
           </header>
           <TrialBanner />
-          <main className="flex-1">
+          <main className="min-w-0 flex-1">
             <Outlet />
           </main>
         </div>

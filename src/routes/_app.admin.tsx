@@ -238,6 +238,7 @@ function UsersTab() {
           {loading ? (
             <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
           ) : (
+            <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -267,6 +268,7 @@ function UsersTab() {
                 )}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -454,6 +456,7 @@ function InvoicesTab() {
           {loading ? (
             <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
           ) : (
+            <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -495,6 +498,7 @@ function InvoicesTab() {
                 )}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -693,6 +697,7 @@ function PlansTab() {
           {loading ? (
             <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
           ) : (
+            <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -734,6 +739,7 @@ function PlansTab() {
                 )}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
