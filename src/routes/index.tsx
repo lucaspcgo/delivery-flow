@@ -169,11 +169,10 @@ function LandingPage() {
           {/* VSL — YouTube embed */}
           <div className="mx-auto mt-10 w-full max-w-3xl px-2 sm:mt-12 sm:px-0">
             <div
-              className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
+              className="relative aspect-video w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
               style={{
                 borderColor: "rgba(248,218,85,0.25)",
                 boxShadow: `0 30px 80px -30px ${BRAND}`,
-                aspectRatio: "16 / 9",
               }}
             >
               <iframe
