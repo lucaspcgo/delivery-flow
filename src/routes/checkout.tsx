@@ -134,11 +134,18 @@ function CheckoutPage() {
 
   useEffect(() => {
     if (step !== 3 || paymentResult) return;
+    if (secondsLeft <= 0) return;
     const id = setInterval(() => {
-      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          clearInterval(id);
+          return 0;
+        }
+        return s - 1;
+      });
     }, 1000);
     return () => clearInterval(id);
-  }, [step, paymentResult]);
+  }, [step, paymentResult, secondsLeft]);
 
   const timerLabel = useMemo(() => {
     const m = Math.floor(secondsLeft / 60).toString().padStart(2, "0");
@@ -180,17 +187,17 @@ function CheckoutPage() {
         : {
             plan,
           };
-      console.log("checkout body:", {
-        plan,
-        name: userData?.name,
-        email: userData?.email,
-        password: userData?.password ? "***" : undefined,
-      });
       const res = await createCheckout(body);
       // Plano gratuito: API retorna type="free_trial" com token+user → auto-login
       if (res.type === "free_trial" && res.token && res.user) {
-        window.localStorage.setItem("auth_token", res.token);
-        window.localStorage.setItem("auth_user", JSON.stringify(res.user));
+        const okA = safeLocalStorageSet("auth_token", res.token);
+        const okB = safeLocalStorageSet("auth_user", JSON.stringify(res.user));
+        if (!okA || !okB) {
+          toast.error("Não foi possível salvar sua sessão.", {
+            description: "Verifique se cookies/armazenamento estão habilitados.",
+          });
+          return;
+        }
         toast.success("Conta criada!", {
           description: "Seu teste grátis de 7 dias começou.",
         });
@@ -299,10 +306,10 @@ function CheckoutPage() {
       const res = await confirmPayment({ invoice_id: checkout.invoice_id });
       if (res.status === "paid") {
         if (res.token) {
-          window.localStorage.setItem("auth_token", res.token);
+          safeLocalStorageSet("auth_token", res.token);
         }
         if (res.user) {
-          window.localStorage.setItem("auth_user", JSON.stringify(res.user));
+          safeLocalStorageSet("auth_user", JSON.stringify(res.user));
         }
         setPaymentResult("success");
       } else {
