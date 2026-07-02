@@ -18,7 +18,7 @@ import {
   type CheckoutCreateResponse,
   formatPlanPrice,
 } from "@/lib/api";
-import { ApiError } from "@/lib/api";
+import { ApiError, safeLocalStorageSet } from "@/lib/api";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Assinar — Zero Tempo" }] }),
