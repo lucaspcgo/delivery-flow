@@ -200,22 +200,6 @@ function LandingPage() {
       {/* STATS */}
       <section className="px-6 py-12" style={{ background: BG_2 }}>
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 text-center sm:grid-cols-3">
-                title="Zero Tempo — Veja como funciona"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                loading="lazy"
-                className="absolute inset-0 block h-full w-full"
-                style={{ border: 0 }}
-              />
-            </div>
-            <p className="mt-3 text-xs text-white/40">Assista em 2 minutos como a Zero Tempo transforma sua operação</p>
-          </div>
-        </div>
-      </section>
-
-      {/* STATS */}
-      <section className="px-6 py-12" style={{ background: BG_2 }}>
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 text-center sm:grid-cols-3">
           {[
             { v: "500+", l: "Restaurantes ativos" },
             { v: "50K+", l: "Pedidos por mês" },
