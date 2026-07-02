@@ -192,18 +192,14 @@ function LandingPage() {
           </div>
           <p className="mt-4 text-sm text-white/50">Sem cartão de crédito necessário</p>
 
-          {/* VSL — YouTube Short (formato vertical 9:16) */}
-          <div className="mx-auto mt-10 w-full max-w-[360px] sm:mt-12 sm:max-w-[400px]">
-            <div
-              className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
-              style={{
-                aspectRatio: "9 / 16",
-                borderColor: "rgba(248,218,85,0.25)",
-                boxShadow: `0 30px 80px -30px ${BRAND}`,
-              }}
-            >
-              <iframe
-                src="https://www.youtube.com/embed/FTrje4NmSxg?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&loop=1&playlist=FTrje4NmSxg"
+          {/* VSL — YouTube embed com detecção automática de aspect ratio */}
+          <VideoEmbed />
+        </div>
+      </section>
+
+      {/* STATS */}
+      <section className="px-6 py-12" style={{ background: BG_2 }}>
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 text-center sm:grid-cols-3">
                 title="Zero Tempo — Veja como funciona"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
