@@ -104,8 +104,10 @@ function RestaurantsPage() {
   const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
+    let alive = true;
     getMeCached()
       .then((me) => {
+        if (!alive) return;
         const expired =
           me.plan === "free" &&
           ((typeof me.trial_days_left === "number" && me.trial_days_left <= 0) ||
@@ -113,6 +115,9 @@ function RestaurantsPage() {
         setBlocked(expired);
       })
       .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const load = useCallback(async () => {
@@ -436,10 +441,12 @@ function CreateRestaurantDialog({
       }
       try {
         await connectPlatform(created.id, connectData as never);
+        toast.success("Restaurante cadastrado e conectado!");
       } catch {
-        // o restaurante já foi criado; seguimos
+        toast.warning("Restaurante criado, mas não foi possível conectar a plataforma.", {
+          description: "Tente conectar manualmente na tela de gerenciamento.",
+        });
       }
-      toast.success("Restaurante cadastrado e conectado!");
       onOpenChange(false);
       onCreated();
     } catch {
