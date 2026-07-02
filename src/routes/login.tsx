@@ -26,7 +26,10 @@ function LoginPage() {
   const [blockMessage, setBlockMessage] = useState<string>("");
 
   useEffect(() => {
-    if (isAuthenticated()) navigate({ to: "/dashboard" });
+    if (isAuthenticated()) {
+      navigate({ to: "/dashboard" });
+      return;
+    }
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("trial_expired") === "1") {

@@ -31,7 +31,9 @@ import {
   type PlanPeriod,
   formatPlanPrice,
   PLAN_PERIOD_LABEL,
+  getMeCached,
 } from "@/lib/api";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/admin")({
   head: () => ({ meta: [{ title: "Painel Administrativo — Zero Tempo" }] }),
@@ -123,23 +125,40 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
 }
 
 export default function AdminPage() {
-  const [authorized, setAuthorized] = useState(false);
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<"checking" | "ok" | "denied">("checking");
 
   useEffect(() => {
-    try {
-      const user = JSON.parse(localStorage.getItem("auth_user") || "{}");
-      if (user?.is_admin) {
-        setAuthorized(true);
-      } else {
-        window.location.href = "/dashboard";
-      }
-    } catch {
-      window.location.href = "/login";
-    }
-  }, []);
+    let alive = true;
+    getMeCached()
+      .then((me) => {
+        if (!alive) return;
+        if (me?.is_admin === true) {
+          setStatus("ok");
+        } else {
+          setStatus("denied");
+          toast.error("Acesso negado", {
+            description: "Você não tem permissão para acessar o painel administrativo.",
+          });
+          navigate({ to: "/dashboard" });
+        }
+      })
+      .catch(() => {
+        if (!alive) return;
+        setStatus("denied");
+        navigate({ to: "/login" });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [navigate]);
 
-  if (!authorized) {
-    return <div className="p-6 text-sm text-muted-foreground">Carregando...</div>;
+  if (status !== "ok") {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        {status === "checking" ? "Verificando permissões..." : "Redirecionando..."}
+      </div>
+    );
   }
 
   return (
@@ -295,6 +314,10 @@ function CreateUserDialog({ open, onOpenChange, onCreated }: { open: boolean; on
       onCreated();
       onOpenChange(false);
       setName(""); setEmail(""); setPassword(""); setPlan("starter"); setIsAdmin("user");
+    } catch (err) {
+      toast.error("Erro ao criar usuário", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     } finally { setSaving(false); }
   };
 
@@ -351,6 +374,10 @@ function EditUserDialog({ user, onClose, onSaved }: { user: AdminUser | null; on
       toast.success("Usuário atualizado!");
       onSaved();
       onClose();
+    } catch (err) {
+      toast.error("Erro ao atualizar usuário", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     } finally { setSaving(false); }
   };
 
@@ -432,10 +459,16 @@ function InvoicesTab() {
   const filtered = filter === "all" ? invoices : invoices.filter((i) => i.status === filter);
 
   const updateStatus = async (id: string, status: InvoiceStatus) => {
-    await http.put(`/admin/invoices/${id}`, { status });
-    if (status === "paid") toast.success("Fatura marcada como paga! Acesso do usuário liberado.");
-    else toast.success("Fatura atualizada!");
-    load();
+    try {
+      await http.put(`/admin/invoices/${id}`, { status });
+      if (status === "paid") toast.success("Fatura marcada como paga! Acesso do usuário liberado.");
+      else toast.success("Fatura atualizada!");
+      load();
+    } catch (err) {
+      toast.error("Erro ao atualizar fatura", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    }
   };
 
   return (
@@ -524,6 +557,10 @@ function CreateInvoiceDialog({ open, onOpenChange, users, onCreated }: { open: b
       onCreated();
       onOpenChange(false);
       setUserId(""); setPlan("starter"); setAmount(""); setDueDate("");
+    } catch (err) {
+      toast.error("Erro ao criar fatura", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     } finally { setSaving(false); }
   };
 

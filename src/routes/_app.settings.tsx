@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Check, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import {
   type UserPlan,
   type UserProfile,
@@ -578,14 +579,7 @@ function TwoFactorSection({
             Authenticator, Authy, etc).
           </p>
           <div className="flex justify-center rounded-lg border bg-white p-4">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-                otpauth,
-              )}&size=200x200`}
-              alt="QR Code 2FA"
-              width={200}
-              height={200}
-            />
+            <QRCodeSVG value={otpauth} size={200} level="M" />
           </div>
           <div className="grid gap-2">
             <Label>Código de 6 dígitos</Label>

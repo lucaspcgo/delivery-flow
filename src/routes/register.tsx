@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { createCheckout, ApiError } from "@/lib/api";
+import { createCheckout, ApiError, safeLocalStorageSet } from "@/lib/api";
 import { isAuthenticated } from "@/lib/auth";
 import logoAsset from "@/assets/logo.webp.asset.json";
 
@@ -43,8 +43,14 @@ function RegisterPage() {
     try {
       const res = await createCheckout({ plan: "free", name, email, password });
       if (res.type === "free_trial" && res.token && res.user) {
-        window.localStorage.setItem("auth_token", res.token);
-        window.localStorage.setItem("auth_user", JSON.stringify(res.user));
+        const okA = safeLocalStorageSet("auth_token", res.token);
+        const okB = safeLocalStorageSet("auth_user", JSON.stringify(res.user));
+        if (!okA || !okB) {
+          toast.error("Não foi possível salvar sua sessão.", {
+            description: "Habilite cookies/armazenamento e tente novamente.",
+          });
+          return;
+        }
         toast.success("Conta criada!", {
           description: "Seu teste grátis de 7 dias começou.",
         });
