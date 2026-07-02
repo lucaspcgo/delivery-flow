@@ -17,18 +17,45 @@ const USER_STORAGE_KEY = "auth_user";
 export const authToken = {
   get(): string | null {
     if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    try {
+      return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    } catch {
+      return null;
+    }
   },
   set(token: string) {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    try {
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } catch (err) {
+      console.warn("[authToken] falha ao salvar token no localStorage", err);
+    }
   },
   clear() {
     if (typeof window === "undefined") return;
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-    window.localStorage.removeItem(USER_STORAGE_KEY);
+    try {
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      window.localStorage.removeItem(USER_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   },
 };
+
+/**
+ * Persiste com segurança um objeto no localStorage. Retorna false em modo
+ * privado / storage cheio / CSP restritiva.
+ */
+export function safeLocalStorageSet(key: string, value: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch (err) {
+    console.warn(`[storage] falha ao salvar ${key}`, err);
+    return false;
+  }
+}
 
 export class ApiError extends Error {
   status: number;
@@ -436,8 +463,6 @@ export async function getDashboardSummary(params?: {
   if (params?.date) query.date = params.date;
   if (params?.platform && params.platform !== "all")
     query.platform = params.platform;
-  // Debug temporário: ver URL final chamada
-  console.log("[dashboard/summary] query:", query);
   const data = await http.get<Partial<DashboardSummary>>("/dashboard/summary", {
     silent: true,
     query,
