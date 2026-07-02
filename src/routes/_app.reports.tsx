@@ -130,7 +130,7 @@ function ReportsPage() {
       .catch(() => setRestaurants([]));
   }, []);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await getReports({
@@ -145,10 +145,31 @@ function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [startDate, endDate, platform, restaurantId]);
 
+  // Carrega apenas no primeiro render — filtros são aplicados via botão
+  // "Gerar Relatório" para evitar múltiplas chamadas enquanto o usuário ajusta.
   useEffect(() => {
-    load();
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const r = await getReports({
+          start_date: startDate,
+          end_date: endDate,
+          platform,
+          restaurant_id: restaurantId,
+        });
+        if (alive) setData(r);
+      } catch {
+        if (alive) setData(null);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
