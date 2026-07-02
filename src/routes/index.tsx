@@ -34,6 +34,32 @@ const BRAND_DARK = "#D9BB3A";
 const BG = "#0F1117";
 const BG_2 = "#1a1d27";
 
+const YT_VIDEO_ID = "FTrje4NmSxg";
+
+/**
+ * Detecta o aspect ratio real do vídeo do YouTube via oEmbed.
+ * Retorna "9 / 16" (Short/vertical) ou "16 / 9" (horizontal).
+ * Fallback: 16/9.
+ */
+function useYouTubeAspect(videoId: string): string {
+  const [aspect, setAspect] = useState<string>("16 / 9");
+  useEffect(() => {
+    let alive = true;
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { width?: number; height?: number } | null) => {
+        if (!alive || !data?.width || !data?.height) return;
+        setAspect(data.height > data.width ? "9 / 16" : "16 / 9");
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [videoId]);
+  return aspect;
+}
+
 const features = [
   { icon: Layers, title: "Multi-Plataforma", desc: "iFood, 99Food e Keeta em um único painel unificado." },
   { icon: Zap, title: "Auto-Accept", desc: "Aceite pedidos automaticamente em segundos, sem esforço." },
