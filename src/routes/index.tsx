@@ -456,8 +456,9 @@ function VideoEmbed() {
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           loading="lazy"
-          className="absolute inset-0 block h-full w-full"
-          style={{ border: 0 }}
+          width="100%"
+          height="100%"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, display: "block" }}
         />
       </div>
       <p className="mt-3 text-xs text-white/40">Assista em 2 minutos como a Zero Tempo transforma sua operação</p>
