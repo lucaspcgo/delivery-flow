@@ -435,3 +435,32 @@ function LandingPage() {
     </div>
   );
 }
+
+function VideoEmbed() {
+  const aspect = useYouTubeAspect(YT_VIDEO_ID);
+  const isVertical = aspect === "9 / 16";
+  const wrapperMax = isVertical ? "max-w-[360px] sm:max-w-[400px]" : "max-w-3xl";
+  return (
+    <div className={`mx-auto mt-10 w-full sm:mt-12 ${wrapperMax}`}>
+      <div
+        className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
+        style={{
+          aspectRatio: aspect,
+          borderColor: "rgba(248,218,85,0.25)",
+          boxShadow: `0 30px 80px -30px ${BRAND}`,
+        }}
+      >
+        <iframe
+          src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&loop=1&playlist=${YT_VIDEO_ID}`}
+          title="Zero Tempo — Veja como funciona"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          loading="lazy"
+          className="absolute inset-0 block h-full w-full"
+          style={{ border: 0 }}
+        />
+      </div>
+      <p className="mt-3 text-xs text-white/40">Assista em 2 minutos como a Zero Tempo transforma sua operação</p>
+    </div>
+  );
+}
