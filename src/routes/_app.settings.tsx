@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Check, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import {
   type UserPlan,
   type UserProfile,
