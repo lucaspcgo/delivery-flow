@@ -167,10 +167,11 @@ function LandingPage() {
           <p className="mt-4 text-sm text-white/50">Sem cartão de crédito necessário</p>
 
           {/* VSL — YouTube embed */}
-          <div className="mx-auto mt-10 w-full max-w-3xl px-2 sm:mt-12 sm:px-0">
+          <div className="mx-auto mt-10 w-full max-w-3xl sm:mt-12">
             <div
-              className="relative aspect-video w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
+              className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
               style={{
+                aspectRatio: "16 / 9",
                 borderColor: "rgba(248,218,85,0.25)",
                 boxShadow: `0 30px 80px -30px ${BRAND}`,
               }}
@@ -181,7 +182,7 @@ function LandingPage() {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 loading="lazy"
-                className="absolute inset-0 h-full w-full"
+                className="absolute inset-0 block h-full w-full"
                 style={{ border: 0 }}
               />
             </div>
