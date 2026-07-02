@@ -34,6 +34,32 @@ const BRAND_DARK = "#D9BB3A";
 const BG = "#0F1117";
 const BG_2 = "#1a1d27";
 
+const YT_VIDEO_ID = "FTrje4NmSxg";
+
+/**
+ * Detecta o aspect ratio real do vídeo do YouTube via oEmbed.
+ * Retorna "9 / 16" (Short/vertical) ou "16 / 9" (horizontal).
+ * Fallback: 16/9.
+ */
+function useYouTubeAspect(videoId: string): string {
+  const [aspect, setAspect] = useState<string>("16 / 9");
+  useEffect(() => {
+    let alive = true;
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { width?: number; height?: number } | null) => {
+        if (!alive || !data?.width || !data?.height) return;
+        setAspect(data.height > data.width ? "9 / 16" : "16 / 9");
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [videoId]);
+  return aspect;
+}
+
 const features = [
   { icon: Layers, title: "Multi-Plataforma", desc: "iFood, 99Food e Keeta em um único painel unificado." },
   { icon: Zap, title: "Auto-Accept", desc: "Aceite pedidos automaticamente em segundos, sem esforço." },
@@ -166,28 +192,8 @@ function LandingPage() {
           </div>
           <p className="mt-4 text-sm text-white/50">Sem cartão de crédito necessário</p>
 
-          {/* VSL — YouTube Short (formato vertical 9:16) */}
-          <div className="mx-auto mt-10 w-full max-w-[360px] sm:mt-12 sm:max-w-[400px]">
-            <div
-              className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
-              style={{
-                aspectRatio: "9 / 16",
-                borderColor: "rgba(248,218,85,0.25)",
-                boxShadow: `0 30px 80px -30px ${BRAND}`,
-              }}
-            >
-              <iframe
-                src="https://www.youtube.com/embed/FTrje4NmSxg?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&loop=1&playlist=FTrje4NmSxg"
-                title="Zero Tempo — Veja como funciona"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                loading="lazy"
-                className="absolute inset-0 block h-full w-full"
-                style={{ border: 0 }}
-              />
-            </div>
-            <p className="mt-3 text-xs text-white/40">Assista em 2 minutos como a Zero Tempo transforma sua operação</p>
-          </div>
+          {/* VSL — YouTube embed com detecção automática de aspect ratio */}
+          <VideoEmbed />
         </div>
       </section>
 
@@ -426,6 +432,35 @@ function LandingPage() {
           © {new Date().getFullYear()} Zero Tempo. Todos os direitos reservados.
         </div>
       </footer>
+    </div>
+  );
+}
+
+function VideoEmbed() {
+  const aspect = useYouTubeAspect(YT_VIDEO_ID);
+  const isVertical = aspect === "9 / 16";
+  const wrapperMax = isVertical ? "max-w-[360px] sm:max-w-[400px]" : "max-w-3xl";
+  return (
+    <div className={`mx-auto mt-10 w-full sm:mt-12 ${wrapperMax}`}>
+      <div
+        className="relative w-full overflow-hidden rounded-xl border shadow-2xl sm:rounded-2xl"
+        style={{
+          aspectRatio: aspect,
+          borderColor: "rgba(248,218,85,0.25)",
+          boxShadow: `0 30px 80px -30px ${BRAND}`,
+        }}
+      >
+        <iframe
+          src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&loop=1&playlist=${YT_VIDEO_ID}`}
+          title="Zero Tempo — Veja como funciona"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          loading="lazy"
+          className="absolute inset-0 block h-full w-full"
+          style={{ border: 0 }}
+        />
+      </div>
+      <p className="mt-3 text-xs text-white/40">Assista em 2 minutos como a Zero Tempo transforma sua operação</p>
     </div>
   );
 }
