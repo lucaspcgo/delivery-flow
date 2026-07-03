@@ -9,6 +9,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { TrialBanner } from "@/components/trial-banner";
 
 export const Route = createFileRoute("/_app")({
+  ssr: false,
   beforeLoad: () => {
     if (typeof window !== "undefined" && !isAuthenticated()) {
       throw redirect({ to: "/login" });
