@@ -14,7 +14,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { http, getMeCached } from "@/lib/api";
+import { http, getMeCached, hasAdminAccess, hasStoredAdminAccess } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/menu-manager")({
   head: () => ({ meta: [{ title: "Gerenciador de Cardápios — Zero Tempo" }] }),
@@ -56,14 +56,25 @@ const BRL = (v: number) =>
 
 function MenuManagerPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"checking" | "ok" | "denied">("checking");
+  const storedAdmin = hasStoredAdminAccess();
+  const [status, setStatus] = useState<"checking" | "ok" | "denied">(
+    storedAdmin ? "ok" : "checking",
+  );
 
   useEffect(() => {
     let alive = true;
-    getMeCached()
+    if (hasStoredAdminAccess()) {
+      setStatus("ok");
+      return () => {
+        alive = false;
+      };
+    }
+
+    getMeCached(true)
       .then((me) => {
         if (!alive) return;
-        if (me?.is_admin === true) setStatus("ok");
+        if (hasAdminAccess(me)) setStatus("ok");
+        else if (hasStoredAdminAccess()) setStatus("ok");
         else {
           setStatus("denied");
           toast.error("Acesso negado", {
@@ -74,6 +85,10 @@ function MenuManagerPage() {
       })
       .catch(() => {
         if (!alive) return;
+        if (hasStoredAdminAccess()) {
+          setStatus("ok");
+          return;
+        }
         setStatus("denied");
         navigate({ to: "/login" });
       });
@@ -82,7 +97,7 @@ function MenuManagerPage() {
     };
   }, [navigate]);
 
-  if (status !== "ok") {
+  if (!storedAdmin && status !== "ok") {
     return (
       <div className="p-6 text-sm text-muted-foreground">
         {status === "checking" ? "Verificando permissões..." : "Redirecionando..."}
