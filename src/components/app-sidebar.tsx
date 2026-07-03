@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield, BookOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUser, logout, type AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,7 @@ export function AppSidebar() {
                 );
               })}
               {(user as { is_admin?: boolean } | null)?.is_admin === true && (
+                <>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
@@ -93,6 +94,19 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/menu-manager")}
+                    tooltip="Cardápios"
+                  >
+                    <Link to="/menu-manager" className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      <span>Cardápios</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
