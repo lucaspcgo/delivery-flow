@@ -16,7 +16,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { http, auth, hasAdminAccess, hasStoredAdminAccess, type MeResponse } from "@/lib/api";
+import {
+  http,
+  auth,
+  hasAdminAccess,
+  hasStoredAdminAccess,
+  getPlansAdmin,
+  type MeResponse,
+  type DBPlan,
+} from "@/lib/api";
 
 export const Route = createFileRoute("/_app/admin")({
   ssr: false,
@@ -47,13 +55,7 @@ interface AdminInvoice {
   due_date: string;
 }
 
-interface AdminPlanRow {
-  id: string;
-  name: string;
-  slug: string;
-  price_cents: number;
-  active: boolean;
-}
+type AdminPlanRow = DBPlan;
 
 interface AdminStats {
   users?: { total?: number; ativos?: number };
@@ -401,8 +403,7 @@ function PlansTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    http
-      .get<AdminPlanRow[]>("/admin/plans", { silent: true })
+    getPlansAdmin()
       .then((d) => setPlans(Array.isArray(d) ? d : []))
       .catch(() => toast.error("Erro ao carregar planos"))
       .finally(() => setLoading(false));
@@ -429,7 +430,7 @@ function PlansTab() {
                   <TableRow key={p.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{p.slug}</TableCell>
-                    <TableCell>{BRL((p.price_cents ?? 0) / 100)}</TableCell>
+                    <TableCell>{BRL(p.price ?? 0)}</TableCell>
                     <TableCell>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
