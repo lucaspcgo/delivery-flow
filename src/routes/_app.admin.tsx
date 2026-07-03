@@ -25,7 +25,8 @@ import {
   type PlanPeriod,
   formatPlanPrice,
   PLAN_PERIOD_LABEL,
-  getMe,
+  getMeCached,
+  type MeResponse,
 } from "@/lib/api";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -124,8 +125,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     let alive = true;
-    getMe()
-      .then((me) => {
+    getMeCached()
+      .then((me: MeResponse) => {
         if (!alive) return;
         if (me?.is_admin === true) {
           setStatus("ok");
