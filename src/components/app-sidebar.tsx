@@ -32,6 +32,7 @@ export function AppSidebar() {
   const [user, setUser] = useState<AuthUser | null>(() => getUser());
   useEffect(() => {
     const sync = () => setUser(getUser());
+    sync();
     window.addEventListener("auth-user-updated", sync);
     window.addEventListener("storage", sync);
     return () => {

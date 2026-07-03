@@ -261,10 +261,82 @@ export interface MeResponse {
   email: string;
   name: string;
   plan?: string;
+  role?: string;
+  roles?: string[];
   trial_days_left?: number;
   trial_expired?: boolean;
   payment_suspended?: boolean;
   is_admin?: boolean;
+}
+
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null;
+}
+
+function hasTruthyAdminFlag(value: unknown): boolean {
+  if (value === true) return true;
+  if (typeof value === "number") return value === 1;
+  if (typeof value !== "string") return false;
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes";
+}
+
+function hasAdminRole(value: unknown): boolean {
+  if (typeof value === "string") return value.trim().toLowerCase() === "admin";
+  if (!Array.isArray(value)) return false;
+
+  return value.some((item) => hasAdminRole(item));
+}
+
+export function hasAdminAccess(me: unknown): boolean {
+  if (!isRecord(me)) return false;
+
+  if (hasTruthyAdminFlag(me.is_admin) || hasTruthyAdminFlag(me.isAdmin)) return true;
+  if (hasTruthyAdminFlag(me.admin)) return true;
+  if (hasAdminRole(me.role) || hasAdminRole(me.roles)) return true;
+
+  return hasAdminAccess(me.user) || hasAdminAccess(me.data);
+}
+
+export function getStoredUser(): MeResponse | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(USER_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed: unknown = JSON.parse(raw);
+    return isRecord(parsed) ? (parsed as unknown as MeResponse) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getStoredTokenClaims(): Record<string, unknown> | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const token = authToken.get();
+    const payload = token?.split(".")[1];
+    if (!payload) return null;
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      "=",
+    );
+    const parsed: unknown = JSON.parse(window.atob(padded));
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function hasStoredAdminAccess(): boolean {
+  return hasAdminAccess(getStoredUser()) || hasAdminAccess(getStoredTokenClaims());
 }
 
 // Cache em módulo para evitar refetch em todo lugar

@@ -16,9 +16,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { http, auth, type MeResponse } from "@/lib/api";
+import { http, auth, hasAdminAccess, hasStoredAdminAccess, type MeResponse } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/admin")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Painel Administrativo — Zero Tempo" }] }),
   component: AdminPage,
 });
@@ -129,15 +130,27 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
 
 function AdminPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"checking" | "ok" | "denied">("checking");
+  const storedAdmin = hasStoredAdminAccess();
+  const [status, setStatus] = useState<"checking" | "ok" | "denied">(
+    storedAdmin ? "ok" : "checking",
+  );
 
   useEffect(() => {
     let alive = true;
+    if (hasStoredAdminAccess()) {
+      setStatus("ok");
+      return () => {
+        alive = false;
+      };
+    }
+
     auth
       .me()
       .then((me: MeResponse) => {
         if (!alive) return;
-        if (me?.is_admin === true) {
+        if (hasAdminAccess(me)) {
+          setStatus("ok");
+        } else if (hasStoredAdminAccess()) {
           setStatus("ok");
         } else {
           setStatus("denied");
@@ -149,6 +162,10 @@ function AdminPage() {
       })
       .catch(() => {
         if (!alive) return;
+        if (hasStoredAdminAccess()) {
+          setStatus("ok");
+          return;
+        }
         setStatus("denied");
         navigate({ to: "/login" });
       });
@@ -157,7 +174,7 @@ function AdminPage() {
     };
   }, [navigate]);
 
-  if (status !== "ok") {
+  if (!storedAdmin && status !== "ok") {
     return (
       <div className="p-6 text-sm text-muted-foreground">
         {status === "checking" ? "Verificando permissões..." : "Redirecionando..."}
