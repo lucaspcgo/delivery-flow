@@ -17,6 +17,7 @@ import {
 import { http, getMeCached, hasAdminAccess, hasStoredAdminAccess } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/menu-manager")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Gerenciador de Cardápios — Zero Tempo" }] }),
   component: MenuManagerPage,
 });

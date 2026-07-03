@@ -19,6 +19,7 @@ import {
 import { http, auth, hasAdminAccess, hasStoredAdminAccess, type MeResponse } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/admin")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Painel Administrativo — Zero Tempo" }] }),
   component: AdminPage,
 });
