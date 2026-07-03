@@ -125,8 +125,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     let alive = true;
-    getMe()
-      .then((me) => {
+    getMeCached()
+      .then((me: MeResponse) => {
         if (!alive) return;
         if (me?.is_admin === true) {
           setStatus("ok");
