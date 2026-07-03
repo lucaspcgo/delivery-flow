@@ -25,7 +25,8 @@ import {
   type PlanPeriod,
   formatPlanPrice,
   PLAN_PERIOD_LABEL,
-  getMe,
+  getMeCached,
+  type MeResponse,
 } from "@/lib/api";
 import { useNavigate } from "@tanstack/react-router";
 
