@@ -392,6 +392,29 @@ export const connectIntegration = (platform: Platform) =>
 export const disconnectIntegration = (platform: Platform) =>
   integrationsApi.disconnect(platform);
 
+// ---------- iFood authorization (device code flow) ----------
+
+export interface IfoodAuthStart {
+  userCode: string;
+  verificationUrl: string;
+  verificationUrlComplete: string;
+  expiresIn: number;
+}
+
+export interface IfoodAuthComplete {
+  success: boolean;
+  connected: Array<{ id: string; name: string }>;
+}
+
+export const ifoodAuth = {
+  start: () =>
+    http.post<IfoodAuthStart>("/integrations/ifood/authorize/start", {}, { silent: true }),
+  complete: () =>
+    http.post<IfoodAuthComplete>("/integrations/ifood/authorize/complete", {}, { silent: true }),
+  status: () =>
+    http.get<{ authorized: boolean }>("/integrations/ifood/authorize/status", { silent: true }),
+};
+
 export const ordersApi = {
   list: (params?: {
     restaurant_id?: string;
