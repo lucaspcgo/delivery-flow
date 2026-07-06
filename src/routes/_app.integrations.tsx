@@ -5,7 +5,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getIntegrations,
@@ -48,13 +58,14 @@ function IntegrationsPage() {
   const [error, setError] = useState(false);
   const [pending, setPending] = useState<Platform | null>(null);
 
-  // iFood device-code flow state
+  // iFood authorization-code flow state
   const [ifoodAuthorized, setIfoodAuthorized] = useState<boolean | null>(null);
+  const [ifoodOpen, setIfoodOpen] = useState(false);
   const [ifoodStarting, setIfoodStarting] = useState(false);
   const [ifoodCompleting, setIfoodCompleting] = useState(false);
   const [ifoodCode, setIfoodCode] = useState<IfoodAuthStart | null>(null);
   const [ifoodError, setIfoodError] = useState<string | null>(null);
-  const [ifoodConnectedNames, setIfoodConnectedNames] = useState<string[] | null>(null);
+  const [authCode, setAuthCode] = useState("");
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -116,10 +127,11 @@ function IntegrationsPage() {
     return err instanceof Error ? err.message : "Erro desconhecido";
   };
 
-  const startIfoodAuth = async () => {
+  const startIfoodAuth = useCallback(async () => {
     setIfoodStarting(true);
     setIfoodError(null);
-    setIfoodConnectedNames(null);
+    setIfoodCode(null);
+    setAuthCode("");
     try {
       const data = await ifoodAuth.start();
       setIfoodCode(data);
@@ -130,20 +142,30 @@ function IntegrationsPage() {
     } finally {
       setIfoodStarting(false);
     }
+  }, []);
+
+  const openIfoodModal = () => {
+    setIfoodOpen(true);
+    void startIfoodAuth();
   };
 
   const completeIfoodAuth = async () => {
+    if (!authCode.trim()) {
+      setIfoodError("Cole o código de autorização.");
+      return;
+    }
     setIfoodCompleting(true);
     setIfoodError(null);
     try {
-      const data = await ifoodAuth.complete();
+      const data = await ifoodAuth.complete(authCode.trim());
       if (data.success) {
         const names = (data.connected ?? []).map((c) => c.name);
-        setIfoodConnectedNames(names);
         setIfoodAuthorized(true);
+        setIfoodOpen(false);
         setIfoodCode(null);
+        setAuthCode("");
         toast.success("iFood conectado com sucesso!", {
-          description: names.length ? `Lojas: ${names.join(", ")}` : undefined,
+          description: names.length ? `Loja(s) conectada(s): ${names.join(", ")}` : undefined,
         });
         await load();
       } else {
@@ -152,7 +174,6 @@ function IntegrationsPage() {
     } catch (err) {
       const msg = extractErrMsg(err);
       setIfoodError(msg);
-      toast.error("Ainda não autorizado", { description: msg });
     } finally {
       setIfoodCompleting(false);
     }
@@ -162,6 +183,16 @@ function IntegrationsPage() {
     const m = Math.floor(s / 60);
     const r = s % 60;
     return `${m}:${String(r).padStart(2, "0")}`;
+  };
+
+  const copyUserCode = async () => {
+    if (!ifoodCode) return;
+    try {
+      await navigator.clipboard.writeText(ifoodCode.userCode);
+      toast.success("Código copiado");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
   };
 
   const toggle = async (i: Integration) => {
@@ -255,54 +286,13 @@ function IntegrationsPage() {
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold capitalize">{i.api_status}</dd></div>
               </dl>
               {isIfood ? (
-                <div className="mt-5 space-y-3">
-                  {ifoodConnected && !ifoodCode ? (
-                    <>
-                      {ifoodConnectedNames && ifoodConnectedNames.length > 0 && (
-                        <p className="text-xs text-emerald-700">
-                          Lojas: {ifoodConnectedNames.join(", ")}
-                        </p>
-                      )}
-                      <Button variant="outline" className="w-full" onClick={() => toggle(i)} disabled={pending === i.platform}>
-                        Desconectar
-                      </Button>
-                    </>
-                  ) : ifoodCode ? (
-                    <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
-                      <div className="text-center">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Seu código</p>
-                        <p className="mt-1 font-mono text-2xl font-bold tracking-widest">{ifoodCode.userCode}</p>
-                      </div>
-                      <Button asChild className="w-full" variant="default">
-                        <a href={ifoodCode.verificationUrlComplete} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Abrir portal do iFood
-                        </a>
-                      </Button>
-                      <p className="text-xs text-muted-foreground">
-                        Faça login no iFood, confirme o código acima e volte aqui.
-                      </p>
-                      <p className="text-center text-xs font-medium">
-                        {countdown > 0 ? `Expira em ${mmss(countdown)}` : "Código expirado"}
-                      </p>
-                      {ifoodError && (
-                        <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
-                          {ifoodError}
-                        </p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button className="flex-1" onClick={() => void completeIfoodAuth()} disabled={ifoodCompleting}>
-                          {ifoodCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Já autorizei
-                        </Button>
-                        <Button variant="outline" onClick={() => void startIfoodAuth()} disabled={ifoodStarting}>
-                          {ifoodStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar novo código"}
-                        </Button>
-                      </div>
-                    </div>
+                <div className="mt-5">
+                  {ifoodConnected ? (
+                    <Button variant="outline" className="w-full" onClick={() => toggle(i)} disabled={pending === i.platform}>
+                      Desconectar
+                    </Button>
                   ) : (
-                    <Button className="w-full" onClick={() => void startIfoodAuth()} disabled={ifoodStarting || ifoodAuthorized === null}>
-                      {ifoodStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button className="w-full" onClick={openIfoodModal} disabled={ifoodAuthorized === null}>
                       Conectar loja iFood
                     </Button>
                   )}
@@ -317,6 +307,108 @@ function IntegrationsPage() {
         );
         })}
       </div>
+
+      <Dialog open={ifoodOpen} onOpenChange={(open) => {
+        setIfoodOpen(open);
+        if (!open) {
+          setIfoodCode(null);
+          setAuthCode("");
+          setIfoodError(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conectar loja iFood</DialogTitle>
+            <DialogDescription>
+              Autorize o Zero Tempo no portal do iFood em 2 passos.
+            </DialogDescription>
+          </DialogHeader>
+
+          {ifoodStarting || !ifoodCode ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {/* Passo 1 */}
+              <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Passo 1 — Ativação no portal
+                </p>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Código de ativação
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <p className="flex-1 font-mono text-2xl font-bold tracking-widest">
+                      {ifoodCode.userCode}
+                    </p>
+                    <Button size="icon" variant="outline" onClick={() => void copyUserCode()} title="Copiar código">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Button asChild className="w-full">
+                  <a href={ifoodCode.verificationUrlComplete} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Abrir portal do iFood
+                  </a>
+                </Button>
+                <ol className="list-decimal space-y-1 pl-4 text-xs text-muted-foreground">
+                  <li>Faça login no iFood.</li>
+                  <li>Cole o código de ativação acima.</li>
+                  <li>O portal vai te mostrar um <strong>código de autorização</strong> — copie ele.</li>
+                </ol>
+                <p className="text-center text-xs font-medium">
+                  {countdown > 0 ? (
+                    <>Expira em {mmss(countdown)}</>
+                  ) : (
+                    <span className="text-destructive">Código expirado</span>
+                  )}
+                </p>
+                {countdown === 0 && (
+                  <Button variant="outline" className="w-full" onClick={() => void startIfoodAuth()} disabled={ifoodStarting}>
+                    Gerar novo código
+                  </Button>
+                )}
+              </div>
+
+              {/* Passo 2 */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Passo 2 — Colar o código de autorização
+                </p>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ifood-auth-code">Código de autorização</Label>
+                  <Input
+                    id="ifood-auth-code"
+                    value={authCode}
+                    onChange={(e) => setAuthCode(e.target.value)}
+                    placeholder="Cole aqui o código do portal"
+                    autoComplete="off"
+                    disabled={ifoodCompleting}
+                  />
+                </div>
+                {ifoodError && (
+                  <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                    {ifoodError}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIfoodOpen(false)} disabled={ifoodCompleting}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void completeIfoodAuth()} disabled={ifoodCompleting || !ifoodCode || !authCode.trim()}>
+              {ifoodCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar / Conectar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

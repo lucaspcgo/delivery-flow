@@ -409,8 +409,12 @@ export interface IfoodAuthComplete {
 export const ifoodAuth = {
   start: () =>
     http.post<IfoodAuthStart>("/integrations/ifood/authorize/start", {}, { silent: true }),
-  complete: () =>
-    http.post<IfoodAuthComplete>("/integrations/ifood/authorize/complete", {}, { silent: true }),
+  complete: (authorizationCode: string) =>
+    http.post<IfoodAuthComplete>(
+      "/integrations/ifood/authorize/complete",
+      { authorizationCode },
+      { silent: true },
+    ),
   status: () =>
     http.get<{ authorized: boolean }>("/integrations/ifood/authorize/status", { silent: true }),
 };
