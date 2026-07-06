@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -76,6 +77,10 @@ function IntegrationsPage() {
   const [nnfName, setNnfName] = useState("");
   const [nnfSubmitting, setNnfSubmitting] = useState(false);
   const [nnfError, setNnfError] = useState<string | null>(null);
+  const [nnfStep, setNnfStep] = useState<1 | 2 | 3 | 4>(1);
+  const [nnfAuthUrl, setNnfAuthUrl] = useState<string | null>(null);
+  const [nnfAuthUrlLoading, setNnfAuthUrlLoading] = useState(false);
+  const [nnfAuthorized, setNnfAuthorized] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -207,7 +212,28 @@ function IntegrationsPage() {
     setNnfShopId("");
     setNnfName("");
     setNnfError(null);
+    setNnfStep(1);
+    setNnfAuthUrl(null);
+    setNnfAuthorized(false);
     setNnfOpen(true);
+  };
+
+  const goToNnfAuthStep = async () => {
+    if (!nnfShopId.trim()) {
+      setNnfError("Informe o Shop ID.");
+      return;
+    }
+    setNnfError(null);
+    setNnfStep(2);
+    setNnfAuthUrlLoading(true);
+    try {
+      const data = await nineNineFoodApi.authorizeUrl();
+      setNnfAuthUrl(data.url);
+    } catch (err) {
+      setNnfError(extractErrMsg(err));
+    } finally {
+      setNnfAuthUrlLoading(false);
+    }
   };
 
   const submitNnf = async () => {
@@ -229,13 +255,20 @@ function IntegrationsPage() {
           nnfName.trim() ||
           nnfShopId.trim();
         toast.success(`Loja 99Food conectada: ${label}`);
-        setNnfOpen(false);
+        setNnfStep(3);
         await load();
       } else {
         setNnfError("Não foi possível conectar a loja.");
       }
     } catch (err) {
-      setNnfError(extractErrMsg(err));
+      const msg = extractErrMsg(err);
+      if (/10101|does not exist/i.test(msg)) {
+        setNnfError(
+          "A loja ainda não autorizou o app. Volte ao passo 2 e autorize no portal do 99Food.",
+        );
+      } else {
+        setNnfError(msg);
+      }
     } finally {
       setNnfSubmitting(false);
     }
@@ -473,49 +506,121 @@ function IntegrationsPage() {
           <DialogHeader>
             <DialogTitle>Conectar loja 99Food</DialogTitle>
             <DialogDescription>
-              Informe o Shop ID da loja no 99Food para conectar ao Zero Tempo.
+              {nnfStep === 1 && "Passo 1 de 3 — Informe os dados da loja."}
+              {nnfStep === 2 && "Passo 2 de 3 — Autorize o Zero Tempo no portal 99Food."}
+              {nnfStep === 3 && "Pronto! Loja conectada."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="nnf-shop-id">Shop ID</Label>
-              <Input
-                id="nnf-shop-id"
-                value={nnfShopId}
-                onChange={(e) => setNnfShopId(e.target.value)}
-                placeholder="Ex.: 123456789"
-                autoComplete="off"
-                disabled={nnfSubmitting}
-              />
-              <p className="text-xs text-muted-foreground">
-                Encontre o Shop ID no portal do 99Food, em detalhes da loja.
+
+          {nnfStep === 1 && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="nnf-shop-id">Shop ID</Label>
+                <Input
+                  id="nnf-shop-id"
+                  value={nnfShopId}
+                  onChange={(e) => setNnfShopId(e.target.value)}
+                  placeholder="Ex.: 123456789"
+                  autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Encontre o Shop ID no portal do 99Food, em detalhes da loja.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nnf-name">Nome da loja (opcional)</Label>
+                <Input
+                  id="nnf-name"
+                  value={nnfName}
+                  onChange={(e) => setNnfName(e.target.value)}
+                  placeholder="Ex.: Minha Lanchonete - Centro"
+                  autoComplete="off"
+                />
+              </div>
+              {nnfError && (
+                <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                  {nnfError}
+                </p>
+              )}
+            </div>
+          )}
+
+          {nnfStep === 2 && (
+            <div className="space-y-4">
+              {nnfAuthUrlLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Faça login no 99Food e clique em Autorizar.
+                  </p>
+                  <Button asChild className="w-full" disabled={!nnfAuthUrl}>
+                    <a
+                      href={nnfAuthUrl ?? "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Abrir portal 99Food para autorizar
+                    </a>
+                  </Button>
+                  <label className="flex items-start gap-2 text-sm">
+                    <Checkbox
+                      checked={nnfAuthorized}
+                      onCheckedChange={(v) => setNnfAuthorized(v === true)}
+                    />
+                    <span>Já autorizei no portal 99Food</span>
+                  </label>
+                  {nnfError && (
+                    <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                      {nnfError}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {nnfStep === 3 && (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+              <p className="text-base font-semibold">Loja conectada!</p>
+              <p className="text-sm text-muted-foreground">
+                A loja do 99Food foi vinculada ao Zero Tempo.
               </p>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nnf-name">Nome da loja (opcional)</Label>
-              <Input
-                id="nnf-name"
-                value={nnfName}
-                onChange={(e) => setNnfName(e.target.value)}
-                placeholder="Ex.: Minha Lanchonete - Centro"
-                autoComplete="off"
-                disabled={nnfSubmitting}
-              />
-            </div>
-            {nnfError && (
-              <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
-                {nnfError}
-              </p>
-            )}
-          </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNnfOpen(false)} disabled={nnfSubmitting}>
-              Cancelar
-            </Button>
-            <Button onClick={() => void submitNnf()} disabled={nnfSubmitting || !nnfShopId.trim()}>
-              {nnfSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Conectar
-            </Button>
+            {nnfStep === 1 && (
+              <>
+                <Button variant="outline" onClick={() => setNnfOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => void goToNnfAuthStep()} disabled={!nnfShopId.trim()}>
+                  Continuar
+                </Button>
+              </>
+            )}
+            {nnfStep === 2 && (
+              <>
+                <Button variant="outline" onClick={() => setNnfStep(1)} disabled={nnfSubmitting}>
+                  Voltar
+                </Button>
+                <Button
+                  onClick={() => void submitNnf()}
+                  disabled={nnfSubmitting || !nnfAuthorized}
+                >
+                  {nnfSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Conectar
+                </Button>
+              </>
+            )}
+            {nnfStep === 3 && (
+              <Button onClick={() => setNnfOpen(false)}>Fechar</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
