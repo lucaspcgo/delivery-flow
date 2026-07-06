@@ -428,6 +428,8 @@ export interface NineNineFoodConnectResponse {
 }
 
 export const nineNineFoodApi = {
+  authorizeUrl: () =>
+    http.get<{ url: string }>("/integrations/99food/authorize-url", { silent: true }),
   connectShop: (appShopId: string, name?: string) =>
     http.post<NineNineFoodConnectResponse>(
       "/integrations/99food/connect-shop",
