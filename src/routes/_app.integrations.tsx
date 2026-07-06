@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getIntegrations,
   connectIntegration,
   disconnectIntegration,
+  ifoodAuth,
+  ApiError,
+  type IfoodAuthStart,
   type Integration,
   type Platform,
 } from "@/lib/api";
@@ -45,6 +48,16 @@ function IntegrationsPage() {
   const [error, setError] = useState(false);
   const [pending, setPending] = useState<Platform | null>(null);
 
+  // iFood device-code flow state
+  const [ifoodAuthorized, setIfoodAuthorized] = useState<boolean | null>(null);
+  const [ifoodStarting, setIfoodStarting] = useState(false);
+  const [ifoodCompleting, setIfoodCompleting] = useState(false);
+  const [ifoodCode, setIfoodCode] = useState<IfoodAuthStart | null>(null);
+  const [ifoodError, setIfoodError] = useState<string | null>(null);
+  const [ifoodConnectedNames, setIfoodConnectedNames] = useState<string[] | null>(null);
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
@@ -62,6 +75,94 @@ function IntegrationsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Verifica status inicial do iFood
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const s = await ifoodAuth.status();
+        if (!cancelled) setIfoodAuthorized(!!s.authorized);
+      } catch {
+        if (!cancelled) setIfoodAuthorized(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Countdown do userCode
+  useEffect(() => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+    if (!ifoodCode) return;
+    setCountdown(ifoodCode.expiresIn);
+    countdownRef.current = setInterval(() => {
+      setCountdown((c) => (c <= 1 ? 0 : c - 1));
+    }, 1000);
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [ifoodCode]);
+
+  const extractErrMsg = (err: unknown): string => {
+    if (err instanceof ApiError) {
+      const p = err.payload as { error?: string; details?: string; message?: string } | null;
+      return p?.details || p?.error || p?.message || err.message;
+    }
+    return err instanceof Error ? err.message : "Erro desconhecido";
+  };
+
+  const startIfoodAuth = async () => {
+    setIfoodStarting(true);
+    setIfoodError(null);
+    setIfoodConnectedNames(null);
+    try {
+      const data = await ifoodAuth.start();
+      setIfoodCode(data);
+    } catch (err) {
+      const msg = extractErrMsg(err);
+      setIfoodError(msg);
+      toast.error("Falha ao iniciar autorização", { description: msg });
+    } finally {
+      setIfoodStarting(false);
+    }
+  };
+
+  const completeIfoodAuth = async () => {
+    setIfoodCompleting(true);
+    setIfoodError(null);
+    try {
+      const data = await ifoodAuth.complete();
+      if (data.success) {
+        const names = (data.connected ?? []).map((c) => c.name);
+        setIfoodConnectedNames(names);
+        setIfoodAuthorized(true);
+        setIfoodCode(null);
+        toast.success("iFood conectado com sucesso!", {
+          description: names.length ? `Lojas: ${names.join(", ")}` : undefined,
+        });
+        await load();
+      } else {
+        setIfoodError("Autorização não concluída. Confirme o código no portal do iFood.");
+      }
+    } catch (err) {
+      const msg = extractErrMsg(err);
+      setIfoodError(msg);
+      toast.error("Ainda não autorizado", { description: msg });
+    } finally {
+      setIfoodCompleting(false);
+    }
+  };
+
+  const mmss = (s: number) => {
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}:${String(r).padStart(2, "0")}`;
+  };
 
   const toggle = async (i: Integration) => {
     const isConnected = i.status === "connected";
@@ -131,6 +232,8 @@ function IntegrationsPage() {
         {list?.map((i) => {
           const connected = i.status === "connected";
           const color = PLATFORM_COLORS[i.platform] ?? "#64748b";
+          const isIfood = i.platform === "ifood";
+          const ifoodConnected = isIfood && (ifoodAuthorized === true || connected);
           return (
           <Card key={i.id} className="overflow-hidden">
             <div className="flex items-center gap-3 border-b p-5">
@@ -139,8 +242,8 @@ function IntegrationsPage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold">{i.name}</h3>
-                <Badge variant="outline" className={connected ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}>
-                  {connected ? (<><CheckCircle2 className="mr-1 h-3 w-3" />Conectado</>) : "Não conectado"}
+                <Badge variant="outline" className={(isIfood ? ifoodConnected : connected) ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}>
+                  {(isIfood ? ifoodConnected : connected) ? (<><CheckCircle2 className="mr-1 h-3 w-3" />Conectado</>) : "Não conectado"}
                 </Badge>
               </div>
             </div>
@@ -151,9 +254,64 @@ function IntegrationsPage() {
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Sync</dt><dd className="font-semibold truncate">{formatRelative(i.last_sync_at)}</dd></div>
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold capitalize">{i.api_status}</dd></div>
               </dl>
-              <Button onClick={() => toggle(i)} disabled={pending === i.platform} variant={connected ? "outline" : "default"} className="mt-5 w-full">
-                {connected ? "Desconectar" : "Conectar"}
-              </Button>
+              {isIfood ? (
+                <div className="mt-5 space-y-3">
+                  {ifoodConnected && !ifoodCode ? (
+                    <>
+                      {ifoodConnectedNames && ifoodConnectedNames.length > 0 && (
+                        <p className="text-xs text-emerald-700">
+                          Lojas: {ifoodConnectedNames.join(", ")}
+                        </p>
+                      )}
+                      <Button variant="outline" className="w-full" onClick={() => toggle(i)} disabled={pending === i.platform}>
+                        Desconectar
+                      </Button>
+                    </>
+                  ) : ifoodCode ? (
+                    <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
+                      <div className="text-center">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Seu código</p>
+                        <p className="mt-1 font-mono text-2xl font-bold tracking-widest">{ifoodCode.userCode}</p>
+                      </div>
+                      <Button asChild className="w-full" variant="default">
+                        <a href={ifoodCode.verificationUrlComplete} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Abrir portal do iFood
+                        </a>
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Faça login no iFood, confirme o código acima e volte aqui.
+                      </p>
+                      <p className="text-center text-xs font-medium">
+                        {countdown > 0 ? `Expira em ${mmss(countdown)}` : "Código expirado"}
+                      </p>
+                      {ifoodError && (
+                        <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                          {ifoodError}
+                        </p>
+                      )}
+                      <div className="flex gap-2">
+                        <Button className="flex-1" onClick={() => void completeIfoodAuth()} disabled={ifoodCompleting}>
+                          {ifoodCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Já autorizei
+                        </Button>
+                        <Button variant="outline" onClick={() => void startIfoodAuth()} disabled={ifoodStarting}>
+                          {ifoodStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar novo código"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button className="w-full" onClick={() => void startIfoodAuth()} disabled={ifoodStarting || ifoodAuthorized === null}>
+                      {ifoodStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Conectar loja iFood
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Button onClick={() => toggle(i)} disabled={pending === i.platform} variant={connected ? "outline" : "default"} className="mt-5 w-full">
+                  {connected ? "Desconectar" : "Conectar"}
+                </Button>
+              )}
             </div>
           </Card>
         );
