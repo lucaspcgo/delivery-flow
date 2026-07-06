@@ -27,6 +27,7 @@ import {
   type Integration,
   type Platform,
 } from "@/lib/api";
+import { nineNineFoodApi } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/integrations")({
   head: () => ({ meta: [{ title: "Integrações — Zero Tempo" }] }),
@@ -68,6 +69,13 @@ function IntegrationsPage() {
   const [authCode, setAuthCode] = useState("");
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 99Food connect-shop state
+  const [nnfOpen, setNnfOpen] = useState(false);
+  const [nnfShopId, setNnfShopId] = useState("");
+  const [nnfName, setNnfName] = useState("");
+  const [nnfSubmitting, setNnfSubmitting] = useState(false);
+  const [nnfError, setNnfError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -195,6 +203,44 @@ function IntegrationsPage() {
     }
   };
 
+  const openNnfModal = () => {
+    setNnfShopId("");
+    setNnfName("");
+    setNnfError(null);
+    setNnfOpen(true);
+  };
+
+  const submitNnf = async () => {
+    if (!nnfShopId.trim()) {
+      setNnfError("Informe o Shop ID.");
+      return;
+    }
+    setNnfSubmitting(true);
+    setNnfError(null);
+    try {
+      const data = await nineNineFoodApi.connectShop(
+        nnfShopId.trim(),
+        nnfName.trim() || undefined,
+      );
+      if (data.success) {
+        const label =
+          data.connected?.map((c) => c.name).join(", ") ||
+          data.name ||
+          nnfName.trim() ||
+          nnfShopId.trim();
+        toast.success(`Loja 99Food conectada: ${label}`);
+        setNnfOpen(false);
+        await load();
+      } else {
+        setNnfError("Não foi possível conectar a loja.");
+      }
+    } catch (err) {
+      setNnfError(extractErrMsg(err));
+    } finally {
+      setNnfSubmitting(false);
+    }
+  };
+
   const toggle = async (i: Integration) => {
     const isConnected = i.status === "connected";
     setPending(i.platform);
@@ -294,6 +340,18 @@ function IntegrationsPage() {
                   ) : (
                     <Button className="w-full" onClick={openIfoodModal} disabled={ifoodAuthorized === null}>
                       Conectar loja iFood
+                    </Button>
+                  )}
+                </div>
+              ) : i.platform === "99food" ? (
+                <div className="mt-5">
+                  {connected ? (
+                    <Button variant="outline" className="w-full" onClick={() => toggle(i)} disabled={pending === i.platform}>
+                      Desconectar
+                    </Button>
+                  ) : (
+                    <Button className="w-full" onClick={openNnfModal}>
+                      Conectar loja 99Food
                     </Button>
                   )}
                 </div>
@@ -405,6 +463,58 @@ function IntegrationsPage() {
             <Button onClick={() => void completeIfoodAuth()} disabled={ifoodCompleting || !ifoodCode || !authCode.trim()}>
               {ifoodCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar / Conectar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={nnfOpen} onOpenChange={setNnfOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conectar loja 99Food</DialogTitle>
+            <DialogDescription>
+              Informe o Shop ID da loja no 99Food para conectar ao Zero Tempo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="nnf-shop-id">Shop ID</Label>
+              <Input
+                id="nnf-shop-id"
+                value={nnfShopId}
+                onChange={(e) => setNnfShopId(e.target.value)}
+                placeholder="Ex.: 123456789"
+                autoComplete="off"
+                disabled={nnfSubmitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                Encontre o Shop ID no portal do 99Food, em detalhes da loja.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nnf-name">Nome da loja (opcional)</Label>
+              <Input
+                id="nnf-name"
+                value={nnfName}
+                onChange={(e) => setNnfName(e.target.value)}
+                placeholder="Ex.: Minha Lanchonete - Centro"
+                autoComplete="off"
+                disabled={nnfSubmitting}
+              />
+            </div>
+            {nnfError && (
+              <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                {nnfError}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNnfOpen(false)} disabled={nnfSubmitting}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void submitNnf()} disabled={nnfSubmitting || !nnfShopId.trim()}>
+              {nnfSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Conectar
             </Button>
           </DialogFooter>
         </DialogContent>
