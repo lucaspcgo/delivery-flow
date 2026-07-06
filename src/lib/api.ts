@@ -419,6 +419,23 @@ export const ifoodAuth = {
     http.get<{ authorized: boolean }>("/integrations/ifood/authorize/status", { silent: true }),
 };
 
+// ---------- 99Food connect shop ----------
+
+export interface NineNineFoodConnectResponse {
+  success: boolean;
+  connected?: Array<{ id: string; name: string }>;
+  name?: string;
+}
+
+export const nineNineFoodApi = {
+  connectShop: (appShopId: string, name?: string) =>
+    http.post<NineNineFoodConnectResponse>(
+      "/integrations/99food/connect-shop",
+      { app_shop_id: appShopId, name },
+      { silent: true },
+    ),
+};
+
 export const ordersApi = {
   list: (params?: {
     restaurant_id?: string;
