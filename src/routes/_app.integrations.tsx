@@ -28,7 +28,6 @@ import {
   type IfoodAuthStart,
   type Integration,
   type Platform,
-  type ApiRestaurant,
 } from "@/lib/api";
 import { nineNineFoodApi } from "@/lib/api";
 
