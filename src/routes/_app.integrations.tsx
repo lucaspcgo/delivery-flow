@@ -24,6 +24,7 @@ import {
   disconnectIntegration,
   ifoodAuth,
   ApiError,
+  getRestaurants,
   type IfoodAuthStart,
   type Integration,
   type Platform,
@@ -59,6 +60,11 @@ function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [pending, setPending] = useState<Platform | null>(null);
+  const [storeCounts, setStoreCounts] = useState<Record<Platform, number>>({
+    ifood: 0,
+    keeta: 0,
+    "99food": 0,
+  });
 
   // iFood authorization-code flow state
   const [ifoodAuthorized, setIfoodAuthorized] = useState<boolean | null>(null);
@@ -88,6 +94,20 @@ function IntegrationsPage() {
     try {
       const data = await getIntegrations();
       setList(data);
+      try {
+        const restaurants = await getRestaurants();
+        const counts: Record<Platform, number> = { ifood: 0, keeta: 0, "99food": 0 };
+        for (const r of restaurants) {
+          for (const p of r.platforms ?? []) {
+            if (p.status === "authorized" && (p.platform === "ifood" || p.platform === "99food" || p.platform === "keeta")) {
+              counts[p.platform as Platform] += 1;
+            }
+          }
+        }
+        setStoreCounts(counts);
+      } catch {
+        // ignore
+      }
     } catch {
       setError(true);
       toast.error("Não foi possível carregar as integrações");
@@ -360,7 +380,7 @@ function IntegrationsPage() {
             <div className="p-5">
               <p className="text-sm text-muted-foreground">{i.description}</p>
               <dl className="mt-4 grid grid-cols-3 gap-3 border-t pt-4 text-sm">
-                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Pedidos</dt><dd className="font-semibold">{i.orders_count}</dd></div>
+                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Lojas</dt><dd className="font-semibold">{storeCounts[i.platform] ?? 0}</dd></div>
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Sync</dt><dd className="font-semibold truncate">{formatRelative(i.last_sync_at)}</dd></div>
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold capitalize">{i.api_status}</dd></div>
               </dl>
