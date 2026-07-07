@@ -25,15 +25,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, RefreshCw, Settings2 } from "lucide-react";
+import { Trash2, RefreshCw, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   getRestaurants,
   createRestaurant,
@@ -101,20 +95,10 @@ function RestaurantsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    getMeCached()
-      .then((me) => {
-        if (!alive) return;
-        const expired =
-          me.plan === "free" &&
-          ((typeof me.trial_days_left === "number" && me.trial_days_left <= 0) ||
-            me.trial_expired === true);
-        setBlocked(expired);
-      })
-      .catch(() => {});
+    getMeCached().catch(() => {});
     return () => {
       alive = false;
     };
