@@ -65,6 +65,11 @@ function IntegrationsPage() {
     keeta: 0,
     "99food": 0,
   });
+  const [storesByPlatform, setStoresByPlatform] = useState<Record<Platform, { id: string; name: string; status: string }[]>>({
+    ifood: [],
+    keeta: [],
+    "99food": [],
+  });
 
   // iFood authorization-code flow state
   const [ifoodAuthorized, setIfoodAuthorized] = useState<boolean | null>(null);
@@ -97,14 +102,21 @@ function IntegrationsPage() {
       try {
         const restaurants = await getRestaurants();
         const counts: Record<Platform, number> = { ifood: 0, keeta: 0, "99food": 0 };
+        const byPlatform: Record<Platform, { id: string; name: string; status: string }[]> = {
+          ifood: [],
+          keeta: [],
+          "99food": [],
+        };
         for (const r of restaurants) {
           for (const p of r.platforms ?? []) {
             if (p.status === "authorized" && (p.platform === "ifood" || p.platform === "99food" || p.platform === "keeta")) {
               counts[p.platform as Platform] += 1;
+              byPlatform[p.platform as Platform].push({ id: r.id, name: r.name, status: p.status });
             }
           }
         }
         setStoreCounts(counts);
+        setStoresByPlatform(byPlatform);
       } catch {
         // ignore
       }
@@ -384,6 +396,25 @@ function IntegrationsPage() {
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Sync</dt><dd className="font-semibold truncate">{formatRelative(i.last_sync_at)}</dd></div>
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold capitalize">{i.api_status}</dd></div>
               </dl>
+              {(i.platform === "ifood" || i.platform === "99food") && (
+                <div className="mt-4 border-t pt-4">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Lojas conectadas</p>
+                  {storesByPlatform[i.platform].length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">Nenhuma loja conectada.</p>
+                  ) : (
+                    <ul className="space-y-1.5 max-h-40 overflow-auto">
+                      {storesByPlatform[i.platform].map((s) => (
+                        <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
+                          <span className="truncate font-medium">{s.name}</span>
+                          <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-200 shrink-0">
+                            <CheckCircle2 className="mr-1 h-3 w-3" />Autorizado
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
               {isIfood ? (
                 <div className="mt-5">
                   {ifoodConnected ? (
