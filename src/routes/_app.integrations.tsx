@@ -27,6 +27,7 @@ import {
   getRestaurants,
   updateRestaurant,
   connectPlatform,
+  disconnectPlatform,
   type IfoodAuthStart,
   type Integration,
   type Platform,
@@ -80,6 +81,7 @@ function IntegrationsPage() {
   const [manageName, setManageName] = useState("");
   const [manageMerchant, setManageMerchant] = useState("");
   const [manageSaving, setManageSaving] = useState(false);
+  const [manageDisconnecting, setManageDisconnecting] = useState(false);
   const [manageError, setManageError] = useState<string | null>(null);
 
   // iFood authorization-code flow state
@@ -230,6 +232,23 @@ function IntegrationsPage() {
       setManageError(extractErrMsg(err));
     } finally {
       setManageSaving(false);
+    }
+  };
+
+  const disconnectManage = async () => {
+    if (!manageStore) return;
+    if (!confirm(`Desconectar a loja "${manageStore.name}" do ${manageStore.platform}?`)) return;
+    setManageDisconnecting(true);
+    setManageError(null);
+    try {
+      await disconnectPlatform(manageStore.id, manageStore.platform);
+      toast.success("Loja desconectada");
+      setManageOpen(false);
+      await load();
+    } catch (err) {
+      setManageError(extractErrMsg(err));
+    } finally {
+      setManageDisconnecting(false);
     }
   };
 
@@ -784,14 +803,24 @@ function IntegrationsPage() {
               </p>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setManageOpen(false)} disabled={manageSaving}>
-              Cancelar
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+            <Button
+              variant="destructive"
+              onClick={() => void disconnectManage()}
+              disabled={manageSaving || manageDisconnecting}
+            >
+              {manageDisconnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Desconectar loja
             </Button>
-            <Button onClick={() => void saveManage()} disabled={manageSaving}>
-              {manageSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setManageOpen(false)} disabled={manageSaving || manageDisconnecting}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void saveManage()} disabled={manageSaving || manageDisconnecting}>
+                {manageSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
