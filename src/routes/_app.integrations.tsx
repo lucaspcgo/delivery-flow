@@ -25,6 +25,8 @@ import {
   ifoodAuth,
   ApiError,
   getRestaurants,
+  updateRestaurant,
+  connectPlatform,
   type IfoodAuthStart,
   type Integration,
   type Platform,
@@ -65,11 +67,20 @@ function IntegrationsPage() {
     keeta: 0,
     "99food": 0,
   });
-  const [storesByPlatform, setStoresByPlatform] = useState<Record<Platform, { id: string; name: string; status: string }[]>>({
+  type StoreEntry = { id: string; name: string; status: string; platform: Platform; merchant_id: string };
+  const [storesByPlatform, setStoresByPlatform] = useState<Record<Platform, StoreEntry[]>>({
     ifood: [],
     keeta: [],
     "99food": [],
   });
+
+  // Manage store modal state
+  const [manageOpen, setManageOpen] = useState(false);
+  const [manageStore, setManageStore] = useState<StoreEntry | null>(null);
+  const [manageName, setManageName] = useState("");
+  const [manageMerchant, setManageMerchant] = useState("");
+  const [manageSaving, setManageSaving] = useState(false);
+  const [manageError, setManageError] = useState<string | null>(null);
 
   // iFood authorization-code flow state
   const [ifoodAuthorized, setIfoodAuthorized] = useState<boolean | null>(null);
@@ -102,7 +113,7 @@ function IntegrationsPage() {
       try {
         const restaurants = await getRestaurants();
         const counts: Record<Platform, number> = { ifood: 0, keeta: 0, "99food": 0 };
-        const byPlatform: Record<Platform, { id: string; name: string; status: string }[]> = {
+        const byPlatform: Record<Platform, StoreEntry[]> = {
           ifood: [],
           keeta: [],
           "99food": [],
@@ -111,7 +122,13 @@ function IntegrationsPage() {
           for (const p of r.platforms ?? []) {
             if (p.status === "authorized" && (p.platform === "ifood" || p.platform === "99food" || p.platform === "keeta")) {
               counts[p.platform as Platform] += 1;
-              byPlatform[p.platform as Platform].push({ id: r.id, name: r.name, status: p.status });
+              byPlatform[p.platform as Platform].push({
+                id: r.id,
+                name: r.name,
+                status: p.status,
+                platform: p.platform as Platform,
+                merchant_id: p.platform_merchant_id ?? "",
+              });
             }
           }
         }
@@ -170,6 +187,50 @@ function IntegrationsPage() {
       return p?.details || p?.error || p?.message || err.message;
     }
     return err instanceof Error ? err.message : "Erro desconhecido";
+  };
+
+  const openManage = (s: StoreEntry) => {
+    setManageStore(s);
+    setManageName(s.name);
+    setManageMerchant(s.merchant_id ?? "");
+    setManageError(null);
+    setManageOpen(true);
+  };
+
+  const saveManage = async () => {
+    if (!manageStore) return;
+    if (!manageName.trim()) {
+      setManageError("O nome não pode ficar vazio.");
+      return;
+    }
+    setManageSaving(true);
+    setManageError(null);
+    try {
+      const tasks: Promise<unknown>[] = [];
+      if (manageName.trim() !== manageStore.name) {
+        tasks.push(updateRestaurant(manageStore.id, { name: manageName.trim() }));
+      }
+      if ((manageMerchant.trim() || "") !== (manageStore.merchant_id ?? "")) {
+        tasks.push(
+          connectPlatform(manageStore.id, {
+            platform: manageStore.platform,
+            platform_merchant_id: manageMerchant.trim(),
+          }),
+        );
+      }
+      if (tasks.length === 0) {
+        setManageOpen(false);
+        return;
+      }
+      await Promise.all(tasks);
+      toast.success("Loja atualizada");
+      setManageOpen(false);
+      await load();
+    } catch (err) {
+      setManageError(extractErrMsg(err));
+    } finally {
+      setManageSaving(false);
+    }
   };
 
   const startIfoodAuth = useCallback(async () => {
@@ -406,9 +467,14 @@ function IntegrationsPage() {
                       {storesByPlatform[i.platform].map((s) => (
                         <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
                           <span className="truncate font-medium">{s.name}</span>
-                          <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-200 shrink-0">
-                            <CheckCircle2 className="mr-1 h-3 w-3" />Autorizado
-                          </Badge>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                              <CheckCircle2 className="mr-1 h-3 w-3" />Autorizado
+                            </Badge>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openManage(s)}>
+                              Gerenciar
+                            </Button>
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -672,6 +738,60 @@ function IntegrationsPage() {
             {nnfStep === 3 && (
               <Button onClick={() => setNnfOpen(false)}>Fechar</Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerenciar loja</DialogTitle>
+            <DialogDescription>
+              Edite o nome da loja e o merchant_id de teste.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="manage-name">Nome da loja</Label>
+              <Input
+                id="manage-name"
+                value={manageName}
+                onChange={(e) => setManageName(e.target.value)}
+                disabled={manageSaving}
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="manage-merchant">Merchant ID (teste)</Label>
+              <Input
+                id="manage-merchant"
+                value={manageMerchant}
+                onChange={(e) => setManageMerchant(e.target.value)}
+                placeholder="Ex.: 123e4567-e89b-..."
+                disabled={manageSaving}
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">
+                Plataforma:{" "}
+                <span className="font-medium capitalize">
+                  {manageStore?.platform}
+                </span>
+              </p>
+            </div>
+            {manageError && (
+              <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                {manageError}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageOpen(false)} disabled={manageSaving}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void saveManage()} disabled={manageSaving}>
+              {manageSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
