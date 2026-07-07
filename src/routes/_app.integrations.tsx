@@ -741,6 +741,60 @@ function IntegrationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerenciar loja</DialogTitle>
+            <DialogDescription>
+              Edite o nome da loja e o merchant_id de teste.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="manage-name">Nome da loja</Label>
+              <Input
+                id="manage-name"
+                value={manageName}
+                onChange={(e) => setManageName(e.target.value)}
+                disabled={manageSaving}
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="manage-merchant">Merchant ID (teste)</Label>
+              <Input
+                id="manage-merchant"
+                value={manageMerchant}
+                onChange={(e) => setManageMerchant(e.target.value)}
+                placeholder="Ex.: 123e4567-e89b-..."
+                disabled={manageSaving}
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">
+                Plataforma:{" "}
+                <span className="font-medium capitalize">
+                  {manageStore?.platform}
+                </span>
+              </p>
+            </div>
+            {manageError && (
+              <p className="rounded border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                {manageError}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageOpen(false)} disabled={manageSaving}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void saveManage()} disabled={manageSaving}>
+              {manageSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
