@@ -803,7 +803,6 @@ function IntegrationsPage() {
               </p>
             )}
           </div>
-          <DialogFooter>
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
             <Button
               variant="destructive"
