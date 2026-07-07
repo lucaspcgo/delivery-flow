@@ -25,15 +25,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, RefreshCw, Settings2 } from "lucide-react";
+import { Trash2, RefreshCw, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   getRestaurants,
   createRestaurant,
@@ -101,20 +95,10 @@ function RestaurantsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    getMeCached()
-      .then((me) => {
-        if (!alive) return;
-        const expired =
-          me.plan === "free" &&
-          ((typeof me.trial_days_left === "number" && me.trial_days_left <= 0) ||
-            me.trial_expired === true);
-        setBlocked(expired);
-      })
-      .catch(() => {});
+    getMeCached().catch(() => {});
     return () => {
       alive = false;
     };
@@ -157,36 +141,6 @@ function RestaurantsPage() {
       <PageHeader
         title="Restaurantes"
         description="Gerencie suas lojas e as plataformas conectadas"
-        actions={
-          blocked ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      size="sm"
-                      disabled
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Novo Restaurante
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Assine um plano para cadastrar restaurantes
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => setCreateOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Novo Restaurante
-            </Button>
-          )
-        }
       />
 
       <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6">
@@ -217,12 +171,6 @@ function RestaurantsPage() {
             <p className="text-sm text-muted-foreground">
               Nenhum restaurante cadastrado
             </p>
-            <Button
-              onClick={() => setCreateOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Cadastrar primeiro
-            </Button>
           </Card>
         )}
 
