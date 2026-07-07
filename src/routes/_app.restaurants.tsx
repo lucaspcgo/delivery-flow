@@ -157,36 +157,6 @@ function RestaurantsPage() {
       <PageHeader
         title="Restaurantes"
         description="Gerencie suas lojas e as plataformas conectadas"
-        actions={
-          blocked ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      size="sm"
-                      disabled
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Novo Restaurante
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Assine um plano para cadastrar restaurantes
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => setCreateOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Novo Restaurante
-            </Button>
-          )
-        }
       />
 
       <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6">
@@ -217,12 +187,6 @@ function RestaurantsPage() {
             <p className="text-sm text-muted-foreground">
               Nenhum restaurante cadastrado
             </p>
-            <Button
-              onClick={() => setCreateOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Cadastrar primeiro
-            </Button>
           </Card>
         )}
 
