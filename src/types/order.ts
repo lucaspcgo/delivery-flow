@@ -28,4 +28,8 @@ export interface ApiOrder {
   total_price: number;
   created_at: string;
   updated_at: string;
+  order_type?: string | null;
+  delivery_type?: string | null;
+  payment_method?: string | null;
+  payment_when?: string | null;
 }

@@ -18,16 +18,19 @@ import type { ApiOrder, OrderItem, OrderSubItem } from "@/types/order";
 type KdsFieldMap = Record<string, boolean>;
 const DEFAULT_KDS_MAP: KdsFieldMap = {
   platform_badge: true,
-  order_id: true,
+  order_number: true,
   customer_name: true,
   customer_phone: false,
-  created_at: true,
-  elapsed: true,
+  order_time: true,
+  order_elapsed: true,
+  order_type: true,
+  payment_method: false,
   delivery_address: false,
-  total: true,
+  total_price: true,
   item_image: true,
   item_name: true,
-  item_amount: true,
+  item_quantity: true,
+  item_price: false,
   item_subitems: true,
 };
 const show = (cfg: KdsFieldMap, key: string) =>
@@ -458,7 +461,7 @@ function OrderCard({
               </span>
             )}
           </div>
-          {show(kdsCfg, "order_id") && (
+          {show(kdsCfg, "order_number") && (
             <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
               #{shortOrderId(order.platform_order_id || order.id)}
             </div>
@@ -468,14 +471,37 @@ function OrderCard({
               📞 {order.customer_phone}
             </div>
           )}
+          {show(kdsCfg, "order_type") && (order.order_type || order.delivery_type) && (
+            <div className="mt-1">
+              <span
+                className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
+                style={{ background: "#E0F2FE", color: "#075985" }}
+              >
+                {String(order.order_type || order.delivery_type)
+                  .toLowerCase()
+                  .includes("take") ||
+                String(order.order_type || order.delivery_type)
+                  .toLowerCase()
+                  .includes("retir")
+                  ? "Retirada"
+                  : "Entrega"}
+              </span>
+            </div>
+          )}
+          {show(kdsCfg, "payment_method") && order.payment_method && (
+            <div className="mt-1 text-[11px]" style={{ color: "#6B7280" }}>
+              💳 {order.payment_method}
+              {order.payment_when ? ` · ${order.payment_when}` : ""}
+            </div>
+          )}
         </div>
         <div className="text-right">
-          {show(kdsCfg, "created_at") && (
+          {show(kdsCfg, "order_time") && (
             <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
               {formatHHmm(order.created_at)}
             </div>
           )}
-          {show(kdsCfg, "elapsed") && (
+          {show(kdsCfg, "order_elapsed") && (
             <div
               className="font-semibold tabular-nums"
               style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
@@ -517,7 +543,7 @@ function OrderCard({
         </div>
       )}
 
-      {show(kdsCfg, "total") && (
+      {show(kdsCfg, "total_price") && (
         <div
           className="mt-3 flex items-center justify-between pt-2"
           style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
@@ -611,7 +637,8 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
   const [broken, setBroken] = useState(false);
   const showImage = show(kdsCfg, "item_image");
   const showName = show(kdsCfg, "item_name");
-  const showQty = show(kdsCfg, "item_amount");
+  const showQty = show(kdsCfg, "item_quantity");
+  const showPrice = show(kdsCfg, "item_price");
   const hasImg = showImage && !!item.image && !broken;
   return (
     <div className="text-sm">
@@ -641,6 +668,11 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
             {showName && item.name}
           </div>
         </div>
+        {showPrice && item.total_price > 0 && (
+          <div className="shrink-0 text-[13px] font-bold" style={{ color: "#16A34A" }}>
+            {centsToBRL(item.total_price)}
+          </div>
+        )}
       </div>
       {showSubs && item.sub_item_list && item.sub_item_list.length > 0 && (
         <ul className="ml-15 mt-1 space-y-0.5" style={{ marginLeft: 60 }}>
