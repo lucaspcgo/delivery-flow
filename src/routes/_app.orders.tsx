@@ -401,6 +401,7 @@ function OrderCard({
   colKey,
   now,
   busy,
+  kdsCfg,
   onAccept,
   onReady,
   onRefuse,
@@ -409,6 +410,7 @@ function OrderCard({
   colKey: ColumnKey;
   now: Date;
   busy: boolean;
+  kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
@@ -422,9 +424,10 @@ function OrderCard({
     return acc + (it.total_price || 0) + subs;
   }, 0);
   const [expanded, setExpanded] = useState(false);
-  const hasDetails =
-    !!order.delivery_address ||
+  const showAddress = show(kdsCfg, "delivery_address") && !!order.delivery_address;
+  const showSubs = show(kdsCfg, "item_subitems") &&
     order.items.some((it) => (it.sub_item_list ?? []).length > 0);
+  const hasDetails = showAddress || showSubs;
 
   return (
     <div
@@ -441,37 +444,52 @@ function OrderCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span
+            {show(kdsCfg, "platform_badge") && (
+              <span
               className="rounded-full px-2 py-0.5 text-[9px] font-bold text-black"
               style={{ background: border }}
             >
               {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
-            </span>
-            <span className="truncate font-bold" style={{ fontSize: 15, color: "#1a1a1a" }}>
-              {order.customer_name ?? "Cliente"}
-            </span>
+              </span>
+            )}
+            {show(kdsCfg, "customer_name") && (
+              <span className="truncate font-bold" style={{ fontSize: 15, color: "#1a1a1a" }}>
+                {order.customer_name ?? "Cliente"}
+              </span>
+            )}
           </div>
-          <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
-            #{shortOrderId(order.platform_order_id || order.id)}
-          </div>
+          {show(kdsCfg, "order_id") && (
+            <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
+              #{shortOrderId(order.platform_order_id || order.id)}
+            </div>
+          )}
+          {show(kdsCfg, "customer_phone") && order.customer_phone && (
+            <div className="mt-0.5 text-[11px]" style={{ color: "#6B7280" }}>
+              📞 {order.customer_phone}
+            </div>
+          )}
         </div>
         <div className="text-right">
-          <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
-            {formatHHmm(order.created_at)}
-          </div>
-          <div
-            className="font-semibold tabular-nums"
-            style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
-          >
-            há {mins} min
-          </div>
+          {show(kdsCfg, "created_at") && (
+            <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
+              {formatHHmm(order.created_at)}
+            </div>
+          )}
+          {show(kdsCfg, "elapsed") && (
+            <div
+              className="font-semibold tabular-nums"
+              style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
+            >
+              há {mins} min
+            </div>
+          )}
         </div>
       </div>
 
       {/* Itens compactos com foto */}
       <div className="mt-3 space-y-2">
         {order.items.map((it, idx) => (
-          <ItemRow key={idx} item={it} showSubs={expanded} />
+          <ItemRow key={idx} item={it} showSubs={expanded && show(kdsCfg, "item_subitems")} kdsCfg={kdsCfg} />
         ))}
       </div>
 
@@ -493,23 +511,25 @@ function OrderCard({
           )}
         </button>
       )}
-      {expanded && order.delivery_address && (
+      {expanded && showAddress && (
         <div className="mt-2 rounded-md bg-gray-50 p-2 text-[12px]" style={{ color: "#4B5563" }}>
           <span className="font-bold">Endereço:</span> {order.delivery_address}
         </div>
       )}
 
-      <div
-        className="mt-3 flex items-center justify-between pt-2"
-        style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
-      >
-        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
-          Total
-        </span>
-        <span className="font-bold" style={{ fontSize: 18, color: "#1a1a1a" }}>
-          {centsToBRL(subtotal)}
-        </span>
-      </div>
+      {show(kdsCfg, "total") && (
+        <div
+          className="mt-3 flex items-center justify-between pt-2"
+          style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
+        >
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
+            Total
+          </span>
+          <span className="font-bold" style={{ fontSize: 18, color: "#1a1a1a" }}>
+            {centsToBRL(subtotal)}
+          </span>
+        </div>
+      )}
 
       {colKey === "new" && (
         <div className="mt-3 grid grid-cols-2" style={{ gap: 8 }}>
@@ -587,31 +607,38 @@ function OrderCard({
   );
 }
 
-function ItemRow({ item, showSubs }: { item: OrderItem; showSubs: boolean }) {
+function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolean; kdsCfg: KdsFieldMap }) {
   const [broken, setBroken] = useState(false);
-  const hasImg = !!item.image && !broken;
+  const showImage = show(kdsCfg, "item_image");
+  const showName = show(kdsCfg, "item_name");
+  const showQty = show(kdsCfg, "item_amount");
+  const hasImg = showImage && !!item.image && !broken;
   return (
     <div className="text-sm">
       <div className="flex items-center gap-3">
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100"
-          style={{ border: "1px solid #E5E7EB" }}
-        >
-          {hasImg ? (
-            <img
-              src={item.image as string}
-              alt={item.name}
-              className="h-full w-full object-cover"
-              onError={() => setBroken(true)}
-              loading="lazy"
-            />
-          ) : (
-            <ImageIcon className="h-5 w-5 text-gray-400" />
-          )}
-        </div>
+        {showImage && (
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100"
+            style={{ border: "1px solid #E5E7EB" }}
+          >
+            {hasImg ? (
+              <img
+                src={item.image as string}
+                alt={item.name}
+                className="h-full w-full object-cover"
+                onError={() => setBroken(true)}
+                loading="lazy"
+              />
+            ) : (
+              <ImageIcon className="h-5 w-5 text-gray-400" />
+            )}
+          </div>
+        )}
         <div className="min-w-0 flex-1" style={{ color: "#1a1a1a" }}>
           <div className="font-bold leading-tight" style={{ fontSize: 14 }}>
-            <span style={{ color: "#2563EB" }}>{item.amount}x</span> {item.name}
+            {showQty && <span style={{ color: "#2563EB" }}>{item.amount}x</span>}
+            {showQty && showName ? " " : ""}
+            {showName && item.name}
           </div>
         </div>
       </div>
