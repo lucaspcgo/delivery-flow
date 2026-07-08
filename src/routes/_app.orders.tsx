@@ -388,6 +388,10 @@ function OrderCard({
     const subs = (it.sub_item_list ?? []).reduce((s, si) => s + (si.total_price || 0), 0);
     return acc + (it.total_price || 0) + subs;
   }, 0);
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails =
+    !!order.delivery_address ||
+    order.items.some((it) => (it.sub_item_list ?? []).length > 0);
 
   return (
     <div
@@ -396,44 +400,71 @@ function OrderCard({
         borderLeft: `4px solid ${border}`,
         color: "#1a1a1a",
         borderRadius: 12,
-        padding: 16,
+        padding: 12,
         boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
       }}
     >
+      {/* Topo: cliente + horário */}
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span
-            className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-black"
-            style={{ background: border }}
-          >
-            {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
-          </span>
-          <span className="font-bold" style={{ color: "#1a1a1a", fontSize: 18 }}>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className="rounded-full px-2 py-0.5 text-[9px] font-bold text-black"
+              style={{ background: border }}
+            >
+              {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
+            </span>
+            <span className="truncate font-bold" style={{ fontSize: 15, color: "#1a1a1a" }}>
+              {order.customer_name ?? "Cliente"}
+            </span>
+          </div>
+          <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
             #{shortOrderId(order.platform_order_id || order.id)}
-          </span>
+          </div>
         </div>
-        <span
-          className="font-bold tabular-nums"
-          style={{ color: urgent ? "#FF4444" : "#6B7280", fontSize: 13 }}
-        >
-          há {mins} min
-        </span>
+        <div className="text-right">
+          <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
+            {formatHHmm(order.created_at)}
+          </div>
+          <div
+            className="font-semibold tabular-nums"
+            style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
+          >
+            há {mins} min
+          </div>
+        </div>
       </div>
 
-      <div className="mt-2 font-bold" style={{ color: "#1a1a1a" }}>
-        {order.customer_name ?? "Cliente"}
-      </div>
-      {order.app_shop_id && (
-        <div className="text-xs" style={{ color: "#6B7280" }}>
-          {order.app_shop_id}
-        </div>
-      )}
-
+      {/* Itens compactos com foto */}
       <div className="mt-3 space-y-2">
         {order.items.map((it, idx) => (
-          <ItemRow key={idx} item={it} index={idx + 1} />
+          <ItemRow key={idx} item={it} showSubs={expanded} />
         ))}
       </div>
+
+      {/* Ver mais: endereço + subitens escondidos */}
+      {hasDetails && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline"
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="h-3 w-3" /> ver menos
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3 w-3" /> ver mais
+            </>
+          )}
+        </button>
+      )}
+      {expanded && order.delivery_address && (
+        <div className="mt-2 rounded-md bg-gray-50 p-2 text-[12px]" style={{ color: "#4B5563" }}>
+          <span className="font-bold">Endereço:</span> {order.delivery_address}
+        </div>
+      )}
 
       <div
         className="mt-3 flex items-center justify-between pt-2"
@@ -523,25 +554,36 @@ function OrderCard({
   );
 }
 
-function ItemRow({ item, index }: { item: OrderItem; index: number }) {
+function ItemRow({ item, showSubs }: { item: OrderItem; showSubs: boolean }) {
+  const [broken, setBroken] = useState(false);
+  const hasImg = !!item.image && !broken;
   return (
     <div className="text-sm">
-      <div className="flex items-start gap-2">
-        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-700">
-          {index}
-        </span>
-        <div className="flex-1 flex items-center gap-2" style={{ color: "#1a1a1a" }}>
-          <span className="font-bold" style={{ fontSize: 14 }}>{item.name}</span>
-          <span
-            className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
-            style={{ background: "#F3F4F6", color: "#6B7280" }}
-          >
-            x{item.amount}
-          </span>
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100"
+          style={{ border: "1px solid #E5E7EB" }}
+        >
+          {hasImg ? (
+            <img
+              src={item.image as string}
+              alt={item.name}
+              className="h-full w-full object-cover"
+              onError={() => setBroken(true)}
+              loading="lazy"
+            />
+          ) : (
+            <ImageIcon className="h-5 w-5 text-gray-400" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1" style={{ color: "#1a1a1a" }}>
+          <div className="font-bold leading-tight" style={{ fontSize: 14 }}>
+            <span style={{ color: "#2563EB" }}>{item.amount}x</span> {item.name}
+          </div>
         </div>
       </div>
-      {item.sub_item_list && item.sub_item_list.length > 0 && (
-        <ul className="ml-7 mt-1 space-y-0.5">
+      {showSubs && item.sub_item_list && item.sub_item_list.length > 0 && (
+        <ul className="ml-15 mt-1 space-y-0.5" style={{ marginLeft: 60 }}>
           {item.sub_item_list.map((s, i) => (
             <SubItem key={i} sub={s} />
           ))}
