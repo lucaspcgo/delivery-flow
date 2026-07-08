@@ -1101,16 +1101,19 @@ export interface KdsSettingsResponse {
 
 const DEFAULT_KDS_FIELDS: KdsField[] = [
   { key: "platform_badge", label: "Etiqueta da plataforma", group: "pedido", default: true },
-  { key: "order_id", label: "Número do pedido", group: "pedido", default: true },
+  { key: "order_number", label: "Número do pedido", group: "pedido", default: true },
   { key: "customer_name", label: "Nome do cliente", group: "pedido", default: true },
   { key: "customer_phone", label: "Telefone do cliente", group: "pedido", default: false },
-  { key: "created_at", label: "Horário do pedido", group: "pedido", default: true },
-  { key: "elapsed", label: "Tempo decorrido (há X min)", group: "pedido", default: true },
+  { key: "order_time", label: "Horário do pedido (HH:mm)", group: "pedido", default: true },
+  { key: "order_elapsed", label: "Tempo decorrido (há X min)", group: "pedido", default: true },
+  { key: "order_type", label: "Tipo (Entrega / Retirada)", group: "pedido", default: true },
+  { key: "payment_method", label: "Forma de pagamento", group: "pedido", default: false },
   { key: "delivery_address", label: "Endereço de entrega", group: "pedido", default: false },
-  { key: "total", label: "Total do pedido", group: "pedido", default: true },
+  { key: "total_price", label: "Total do pedido", group: "pedido", default: true },
   { key: "item_image", label: "Foto do item", group: "item", default: true },
   { key: "item_name", label: "Nome do item", group: "item", default: true },
-  { key: "item_amount", label: "Quantidade", group: "item", default: true },
+  { key: "item_quantity", label: "Quantidade", group: "item", default: true },
+  { key: "item_price", label: "Preço do item", group: "item", default: false },
   { key: "item_subitems", label: "Adicionais / subitens", group: "item", default: true },
 ];
 
