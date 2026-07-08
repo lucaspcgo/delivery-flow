@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat, Loader2 } from "lucide-react";
+import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { getAllOrders, confirmOrder, cancelOrder, readyOrder } from "@/lib/api";
 import {
@@ -68,6 +68,16 @@ function minutesSince(iso: string): number {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return 0;
   return Math.max(0, Math.floor((Date.now() - t) / 60000));
+}
+
+function formatHHmm(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--:--";
+  return d.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function playBeep() {
