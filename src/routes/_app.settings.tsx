@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,9 @@ import {
   updatePlan,
   updateProfile,
   verify2FA,
+  getKdsSettings,
+  updateKdsSettings,
+  type KdsField,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -104,10 +108,11 @@ function SettingsPage() {
       />
       <div className="p-4 sm:p-8">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full max-w-xl grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="plan">Planos</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
+            <TabsTrigger value="kds">KDS</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-6 space-y-6">
@@ -162,6 +167,10 @@ function SettingsPage() {
                 />
               </>
             )}
+          </TabsContent>
+
+          <TabsContent value="kds" className="mt-6">
+            <KdsSettingsSection />
           </TabsContent>
         </Tabs>
       </div>
