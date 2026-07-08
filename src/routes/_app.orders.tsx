@@ -332,6 +332,7 @@ function Column({
   orders,
   now,
   busyId,
+  kdsCfg,
   onAccept,
   onReady,
   onRefuse,
@@ -340,6 +341,7 @@ function Column({
   orders: ApiOrder[];
   now: Date;
   busyId: string | null;
+  kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
@@ -382,6 +384,7 @@ function Column({
               colKey={col.key}
               now={now}
               busy={busyId === o.id}
+              kdsCfg={kdsCfg}
               onAccept={onAccept}
               onReady={onReady}
               onRefuse={onRefuse}
