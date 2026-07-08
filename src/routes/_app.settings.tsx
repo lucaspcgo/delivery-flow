@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,9 @@ import {
   updatePlan,
   updateProfile,
   verify2FA,
+  getKdsSettings,
+  updateKdsSettings,
+  type KdsField,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -104,10 +108,11 @@ function SettingsPage() {
       />
       <div className="p-4 sm:p-8">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full max-w-xl grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="plan">Planos</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
+            <TabsTrigger value="kds">KDS</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-6 space-y-6">
@@ -162,6 +167,10 @@ function SettingsPage() {
                 />
               </>
             )}
+          </TabsContent>
+
+          <TabsContent value="kds" className="mt-6">
+            <KdsSettingsSection />
           </TabsContent>
         </Tabs>
       </div>
@@ -631,5 +640,123 @@ function TwoFactorSection({
         </AlertDialogContent>
       </AlertDialog>
     </Card>
+  );
+}
+
+function KdsSettingsSection() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [available, setAvailable] = useState<KdsField[]>([]);
+  const [fields, setFields] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const data = await getKdsSettings();
+      if (!alive) return;
+      setAvailable(data.available_fields);
+      setFields(data.config.fields);
+      setLoading(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const toggle = (key: string, value: boolean) =>
+    setFields((prev) => ({ ...prev, [key]: value }));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateKdsSettings(fields);
+      toast.success("Configuração do KDS salva!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar KDS");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="max-w-3xl space-y-3 p-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </Card>
+    );
+  }
+
+  const pedido = available.filter((f) => f.group === "pedido");
+  const item = available.filter((f) => f.group === "item");
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Configurar KDS</h2>
+        <p className="text-sm text-muted-foreground">
+          Escolha quais informações aparecem em cada card da tela da cozinha.
+        </p>
+      </div>
+
+      <Card className="p-6">
+        <h3 className="mb-4 text-base font-semibold">Dados do pedido</h3>
+        <div className="divide-y">
+          {pedido.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum campo disponível.</p>
+          ) : (
+            pedido.map((f) => (
+              <FieldRow
+                key={f.key}
+                label={f.label}
+                checked={!!fields[f.key]}
+                onChange={(v) => toggle(f.key, v)}
+              />
+            ))
+          )}
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="mb-4 text-base font-semibold">Por item</h3>
+        <div className="divide-y">
+          {item.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum campo disponível.</p>
+          ) : (
+            item.map((f) => (
+              <FieldRow
+                key={f.key}
+                label={f.label}
+                checked={!!fields[f.key]}
+                onChange={(v) => toggle(f.key, v)}
+              />
+            ))
+          )}
+        </div>
+      </Card>
+
+      <Button onClick={save} disabled={saving}>
+        {saving ? "Salvando..." : "Salvar"}
+      </Button>
+    </div>
+  );
+}
+
+function FieldRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between py-3">
+      <Label className="text-sm font-medium">{label}</Label>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
   );
 }

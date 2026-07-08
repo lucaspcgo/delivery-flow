@@ -1082,3 +1082,64 @@ export async function getReports(params: {
     por_status: Array.isArray(data?.por_status) ? data.por_status : [],
   };
 }
+
+// ---------- Configuração do KDS ----------
+
+export type KdsFieldGroup = "pedido" | "item";
+
+export interface KdsField {
+  key: string;
+  label: string;
+  group: KdsFieldGroup;
+  default: boolean;
+}
+
+export interface KdsSettingsResponse {
+  available_fields: KdsField[];
+  config: { fields: Record<string, boolean> };
+}
+
+const DEFAULT_KDS_FIELDS: KdsField[] = [
+  { key: "platform_badge", label: "Etiqueta da plataforma", group: "pedido", default: true },
+  { key: "order_id", label: "Número do pedido", group: "pedido", default: true },
+  { key: "customer_name", label: "Nome do cliente", group: "pedido", default: true },
+  { key: "customer_phone", label: "Telefone do cliente", group: "pedido", default: false },
+  { key: "created_at", label: "Horário do pedido", group: "pedido", default: true },
+  { key: "elapsed", label: "Tempo decorrido (há X min)", group: "pedido", default: true },
+  { key: "delivery_address", label: "Endereço de entrega", group: "pedido", default: false },
+  { key: "total", label: "Total do pedido", group: "pedido", default: true },
+  { key: "item_image", label: "Foto do item", group: "item", default: true },
+  { key: "item_name", label: "Nome do item", group: "item", default: true },
+  { key: "item_amount", label: "Quantidade", group: "item", default: true },
+  { key: "item_subitems", label: "Adicionais / subitens", group: "item", default: true },
+];
+
+function buildDefaultKdsConfig(fields: KdsField[]): Record<string, boolean> {
+  const map: Record<string, boolean> = {};
+  for (const f of fields) map[f.key] = f.default;
+  return map;
+}
+
+export async function getKdsSettings(): Promise<KdsSettingsResponse> {
+  try {
+    const data = await http.get<KdsSettingsResponse>("/settings/kds", { silent: true });
+    const available =
+      Array.isArray(data?.available_fields) && data.available_fields.length > 0
+        ? data.available_fields
+        : DEFAULT_KDS_FIELDS;
+    const defaults = buildDefaultKdsConfig(available);
+    const fields = { ...defaults, ...(data?.config?.fields ?? {}) };
+    return { available_fields: available, config: { fields } };
+  } catch {
+    return {
+      available_fields: DEFAULT_KDS_FIELDS,
+      config: { fields: buildDefaultKdsConfig(DEFAULT_KDS_FIELDS) },
+    };
+  }
+}
+
+export async function updateKdsSettings(
+  fields: Record<string, boolean>,
+): Promise<KdsSettingsResponse> {
+  return http.put<KdsSettingsResponse>("/settings/kds", { fields });
+}

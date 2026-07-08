@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, getKdsSettings } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { ApiOrder, OrderItem, OrderSubItem } from "@/types/order";
+
+type KdsFieldMap = Record<string, boolean>;
+const DEFAULT_KDS_MAP: KdsFieldMap = {
+  platform_badge: true,
+  order_id: true,
+  customer_name: true,
+  customer_phone: false,
+  created_at: true,
+  elapsed: true,
+  delivery_address: false,
+  total: true,
+  item_image: true,
+  item_name: true,
+  item_amount: true,
+  item_subitems: true,
+};
+const show = (cfg: KdsFieldMap, key: string) =>
+  cfg[key] ?? DEFAULT_KDS_MAP[key] ?? true;
 
 export const Route = createFileRoute("/_app/orders")({
   head: () => ({ meta: [{ title: "Pedidos ao Vivo · Zero Tempo" }] }),
@@ -110,6 +128,7 @@ function OrdersKanban() {
   const [now, setNow] = useState(() => new Date());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
+  const [kdsCfg, setKdsCfg] = useState<KdsFieldMap>(DEFAULT_KDS_MAP);
   const todayStr = () => {
     const d = new Date();
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
@@ -147,6 +166,16 @@ function OrdersKanban() {
     const i = setInterval(load, 1000);
     return () => clearInterval(i);
   }, [load]);
+
+  useEffect(() => {
+    let alive = true;
+    getKdsSettings().then((r) => {
+      if (alive) setKdsCfg(r.config.fields);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -259,6 +288,7 @@ function OrdersKanban() {
             orders={grouped[col.key]}
             now={now}
             busyId={busyId}
+            kdsCfg={kdsCfg}
             onAccept={handleAccept}
             onReady={handleReady}
             onRefuse={(o) => setRefuseTarget(o)}
@@ -302,6 +332,7 @@ function Column({
   orders,
   now,
   busyId,
+  kdsCfg,
   onAccept,
   onReady,
   onRefuse,
@@ -310,6 +341,7 @@ function Column({
   orders: ApiOrder[];
   now: Date;
   busyId: string | null;
+  kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
@@ -352,6 +384,7 @@ function Column({
               colKey={col.key}
               now={now}
               busy={busyId === o.id}
+              kdsCfg={kdsCfg}
               onAccept={onAccept}
               onReady={onReady}
               onRefuse={onRefuse}
@@ -368,6 +401,7 @@ function OrderCard({
   colKey,
   now,
   busy,
+  kdsCfg,
   onAccept,
   onReady,
   onRefuse,
@@ -376,6 +410,7 @@ function OrderCard({
   colKey: ColumnKey;
   now: Date;
   busy: boolean;
+  kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
@@ -389,9 +424,10 @@ function OrderCard({
     return acc + (it.total_price || 0) + subs;
   }, 0);
   const [expanded, setExpanded] = useState(false);
-  const hasDetails =
-    !!order.delivery_address ||
+  const showAddress = show(kdsCfg, "delivery_address") && !!order.delivery_address;
+  const showSubs = show(kdsCfg, "item_subitems") &&
     order.items.some((it) => (it.sub_item_list ?? []).length > 0);
+  const hasDetails = showAddress || showSubs;
 
   return (
     <div
@@ -408,37 +444,52 @@ function OrderCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span
+            {show(kdsCfg, "platform_badge") && (
+              <span
               className="rounded-full px-2 py-0.5 text-[9px] font-bold text-black"
               style={{ background: border }}
             >
               {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
-            </span>
-            <span className="truncate font-bold" style={{ fontSize: 15, color: "#1a1a1a" }}>
-              {order.customer_name ?? "Cliente"}
-            </span>
+              </span>
+            )}
+            {show(kdsCfg, "customer_name") && (
+              <span className="truncate font-bold" style={{ fontSize: 15, color: "#1a1a1a" }}>
+                {order.customer_name ?? "Cliente"}
+              </span>
+            )}
           </div>
-          <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
-            #{shortOrderId(order.platform_order_id || order.id)}
-          </div>
+          {show(kdsCfg, "order_id") && (
+            <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
+              #{shortOrderId(order.platform_order_id || order.id)}
+            </div>
+          )}
+          {show(kdsCfg, "customer_phone") && order.customer_phone && (
+            <div className="mt-0.5 text-[11px]" style={{ color: "#6B7280" }}>
+              📞 {order.customer_phone}
+            </div>
+          )}
         </div>
         <div className="text-right">
-          <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
-            {formatHHmm(order.created_at)}
-          </div>
-          <div
-            className="font-semibold tabular-nums"
-            style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
-          >
-            há {mins} min
-          </div>
+          {show(kdsCfg, "created_at") && (
+            <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
+              {formatHHmm(order.created_at)}
+            </div>
+          )}
+          {show(kdsCfg, "elapsed") && (
+            <div
+              className="font-semibold tabular-nums"
+              style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
+            >
+              há {mins} min
+            </div>
+          )}
         </div>
       </div>
 
       {/* Itens compactos com foto */}
       <div className="mt-3 space-y-2">
         {order.items.map((it, idx) => (
-          <ItemRow key={idx} item={it} showSubs={expanded} />
+          <ItemRow key={idx} item={it} showSubs={expanded && show(kdsCfg, "item_subitems")} kdsCfg={kdsCfg} />
         ))}
       </div>
 
@@ -460,23 +511,25 @@ function OrderCard({
           )}
         </button>
       )}
-      {expanded && order.delivery_address && (
+      {expanded && showAddress && (
         <div className="mt-2 rounded-md bg-gray-50 p-2 text-[12px]" style={{ color: "#4B5563" }}>
           <span className="font-bold">Endereço:</span> {order.delivery_address}
         </div>
       )}
 
-      <div
-        className="mt-3 flex items-center justify-between pt-2"
-        style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
-      >
-        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
-          Total
-        </span>
-        <span className="font-bold" style={{ fontSize: 18, color: "#1a1a1a" }}>
-          {centsToBRL(subtotal)}
-        </span>
-      </div>
+      {show(kdsCfg, "total") && (
+        <div
+          className="mt-3 flex items-center justify-between pt-2"
+          style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
+        >
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
+            Total
+          </span>
+          <span className="font-bold" style={{ fontSize: 18, color: "#1a1a1a" }}>
+            {centsToBRL(subtotal)}
+          </span>
+        </div>
+      )}
 
       {colKey === "new" && (
         <div className="mt-3 grid grid-cols-2" style={{ gap: 8 }}>
@@ -554,31 +607,38 @@ function OrderCard({
   );
 }
 
-function ItemRow({ item, showSubs }: { item: OrderItem; showSubs: boolean }) {
+function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolean; kdsCfg: KdsFieldMap }) {
   const [broken, setBroken] = useState(false);
-  const hasImg = !!item.image && !broken;
+  const showImage = show(kdsCfg, "item_image");
+  const showName = show(kdsCfg, "item_name");
+  const showQty = show(kdsCfg, "item_amount");
+  const hasImg = showImage && !!item.image && !broken;
   return (
     <div className="text-sm">
       <div className="flex items-center gap-3">
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100"
-          style={{ border: "1px solid #E5E7EB" }}
-        >
-          {hasImg ? (
-            <img
-              src={item.image as string}
-              alt={item.name}
-              className="h-full w-full object-cover"
-              onError={() => setBroken(true)}
-              loading="lazy"
-            />
-          ) : (
-            <ImageIcon className="h-5 w-5 text-gray-400" />
-          )}
-        </div>
+        {showImage && (
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100"
+            style={{ border: "1px solid #E5E7EB" }}
+          >
+            {hasImg ? (
+              <img
+                src={item.image as string}
+                alt={item.name}
+                className="h-full w-full object-cover"
+                onError={() => setBroken(true)}
+                loading="lazy"
+              />
+            ) : (
+              <ImageIcon className="h-5 w-5 text-gray-400" />
+            )}
+          </div>
+        )}
         <div className="min-w-0 flex-1" style={{ color: "#1a1a1a" }}>
           <div className="font-bold leading-tight" style={{ fontSize: 14 }}>
-            <span style={{ color: "#2563EB" }}>{item.amount}x</span> {item.name}
+            {showQty && <span style={{ color: "#2563EB" }}>{item.amount}x</span>}
+            {showQty && showName ? " " : ""}
+            {showName && item.name}
           </div>
         </div>
       </div>
