@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, getKdsSettings } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { ApiOrder, OrderItem, OrderSubItem } from "@/types/order";
+
+type KdsFieldMap = Record<string, boolean>;
+const DEFAULT_KDS_MAP: KdsFieldMap = {
+  platform_badge: true,
+  order_id: true,
+  customer_name: true,
+  customer_phone: false,
+  created_at: true,
+  elapsed: true,
+  delivery_address: false,
+  total: true,
+  item_image: true,
+  item_name: true,
+  item_amount: true,
+  item_subitems: true,
+};
+const show = (cfg: KdsFieldMap, key: string) =>
+  cfg[key] ?? DEFAULT_KDS_MAP[key] ?? true;
 
 export const Route = createFileRoute("/_app/orders")({
   head: () => ({ meta: [{ title: "Pedidos ao Vivo · Zero Tempo" }] }),
@@ -110,6 +128,7 @@ function OrdersKanban() {
   const [now, setNow] = useState(() => new Date());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
+  const [kdsCfg, setKdsCfg] = useState<KdsFieldMap>(DEFAULT_KDS_MAP);
   const todayStr = () => {
     const d = new Date();
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
@@ -147,6 +166,16 @@ function OrdersKanban() {
     const i = setInterval(load, 1000);
     return () => clearInterval(i);
   }, [load]);
+
+  useEffect(() => {
+    let alive = true;
+    getKdsSettings().then((r) => {
+      if (alive) setKdsCfg(r.config.fields);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -259,6 +288,7 @@ function OrdersKanban() {
             orders={grouped[col.key]}
             now={now}
             busyId={busyId}
+            kdsCfg={kdsCfg}
             onAccept={handleAccept}
             onReady={handleReady}
             onRefuse={(o) => setRefuseTarget(o)}
