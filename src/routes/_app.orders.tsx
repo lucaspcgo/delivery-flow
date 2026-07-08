@@ -18,16 +18,19 @@ import type { ApiOrder, OrderItem, OrderSubItem } from "@/types/order";
 type KdsFieldMap = Record<string, boolean>;
 const DEFAULT_KDS_MAP: KdsFieldMap = {
   platform_badge: true,
-  order_id: true,
+  order_number: true,
   customer_name: true,
   customer_phone: false,
-  created_at: true,
-  elapsed: true,
+  order_time: true,
+  order_elapsed: true,
+  order_type: true,
+  payment_method: false,
   delivery_address: false,
-  total: true,
+  total_price: true,
   item_image: true,
   item_name: true,
-  item_amount: true,
+  item_quantity: true,
+  item_price: false,
   item_subitems: true,
 };
 const show = (cfg: KdsFieldMap, key: string) =>
