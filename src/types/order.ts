@@ -11,6 +11,7 @@ export interface OrderItem {
   name: string;
   amount: number;
   total_price: number;
+  image?: string | null;
   sub_item_list?: OrderSubItem[];
 }
 
