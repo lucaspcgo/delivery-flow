@@ -637,7 +637,8 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
   const [broken, setBroken] = useState(false);
   const showImage = show(kdsCfg, "item_image");
   const showName = show(kdsCfg, "item_name");
-  const showQty = show(kdsCfg, "item_amount");
+  const showQty = show(kdsCfg, "item_quantity");
+  const showPrice = show(kdsCfg, "item_price");
   const hasImg = showImage && !!item.image && !broken;
   return (
     <div className="text-sm">
@@ -667,6 +668,11 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
             {showName && item.name}
           </div>
         </div>
+        {showPrice && item.total_price > 0 && (
+          <div className="shrink-0 text-[13px] font-bold" style={{ color: "#16A34A" }}>
+            {centsToBRL(item.total_price)}
+          </div>
+        )}
       </div>
       {showSubs && item.sub_item_list && item.sub_item_list.length > 0 && (
         <ul className="ml-15 mt-1 space-y-0.5" style={{ marginLeft: 60 }}>
