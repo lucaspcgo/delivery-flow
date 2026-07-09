@@ -103,6 +103,25 @@ function minutesSince(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - t) / 60000));
 }
 
+function formatElapsed(iso: string, nowMs: number): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "--:--";
+  const s = Math.max(0, Math.floor((nowMs - t) / 1000));
+  if (s < 3600) {
+    const mm = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+  return `há ${Math.floor(s / 60)} min`;
+}
+
+function formatSignedMMSS(totalSec: number): string {
+  const abs = Math.abs(totalSec);
+  const mm = String(Math.floor(abs / 60)).padStart(2, "0");
+  const ss = String(abs % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
 function formatHHmm(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "--:--";
@@ -560,10 +579,18 @@ function OrderCard({
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
 }) {
-  void now; // re-render trigger
   void colKey;
+  const nowMs = now.getTime();
   const mins = minutesSince(order.created_at);
   const urgent = mins > 20;
+  const elapsedText = formatElapsed(order.created_at, nowMs);
+  const promiseEpochMs =
+    typeof order.promise_epoch === "number"
+      ? (order.promise_epoch > 1e12 ? order.promise_epoch : order.promise_epoch * 1000)
+      : null;
+  const promiseDiffSec =
+    promiseEpochMs != null ? Math.floor((promiseEpochMs - nowMs) / 1000) : null;
+  const promiseLate = promiseDiffSec != null && promiseDiffSec < 0;
   const border = PLATFORM_BORDER[order.platform] ?? "#888";
   const subtotal = order.items.reduce((acc, it) => {
     const subs = (it.sub_item_list ?? []).reduce((s, si) => s + (si.total_price || 0), 0);
@@ -662,8 +689,22 @@ function OrderCard({
                 color: urgent ? "#fff" : "var(--foreground)",
                 background: urgent ? "#DC2626" : "var(--muted)",
               }}
+              title="Tempo decorrido desde o pedido"
             >
-              há {mins} min
+              {elapsedText}
+            </div>
+          )}
+          {promiseDiffSec != null && (
+            <div
+              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              style={{
+                color: "#fff",
+                background: promiseLate ? "#DC2626" : "#0F172A",
+              }}
+              title="Contagem até a promessa"
+            >
+              {promiseLate ? "atrasado " : "faltam "}
+              {formatSignedMMSS(promiseDiffSec)}
             </div>
           )}
         </div>
@@ -756,6 +797,28 @@ function OrderCard({
           >
             <span className="mr-1 font-black">📝 Obs:</span>
             <span className="font-semibold">{note}</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 text-sm">
+          <Bike className="h-4 w-4 text-muted-foreground" />
+          {order.courier_name && order.courier_name.trim() ? (
+            <span className="font-bold text-foreground">
+              Entregador: {order.courier_name}
+            </span>
+          ) : (
+            <span className="font-semibold text-muted-foreground">
+              Aguardando entregador
+            </span>
+          )}
+        </div>
+        {order.pickup_code && String(order.pickup_code).trim() && (
+          <div
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-black"
+            style={{ background: "#DBEAFE", color: "#1E3A8A" }}
+          >
+            <span>🔑</span>
+            <span className="uppercase tracking-wider">Coleta:</span>
+            <span className="tabular-nums">{order.pickup_code}</span>
           </div>
         )}
       </div>
