@@ -152,6 +152,7 @@ function OrdersKanban() {
     return tz.toISOString().slice(0, 10);
   };
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
+  const [storeFilter, setStoreFilter] = useState<string>("__all__");
   const seenIds = useRef<Set<string>>(new Set());
   const firstLoad = useRef(true);
 
@@ -232,7 +233,12 @@ function OrdersKanban() {
       .sort((a, b) => a.order - b.order);
     const g: Record<string, ApiOrder[]> = {};
     for (const c of visible) g[c.key] = [];
-    for (const o of orders) {
+    const filtered = orders.filter((o) => {
+      if (storeFilter === "__all__") return true;
+      const name = (o.store_name && o.store_name.trim()) || "__unknown__";
+      return name === storeFilter;
+    });
+    for (const o of filtered) {
       const stage = String(o.kds_stage ?? legacyStageFromStatus(o.status));
       if (g[stage]) {
         g[stage].push(o);
@@ -243,8 +249,28 @@ function OrdersKanban() {
       // se não há coluna "pendente" visível, o pedido simplesmente não aparece
     }
     return { renderColumns: visible, grouped: g };
-  }, [orders, columns]);
+  }, [orders, columns, storeFilter]);
   const visibleColumns = renderColumns;
+
+  const storeOptions = useMemo(() => {
+    const set = new Set<string>();
+    let hasUnknown = false;
+    for (const o of orders) {
+      const n = (o.store_name && o.store_name.trim()) || "";
+      if (n) set.add(n);
+      else hasUnknown = true;
+    }
+    const arr = Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    return { names: arr, hasUnknown };
+  }, [orders]);
+
+  const totalFiltered = useMemo(() => {
+    if (storeFilter === "__all__") return orders.length;
+    return orders.filter((o) => {
+      const name = (o.store_name && o.store_name.trim()) || "__unknown__";
+      return name === storeFilter;
+    }).length;
+  }, [orders, storeFilter]);
 
   const handleAccept = async (order: ApiOrder) => {
     setBusyId(order.id);
@@ -321,7 +347,7 @@ function OrdersKanban() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-black text-foreground">Pedidos ao Vivo</h1>
           <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
-            {orders.length}
+            {totalFiltered}
           </span>
           <input
             type="date"
@@ -335,6 +361,20 @@ function OrdersKanban() {
           >
             Hoje
           </button>
+          <select
+            value={storeFilter}
+            onChange={(e) => setStoreFilter(e.target.value)}
+            className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none max-w-[220px]"
+            aria-label="Filtrar por loja"
+          >
+            <option value="__all__">Todas as lojas</option>
+            {storeOptions.names.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+            {storeOptions.hasUnknown && (
+              <option value="__unknown__">Loja não identificada</option>
+            )}
+          </select>
         </div>
         <div className="flex items-center gap-4">
           <span className="font-mono text-xl font-bold tabular-nums text-muted-foreground">
@@ -630,12 +670,12 @@ function OrderCard({
       </div>
 
       {/* Nome da loja */}
-      {order.store_name && (
-        <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
-          <Store className="h-4 w-4 text-muted-foreground" />
-          <span className="truncate">{order.store_name}</span>
-        </div>
-      )}
+      <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
+        <Store className="h-4 w-4 text-muted-foreground" />
+        <span className="truncate">
+          {order.store_name?.trim() || "Loja não identificada"}
+        </span>
+      </div>
 
       {/* Itens grandes */}
       <div className="mt-4 space-y-3 rounded-xl bg-muted/60 p-3">
