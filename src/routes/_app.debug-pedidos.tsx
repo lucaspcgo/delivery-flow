@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useCallback } from "react";
 import { http } from "@/lib/api";
 import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,16 @@ export const Route = createFileRoute("/_app/debug-pedidos")({
 
 type Platform = "99food" | "ifood";
 
+type CheckStatus = "ok" | "divergente" | "vazio" | "sem_origem";
+
+interface FieldCheck {
+  field: string;
+  mapped?: unknown;
+  raw?: unknown;
+  source?: string | null;
+  status: CheckStatus;
+}
+
 interface DebugOrder {
   platform_order_id?: string | null;
   status?: string | null;
@@ -24,12 +33,18 @@ interface DebugOrder {
   mapped?: Record<string, unknown> | null;
   raw?: unknown;
   raw_keys?: string[] | null;
+  field_checks?: FieldCheck[] | null;
 }
 
 interface DebugResponse {
   platform: string;
   count: number;
   orders: DebugOrder[];
+  total?: number;
+  has_more?: boolean;
+  next_offset?: number | null;
+  offset?: number;
+  limit?: number;
 }
 
 function formatDateTime(iso?: string | null): string {
@@ -117,6 +132,70 @@ function MappedBlock({ mapped }: { mapped: Record<string, unknown> | null | unde
   );
 }
 
+const STATUS_META: Record<CheckStatus, { row: string; badge: string; label: string }> = {
+  divergente: {
+    row: "bg-red-50 border-red-200",
+    badge: "bg-red-100 text-red-800 border-red-300",
+    label: "Divergente",
+  },
+  vazio: {
+    row: "bg-yellow-50 border-yellow-200",
+    badge: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    label: "Dado perdido",
+  },
+  sem_origem: {
+    row: "bg-gray-50 border-gray-200",
+    badge: "bg-gray-100 text-gray-700 border-gray-300",
+    label: "Não veio da plataforma",
+  },
+  ok: {
+    row: "bg-green-50/40 border-green-100",
+    badge: "bg-green-100 text-green-800 border-green-300",
+    label: "OK",
+  },
+};
+
+function FieldChecksTable({ checks }: { checks: FieldCheck[] }) {
+  if (!checks || checks.length === 0) {
+    return <p className="text-sm text-muted-foreground">Sem verificações de campo.</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] border-collapse text-sm">
+        <thead>
+          <tr className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <th className="px-2 py-2">Campo</th>
+            <th className="px-2 py-2">Mapeado</th>
+            <th className="px-2 py-2">Bruto</th>
+            <th className="px-2 py-2">Origem</th>
+            <th className="px-2 py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {checks.map((c, idx) => {
+            const meta = STATUS_META[c.status] ?? STATUS_META.ok;
+            return (
+              <tr key={`${c.field}-${idx}`} className={`border-b ${meta.row}`}>
+                <td className="px-2 py-2 align-top font-mono text-xs font-semibold">{c.field}</td>
+                <td className="px-2 py-2 align-top">{renderScalar(c.mapped)}</td>
+                <td className="px-2 py-2 align-top">{renderScalar(c.raw)}</td>
+                <td className="px-2 py-2 align-top font-mono text-xs text-muted-foreground">
+                  {c.source ?? "—"}
+                </td>
+                <td className="px-2 py-2 align-top">
+                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${meta.badge}`}>
+                    {meta.label}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function DebugCard({ order }: { order: DebugOrder }) {
   const rawJson = (() => {
     try {
@@ -160,6 +239,14 @@ function DebugCard({ order }: { order: DebugOrder }) {
         </Button>
       </CardHeader>
       <CardContent className="pt-4">
+        {order.field_checks && order.field_checks.length > 0 && (
+          <section className="mb-4 min-w-0">
+            <h3 className="mb-3 text-sm font-semibold">
+              Verificação campo a campo
+            </h3>
+            <FieldChecksTable checks={order.field_checks} />
+          </section>
+        )}
         <div className="grid gap-4 lg:grid-cols-2">
           <section className="min-w-0">
             <h3 className="mb-3 text-sm font-semibold">
