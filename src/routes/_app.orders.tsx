@@ -589,7 +589,7 @@ function OrderCard({
               className="mt-2 font-black tabular-nums"
               style={{ fontSize: 24, color: "#B45309", letterSpacing: 1 }}
             >
-              #{shortOrderId(order.platform_order_id || order.id)}
+              #{order.order_number || order.platform_order_id}
             </div>
           )}
           {show(kdsCfg, "customer_phone") && order.customer_phone && (
