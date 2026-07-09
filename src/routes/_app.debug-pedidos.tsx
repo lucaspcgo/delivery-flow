@@ -293,20 +293,52 @@ function DebugPedidosPage() {
   }, [isAdmin, navigate]);
   const [platform, setPlatform] = useState<Platform>("99food");
   const [limit, setLimit] = useState<number>(10);
-  const [applied, setApplied] = useState<{ platform: Platform; limit: number }>({
-    platform: "99food",
-    limit: 10,
-  });
+  const [orders, setOrders] = useState<DebugOrder[]>([]);
+  const [meta, setMeta] = useState<{
+    platform: string;
+    total: number;
+    hasMore: boolean;
+    nextOffset: number | null;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const query = useQuery<DebugResponse, Error>({
-    queryKey: ["debug-orders", applied.platform, applied.limit],
-    queryFn: () =>
-      http.get<DebugResponse>(`/orders/${applied.platform}/debug`, {
-        query: { limit: applied.limit },
-        silent: true,
-      }),
-    enabled: isAdmin,
-  });
+  const fetchPage = useCallback(
+    async (opts: { platform: Platform; limit: number; offset: number; append: boolean }) => {
+      const { platform: pf, limit: lm, offset, append } = opts;
+      if (append) setIsFetchingMore(true);
+      else setIsLoading(true);
+      setError(null);
+      try {
+        const data = await http.get<DebugResponse>(`/orders/${pf}/debug`, {
+          query: { limit: lm, offset },
+          silent: true,
+        });
+        const next = data.orders ?? [];
+        setOrders((prev) => (append ? [...prev, ...next] : next));
+        setMeta({
+          platform: data.platform ?? pf,
+          total: typeof data.total === "number" ? data.total : (append ? (meta?.total ?? 0) : next.length),
+          hasMore: data.has_more === true,
+          nextOffset: typeof data.next_offset === "number" ? data.next_offset : null,
+        });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "erro desconhecido");
+      } finally {
+        setIsLoading(false);
+        setIsFetchingMore(false);
+      }
+    },
+    [meta?.total],
+  );
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchPage({ platform: "99food", limit: 10, offset: 0, append: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   if (!isAdmin) {
     return (
@@ -314,10 +346,19 @@ function DebugPedidosPage() {
     );
   }
 
+  const clampedLimit = () => Math.max(1, Math.min(50, Math.floor(limit || 1)));
+
   const apply = () => {
-    const clamped = Math.max(1, Math.min(50, Math.floor(limit || 1)));
-    setLimit(clamped);
-    setApplied({ platform, limit: clamped });
+    const lm = clampedLimit();
+    setLimit(lm);
+    setOrders([]);
+    setMeta(null);
+    fetchPage({ platform, limit: lm, offset: 0, append: false });
+  };
+
+  const loadMore = () => {
+    if (!meta || !meta.hasMore || meta.nextOffset === null) return;
+    fetchPage({ platform, limit: clampedLimit(), offset: meta.nextOffset, append: true });
   };
 
   return (
@@ -362,23 +403,23 @@ function DebugPedidosPage() {
               className="w-32"
             />
           </div>
-          <Button onClick={apply} disabled={query.isFetching}>
-            {query.isFetching ? (
+          <Button onClick={apply} disabled={isLoading || isFetchingMore}>
+            {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="mr-2 h-4 w-4" />
             )}
             Atualizar
           </Button>
-          {query.data && (
+          {meta && (
             <div className="ml-auto text-sm text-muted-foreground">
-              {query.data.count} pedido(s) · plataforma <strong>{query.data.platform}</strong>
+              {orders.length} de {meta.total} · plataforma <strong>{meta.platform}</strong>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {query.isLoading && (
+      {isLoading && (
         <Card>
           <CardContent className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -387,15 +428,15 @@ function DebugPedidosPage() {
         </Card>
       )}
 
-      {query.isError && (
+      {error && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardContent className="p-4 text-sm text-destructive">
-            Não foi possível carregar os pedidos: {query.error?.message ?? "erro desconhecido"}.
+            Não foi possível carregar os pedidos: {error}.
           </CardContent>
         </Card>
       )}
 
-      {query.data && query.data.orders.length === 0 && !query.isLoading && (
+      {!isLoading && !error && orders.length === 0 && (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
             Nenhum pedido retornado para os filtros atuais.
@@ -404,10 +445,21 @@ function DebugPedidosPage() {
       )}
 
       <div className="space-y-4">
-        {query.data?.orders.map((o, idx) => (
+        {orders.map((o: DebugOrder, idx: number) => (
           <DebugCard key={o.platform_order_id ?? idx} order={o} />
         ))}
       </div>
+
+      {meta?.hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={loadMore} disabled={isFetchingMore}>
+            {isFetchingMore ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Carregar mais
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
