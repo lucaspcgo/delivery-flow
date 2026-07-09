@@ -347,11 +347,8 @@ function Column({
 }) {
   return (
     <div
-      className="flex min-w-0 flex-col p-3"
-      style={{
-        maxHeight: "calc(100vh - 8rem)",
-        borderRadius: 16,
-      }}
+      className="flex min-w-0 flex-col rounded-2xl border bg-muted/40 p-3 shadow-sm"
+      style={{ maxHeight: "calc(100vh - 8rem)" }}
     >
       <div
         className="mb-3 flex items-center justify-between px-4 py-3"
