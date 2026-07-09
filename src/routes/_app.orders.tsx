@@ -69,9 +69,9 @@ const COLUMNS: {
   headerText: string;
   emoji: string;
 }[] = [
-  { key: "new", title: "NOVOS", accent: "#F59E0B", headerBg: "#FFF9C4", headerText: "#92400E", emoji: "🟡" },
-  { key: "preparing", title: "EM PREPARO", accent: "#F97316", headerBg: "#FED7AA", headerText: "#92400E", emoji: "🟠" },
-  { key: "done", title: "ENTREGUES", accent: "#10B981", headerBg: "#D1FAE5", headerText: "#065F46", emoji: "✅" },
+  { key: "new", title: "AGUARDANDO", accent: "#F59E0B", headerBg: "#F59E0B", headerText: "#1a1a1a", emoji: "🟡" },
+  { key: "preparing", title: "EM PREPARO", accent: "#F97316", headerBg: "#F97316", headerText: "#1a1a1a", emoji: "🟠" },
+  { key: "done", title: "ENTREGUES", accent: "#10B981", headerBg: "#10B981", headerText: "#052e1b", emoji: "✅" },
 ];
 
 function shortOrderId(s: string): string {
@@ -245,12 +245,13 @@ function OrdersKanban() {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#F5F5F5" }}>
+    <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#0B0F17" }}>
       <header
-        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-6 py-4"
+        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 px-6 py-4"
+        style={{ background: "#111827" }}
       >
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black" style={{ color: "#1a1a1a" }}>
+          <h1 className="text-2xl font-black" style={{ color: "#F9FAFB" }}>
             Pedidos ao Vivo
           </h1>
           <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
@@ -260,7 +261,7 @@ function OrdersKanban() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-white/10 bg-[#1F2937] px-3 py-1.5 text-sm font-medium text-gray-100 focus:border-blue-500 focus:outline-none"
           />
           <button
             onClick={() => setSelectedDate(todayStr())}
@@ -270,12 +271,12 @@ function OrdersKanban() {
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#6B7280" }}>
+          <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#9CA3AF" }}>
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
           <button
             onClick={load}
-            className="rounded-lg bg-gray-100 p-2 text-gray-700 hover:bg-gray-200"
+            className="rounded-lg bg-white/10 p-2 text-gray-100 hover:bg-white/20"
             aria-label="Atualizar"
           >
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
@@ -354,9 +355,10 @@ function Column({
       className="flex min-w-0 flex-col p-3"
       style={{
         maxHeight: "calc(100vh - 8rem)",
-        background: "#EFEFEF",
+        background: "#111827",
         borderRadius: 16,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
+        border: "1px solid rgba(255,255,255,0.06)",
       }}
     >
       <div
@@ -365,7 +367,7 @@ function Column({
       >
         <div className="flex items-center gap-2">
           <span className="text-2xl">{col.emoji}</span>
-          <h2 className="text-sm font-black tracking-wider">{col.title}</h2>
+          <h2 className="text-base font-black tracking-widest">{col.title}</h2>
         </div>
         <span
           className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold"
@@ -376,7 +378,7 @@ function Column({
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ rowGap: 12 }}>
         {orders.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-400">
+          <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-sm text-gray-500">
             Nenhum pedido
           </div>
         ) : (
@@ -430,81 +432,75 @@ function OrderCard({
   const showAddress = show(kdsCfg, "delivery_address") && !!order.delivery_address;
   const showSubs = show(kdsCfg, "item_subitems") &&
     order.items.some((it) => (it.sub_item_list ?? []).length > 0);
-  const hasDetails = showAddress || showSubs;
+  const hasDetails = showSubs;
+  const typeRaw = String(order.order_type || order.delivery_type || "").toLowerCase();
+  const isTakeout = typeRaw.includes("take") || typeRaw.includes("retir");
 
   return (
     <div
-      className="w-full bg-white"
+      className="w-full"
       style={{
-        borderLeft: `4px solid ${border}`,
-        color: "#1a1a1a",
-        borderRadius: 12,
-        padding: 12,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+        background: "#1F2937",
+        color: "#F9FAFB",
+        borderRadius: 16,
+        padding: 16,
+        borderLeft: `6px solid ${border}`,
+        boxShadow: urgent
+          ? "0 0 0 2px rgba(239,68,68,0.35), 0 8px 24px rgba(0,0,0,0.5)"
+          : "0 6px 20px rgba(0,0,0,0.45)",
       }}
     >
-      {/* Topo: cliente + horário */}
-      <div className="flex items-start justify-between gap-2">
+      {/* Topo: cliente + selo plataforma + horário */}
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {show(kdsCfg, "platform_badge") && (
               <span
-              className="rounded-full px-2 py-0.5 text-[9px] font-bold text-black"
-              style={{ background: border }}
-            >
-              {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
+                className="rounded-md px-2 py-1 text-[11px] font-black tracking-wider text-black"
+                style={{ background: border }}
+              >
+                {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
               </span>
             )}
             {show(kdsCfg, "customer_name") && (
-              <span className="truncate font-bold" style={{ fontSize: 15, color: "#1a1a1a" }}>
+              <span
+                className="truncate font-black"
+                style={{ fontSize: 22, color: "#F9FAFB", lineHeight: 1.1 }}
+              >
                 {order.customer_name ?? "Cliente"}
               </span>
             )}
           </div>
           {show(kdsCfg, "order_number") && (
-            <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
+            <div
+              className="mt-2 font-black tabular-nums"
+              style={{ fontSize: 28, color: "#FBBF24", letterSpacing: 1 }}
+            >
               #{shortOrderId(order.platform_order_id || order.id)}
             </div>
           )}
           {show(kdsCfg, "customer_phone") && order.customer_phone && (
-            <div className="mt-0.5 text-[11px]" style={{ color: "#6B7280" }}>
+            <div className="mt-1 text-sm" style={{ color: "#D1D5DB" }}>
               📞 {order.customer_phone}
-            </div>
-          )}
-          {show(kdsCfg, "order_type") && (order.order_type || order.delivery_type) && (
-            <div className="mt-1">
-              <span
-                className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={{ background: "#E0F2FE", color: "#075985" }}
-              >
-                {String(order.order_type || order.delivery_type)
-                  .toLowerCase()
-                  .includes("take") ||
-                String(order.order_type || order.delivery_type)
-                  .toLowerCase()
-                  .includes("retir")
-                  ? "Retirada"
-                  : "Entrega"}
-              </span>
-            </div>
-          )}
-          {show(kdsCfg, "payment_method") && order.payment_method && (
-            <div className="mt-1 text-[11px]" style={{ color: "#6B7280" }}>
-              💳 {order.payment_method}
-              {order.payment_when ? ` · ${order.payment_when}` : ""}
             </div>
           )}
         </div>
         <div className="text-right">
           {show(kdsCfg, "order_time") && (
-            <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
+            <div
+              className="font-mono font-black tabular-nums"
+              style={{ fontSize: 26, color: "#F9FAFB", lineHeight: 1 }}
+            >
               {formatHHmm(order.created_at)}
             </div>
           )}
           {show(kdsCfg, "order_elapsed") && (
             <div
-              className="font-semibold tabular-nums"
-              style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
+              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              style={{
+                color: urgent ? "#fff" : "#F9FAFB",
+                background: urgent ? "#DC2626" : "rgba(255,255,255,0.08)",
+              }}
             >
               há {mins} min
             </div>
@@ -512,19 +508,49 @@ function OrderCard({
         </div>
       </div>
 
-      {/* Itens compactos com foto */}
-      <div className="mt-3 space-y-2">
+      {/* Chips: tipo + pagamento */}
+      {(show(kdsCfg, "order_type") || show(kdsCfg, "payment_method")) && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {show(kdsCfg, "order_type") && (order.order_type || order.delivery_type) && (
+            <span
+              className="rounded-full px-3 py-1 text-xs font-bold"
+              style={{
+                background: isTakeout ? "#7C3AED" : "#2563EB",
+                color: "#fff",
+              }}
+            >
+              {isTakeout ? "🏃 Retirada" : "🛵 Entrega"}
+            </span>
+          )}
+          {show(kdsCfg, "payment_method") && order.payment_method && (
+            <span
+              className="rounded-full px-3 py-1 text-xs font-bold"
+              style={{ background: "rgba(255,255,255,0.08)", color: "#E5E7EB" }}
+            >
+              💳 {order.payment_method}
+              {order.payment_when ? ` · ${order.payment_when}` : ""}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Itens grandes */}
+      <div className="mt-4 space-y-3 rounded-xl p-3" style={{ background: "rgba(0,0,0,0.25)" }}>
         {order.items.map((it, idx) => (
-          <ItemRow key={idx} item={it} showSubs={expanded && show(kdsCfg, "item_subitems")} kdsCfg={kdsCfg} />
+          <ItemRow
+            key={idx}
+            item={it}
+            showSubs={expanded && show(kdsCfg, "item_subitems")}
+            kdsCfg={kdsCfg}
+          />
         ))}
       </div>
 
-      {/* Ver mais: endereço + subitens escondidos */}
       {hasDetails && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline"
+          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-400 hover:underline"
         >
           {expanded ? (
             <>
@@ -532,28 +558,37 @@ function OrderCard({
             </>
           ) : (
             <>
-              <ChevronDown className="h-3 w-3" /> ver mais
+              <ChevronDown className="h-3 w-3" /> ver complementos
             </>
           )}
         </button>
       )}
-      {expanded && showAddress && (
-        <div className="mt-2 rounded-md bg-gray-50 p-2 text-[12px]" style={{ color: "#4B5563" }}>
-          <span className="font-bold">Endereço:</span> {order.delivery_address}
-        </div>
-      )}
 
-      {show(kdsCfg, "total_price") && (
+      {/* Rodapé: endereço + total */}
+      {(showAddress || show(kdsCfg, "total_price")) && (
         <div
-          className="mt-3 flex items-center justify-between pt-2"
-          style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
+          className="mt-4 space-y-2 pt-3"
+          style={{ borderTop: "1px dashed rgba(255,255,255,0.15)" }}
         >
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
-            Total
-          </span>
-          <span className="font-bold" style={{ fontSize: 18, color: "#1a1a1a" }}>
-            {centsToBRL(subtotal)}
-          </span>
+          {showAddress && (
+            <div className="text-sm leading-snug" style={{ color: "#E5E7EB" }}>
+              <span className="font-black" style={{ color: "#F9FAFB" }}>📍 </span>
+              {order.delivery_address}
+            </div>
+          )}
+          {show(kdsCfg, "total_price") && (
+            <div className="flex items-center justify-between">
+              <span
+                className="text-xs font-black uppercase tracking-widest"
+                style={{ color: "#9CA3AF" }}
+              >
+                Total
+              </span>
+              <span className="font-black tabular-nums" style={{ fontSize: 24, color: "#4ADE80" }}>
+                {centsToBRL(subtotal)}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -641,12 +676,25 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
   const showPrice = show(kdsCfg, "item_price");
   const hasImg = showImage && !!item.image && !broken;
   return (
-    <div className="text-sm">
+    <div>
       <div className="flex items-center gap-3">
+        {showQty && (
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg font-black tabular-nums"
+            style={{
+              background: "#FBBF24",
+              color: "#1a1a1a",
+              fontSize: 26,
+              lineHeight: 1,
+            }}
+          >
+            {String(item.amount).padStart(2, "0")}
+          </div>
+        )}
         {showImage && (
           <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100"
-            style={{ border: "1px solid #E5E7EB" }}
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)" }}
           >
             {hasImg ? (
               <img
@@ -657,25 +705,28 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
                 loading="lazy"
               />
             ) : (
-              <ImageIcon className="h-5 w-5 text-gray-400" />
+              <ImageIcon className="h-6 w-6 text-gray-500" />
             )}
           </div>
         )}
-        <div className="min-w-0 flex-1" style={{ color: "#1a1a1a" }}>
-          <div className="font-bold leading-tight" style={{ fontSize: 14 }}>
-            {showQty && <span style={{ color: "#2563EB" }}>{item.amount}x</span>}
-            {showQty && showName ? " " : ""}
-            {showName && item.name}
-          </div>
+        <div className="min-w-0 flex-1">
+          {showName && (
+            <div
+              className="font-black leading-tight"
+              style={{ fontSize: 17, color: "#F9FAFB" }}
+            >
+              {item.name}
+            </div>
+          )}
         </div>
         {showPrice && item.total_price > 0 && (
-          <div className="shrink-0 text-[13px] font-bold" style={{ color: "#16A34A" }}>
+          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#4ADE80" }}>
             {centsToBRL(item.total_price)}
           </div>
         )}
       </div>
       {showSubs && item.sub_item_list && item.sub_item_list.length > 0 && (
-        <ul className="ml-15 mt-1 space-y-0.5" style={{ marginLeft: 60 }}>
+        <ul className="mt-2 space-y-1" style={{ marginLeft: 68 }}>
           {item.sub_item_list.map((s, i) => (
             <SubItem key={i} sub={s} />
           ))}
@@ -688,12 +739,12 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
 function SubItem({ sub }: { sub: OrderSubItem }) {
   const price = sub.total_price || 0;
   return (
-    <li className="flex justify-between" style={{ fontSize: 13, color: "#6B7280" }}>
+    <li className="flex justify-between" style={{ fontSize: 13, color: "#D1D5DB" }}>
       <span>
-        <span style={{ color: "#9CA3AF" }}>•</span> {sub.name}
+        <span style={{ color: "#6B7280" }}>•</span> {sub.name}
       </span>
       {price > 0 && (
-        <span className="font-semibold" style={{ color: "#16A34A" }}>
+        <span className="font-bold" style={{ color: "#4ADE80" }}>
           +{centsToBRL(price)}
         </span>
       )}
