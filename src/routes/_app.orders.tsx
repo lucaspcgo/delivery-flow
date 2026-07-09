@@ -245,12 +245,13 @@ function OrdersKanban() {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#F5F5F5" }}>
+    <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#0B0F17" }}>
       <header
-        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-6 py-4"
+        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 px-6 py-4"
+        style={{ background: "#111827" }}
       >
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black" style={{ color: "#1a1a1a" }}>
+          <h1 className="text-2xl font-black" style={{ color: "#F9FAFB" }}>
             Pedidos ao Vivo
           </h1>
           <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
@@ -260,7 +261,7 @@ function OrdersKanban() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-white/10 bg-[#1F2937] px-3 py-1.5 text-sm font-medium text-gray-100 focus:border-blue-500 focus:outline-none"
           />
           <button
             onClick={() => setSelectedDate(todayStr())}
@@ -270,12 +271,12 @@ function OrdersKanban() {
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#6B7280" }}>
+          <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#9CA3AF" }}>
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
           <button
             onClick={load}
-            className="rounded-lg bg-gray-100 p-2 text-gray-700 hover:bg-gray-200"
+            className="rounded-lg bg-white/10 p-2 text-gray-100 hover:bg-white/20"
             aria-label="Atualizar"
           >
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
