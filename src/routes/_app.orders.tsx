@@ -429,14 +429,15 @@ function OrderCard({
     <div
       className="w-full"
       style={{
-        background: "#1F2937",
-        color: "#F9FAFB",
+        background: "var(--card)",
+        color: "var(--card-foreground)",
         borderRadius: 16,
         padding: 16,
         borderLeft: `6px solid ${border}`,
         boxShadow: urgent
-          ? "0 0 0 2px rgba(239,68,68,0.35), 0 8px 24px rgba(0,0,0,0.5)"
-          : "0 6px 20px rgba(0,0,0,0.45)",
+          ? "0 0 0 2px rgba(239,68,68,0.4), 0 4px 12px rgba(0,0,0,0.08)"
+          : "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+        border: "1px solid var(--border)",
       }}
     >
       {/* Topo: cliente + selo plataforma + horário */}
@@ -454,7 +455,7 @@ function OrderCard({
             {show(kdsCfg, "customer_name") && (
               <span
                 className="truncate font-black"
-                style={{ fontSize: 22, color: "#F9FAFB", lineHeight: 1.1 }}
+                style={{ fontSize: 22, lineHeight: 1.1 }}
               >
                 {order.customer_name ?? "Cliente"}
               </span>
@@ -463,13 +464,13 @@ function OrderCard({
           {show(kdsCfg, "order_number") && (
             <div
               className="mt-2 font-black tabular-nums"
-              style={{ fontSize: 28, color: "#FBBF24", letterSpacing: 1 }}
+              style={{ fontSize: 28, color: "#B45309", letterSpacing: 1 }}
             >
               #{shortOrderId(order.platform_order_id || order.id)}
             </div>
           )}
           {show(kdsCfg, "customer_phone") && order.customer_phone && (
-            <div className="mt-1 text-sm" style={{ color: "#D1D5DB" }}>
+            <div className="mt-1 text-sm text-muted-foreground">
               📞 {order.customer_phone}
             </div>
           )}
@@ -478,7 +479,7 @@ function OrderCard({
           {show(kdsCfg, "order_time") && (
             <div
               className="font-mono font-black tabular-nums"
-              style={{ fontSize: 26, color: "#F9FAFB", lineHeight: 1 }}
+              style={{ fontSize: 26, lineHeight: 1 }}
             >
               {formatHHmm(order.created_at)}
             </div>
@@ -487,8 +488,8 @@ function OrderCard({
             <div
               className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
               style={{
-                color: urgent ? "#fff" : "#F9FAFB",
-                background: urgent ? "#DC2626" : "rgba(255,255,255,0.08)",
+                color: urgent ? "#fff" : "var(--foreground)",
+                background: urgent ? "#DC2626" : "var(--muted)",
               }}
             >
               há {mins} min
@@ -514,7 +515,7 @@ function OrderCard({
           {show(kdsCfg, "payment_method") && order.payment_method && (
             <span
               className="rounded-full px-3 py-1 text-xs font-bold"
-              style={{ background: "rgba(255,255,255,0.08)", color: "#E5E7EB" }}
+              style={{ background: "var(--muted)", color: "var(--foreground)" }}
             >
               💳 {order.payment_method}
               {order.payment_when ? ` · ${order.payment_when}` : ""}
@@ -524,7 +525,7 @@ function OrderCard({
       )}
 
       {/* Itens grandes */}
-      <div className="mt-4 space-y-3 rounded-xl p-3" style={{ background: "rgba(0,0,0,0.25)" }}>
+      <div className="mt-4 space-y-3 rounded-xl bg-muted/60 p-3">
         {order.items.map((it, idx) => (
           <ItemRow
             key={idx}
@@ -539,7 +540,7 @@ function OrderCard({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-400 hover:underline"
+          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
         >
           {expanded ? (
             <>
@@ -557,23 +558,22 @@ function OrderCard({
       {(showAddress || show(kdsCfg, "total_price")) && (
         <div
           className="mt-4 space-y-2 pt-3"
-          style={{ borderTop: "1px dashed rgba(255,255,255,0.15)" }}
+          style={{ borderTop: "1px dashed var(--border)" }}
         >
           {showAddress && (
-            <div className="text-sm leading-snug" style={{ color: "#E5E7EB" }}>
-              <span className="font-black" style={{ color: "#F9FAFB" }}>📍 </span>
+            <div className="text-sm leading-snug text-foreground/80">
+              <span className="font-black text-foreground">📍 </span>
               {order.delivery_address}
             </div>
           )}
           {show(kdsCfg, "total_price") && (
             <div className="flex items-center justify-between">
               <span
-                className="text-xs font-black uppercase tracking-widest"
-                style={{ color: "#9CA3AF" }}
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground"
               >
                 Total
               </span>
-              <span className="font-black tabular-nums" style={{ fontSize: 24, color: "#4ADE80" }}>
+              <span className="font-black tabular-nums" style={{ fontSize: 24, color: "#16A34A" }}>
                 {centsToBRL(subtotal)}
               </span>
             </div>
