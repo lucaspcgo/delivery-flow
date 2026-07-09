@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, MapPin, Clock, Store } from "lucide-react";
+import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store } from "lucide-react";
 import { toast } from "sonner";
 import { getAllOrders, confirmOrder, cancelOrder, readyOrder, getKdsSettings } from "@/lib/api";
 import {
@@ -418,7 +418,6 @@ function OrderCard({
     return acc + (it.total_price || 0) + subs;
   }, 0);
   const [expanded, setExpanded] = useState(false);
-  const showAddress = show(kdsCfg, "delivery_address") && !!order.delivery_address;
   const showSubs = show(kdsCfg, "item_subitems") &&
     order.items.some((it) => (it.sub_item_list ?? []).length > 0);
   const hasDetails = showSubs;
