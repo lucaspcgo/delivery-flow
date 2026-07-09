@@ -246,6 +246,19 @@ function OrdersKanban() {
     }
   };
 
+  const handleDispatch = async (order: ApiOrder) => {
+    setBusyId(order.id);
+    try {
+      await dispatchOrder(order.platform, order.platform_order_id || order.id);
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} saiu para entrega!`);
+      await load();
+    } catch {
+      toast.error("Erro ao despachar pedido. Tente novamente.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const handleRefuseConfirm = async () => {
     const order = refuseTarget;
     if (!order) return;
