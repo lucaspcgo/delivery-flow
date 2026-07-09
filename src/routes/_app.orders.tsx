@@ -852,3 +852,115 @@ function SubItem({ sub }: { sub: OrderSubItem }) {
     </li>
   );
 }
+
+function ColumnsConfigDialog({
+  open,
+  onOpenChange,
+  columns,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  columns: KdsColumn[];
+  onSaved: (next: KdsColumn[]) => void;
+}) {
+  const [draft, setDraft] = useState<KdsColumn[]>(columns);
+  const [saving, setSaving] = useState(false);
+  const dragIdx = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (open) setDraft(columns.map((c) => ({ ...c })));
+  }, [open, columns]);
+
+  const move = (from: number, to: number) => {
+    if (from === to || to < 0 || to >= draft.length) return;
+    const next = [...draft];
+    const [it] = next.splice(from, 1);
+    next.splice(to, 0, it);
+    setDraft(next.map((c, i) => ({ ...c, order: i })));
+  };
+
+  const toggle = (idx: number, visible: boolean) => {
+    setDraft((prev) => prev.map((c, i) => (i === idx ? { ...c, visible } : c)));
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const ordered = draft.map((c, i) => ({ ...c, order: i }));
+      await updateKdsColumns(ordered);
+      toast.success("Colunas atualizadas");
+      onSaved(ordered);
+    } catch {
+      toast.error("Não foi possível salvar as colunas");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Configurar colunas do KDS</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Desligue colunas que você não quer ver e arraste para reordenar.
+        </p>
+        <ul className="mt-2 space-y-1">
+          {draft.map((c, idx) => (
+            <li
+              key={c.key}
+              draggable
+              onDragStart={() => (dragIdx.current = idx)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => {
+                if (dragIdx.current !== null) move(dragIdx.current, idx);
+                dragIdx.current = null;
+              }}
+              className="flex items-center gap-2 rounded-md border bg-background px-2 py-2"
+            >
+              <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
+              <Checkbox
+                checked={c.visible}
+                onCheckedChange={(v) => toggle(idx, v === true)}
+                aria-label={`Mostrar ${c.label}`}
+              />
+              <span className="flex-1 truncate text-sm font-medium">{c.label}</span>
+              <span className="font-mono text-[10px] text-muted-foreground">{c.key}</span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => move(idx, idx - 1)}
+                  disabled={idx === 0}
+                  className="rounded border px-1 text-xs disabled:opacity-30"
+                  aria-label="Mover para cima"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(idx, idx + 1)}
+                  disabled={idx === draft.length - 1}
+                  className="rounded border px-1 text-xs disabled:opacity-30"
+                  aria-label="Mover para baixo"
+                >
+                  ↓
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
