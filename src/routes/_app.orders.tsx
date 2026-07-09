@@ -676,12 +676,25 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
   const showPrice = show(kdsCfg, "item_price");
   const hasImg = showImage && !!item.image && !broken;
   return (
-    <div className="text-sm">
+    <div>
       <div className="flex items-center gap-3">
+        {showQty && (
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg font-black tabular-nums"
+            style={{
+              background: "#FBBF24",
+              color: "#1a1a1a",
+              fontSize: 26,
+              lineHeight: 1,
+            }}
+          >
+            {String(item.amount).padStart(2, "0")}
+          </div>
+        )}
         {showImage && (
           <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100"
-            style={{ border: "1px solid #E5E7EB" }}
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)" }}
           >
             {hasImg ? (
               <img
@@ -692,25 +705,28 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
                 loading="lazy"
               />
             ) : (
-              <ImageIcon className="h-5 w-5 text-gray-400" />
+              <ImageIcon className="h-6 w-6 text-gray-500" />
             )}
           </div>
         )}
-        <div className="min-w-0 flex-1" style={{ color: "#1a1a1a" }}>
-          <div className="font-bold leading-tight" style={{ fontSize: 14 }}>
-            {showQty && <span style={{ color: "#2563EB" }}>{item.amount}x</span>}
-            {showQty && showName ? " " : ""}
-            {showName && item.name}
-          </div>
+        <div className="min-w-0 flex-1">
+          {showName && (
+            <div
+              className="font-black leading-tight"
+              style={{ fontSize: 17, color: "#F9FAFB" }}
+            >
+              {item.name}
+            </div>
+          )}
         </div>
         {showPrice && item.total_price > 0 && (
-          <div className="shrink-0 text-[13px] font-bold" style={{ color: "#16A34A" }}>
+          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#4ADE80" }}>
             {centsToBRL(item.total_price)}
           </div>
         )}
       </div>
       {showSubs && item.sub_item_list && item.sub_item_list.length > 0 && (
-        <ul className="ml-15 mt-1 space-y-0.5" style={{ marginLeft: 60 }}>
+        <ul className="mt-2 space-y-1" style={{ marginLeft: 68 }}>
           {item.sub_item_list.map((s, i) => (
             <SubItem key={i} sub={s} />
           ))}
@@ -723,12 +739,12 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
 function SubItem({ sub }: { sub: OrderSubItem }) {
   const price = sub.total_price || 0;
   return (
-    <li className="flex justify-between" style={{ fontSize: 13, color: "#6B7280" }}>
+    <li className="flex justify-between" style={{ fontSize: 13, color: "#D1D5DB" }}>
       <span>
-        <span style={{ color: "#9CA3AF" }}>•</span> {sub.name}
+        <span style={{ color: "#6B7280" }}>•</span> {sub.name}
       </span>
       {price > 0 && (
-        <span className="font-semibold" style={{ color: "#16A34A" }}>
+        <span className="font-bold" style={{ color: "#4ADE80" }}>
           +{centsToBRL(price)}
         </span>
       )}
