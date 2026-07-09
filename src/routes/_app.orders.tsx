@@ -78,7 +78,9 @@ const COLUMN_STYLE: Record<string, { bg: string; text: string; emoji: string }> 
   dispatched: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
   delivered:  { bg: "#10B981", text: "#052e1b", emoji: "✅" },
   cancelled:  { bg: "#DC2626", text: "#fff",     emoji: "❌" },
-  outros:     { bg: "#64748B", text: "#fff",     emoji: "📦" },
+  pendente:   { bg: "#F59E0B", text: "#1a1a1a", emoji: "🟡" },
+  aguardando: { bg: "#F97316", text: "#1a1a1a", emoji: "🟠" },
+  entregando: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
 };
 function styleFor(key: string) {
   return COLUMN_STYLE[key] ?? { bg: "#64748B", text: "#fff", emoji: "📋" };
