@@ -15,6 +15,13 @@ export interface OrderItem {
   sub_item_list?: OrderSubItem[];
 }
 
+export type OrderAction = "confirm" | "ready" | "dispatch" | "cancel";
+
+export interface OrderAvailableAction {
+  action: OrderAction | string;
+  label: string;
+}
+
 export interface ApiOrder {
   id: string;
   platform: OrderPlatform;
@@ -41,4 +48,5 @@ export interface ApiOrder {
   neighborhood?: string | null;
   note?: string | null;
   kds_stage?: string | null;
+  available_actions?: OrderAvailableAction[];
 }

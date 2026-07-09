@@ -758,96 +758,77 @@ function StageActions({
   onDispatch: (o: ApiOrder) => void | Promise<void>;
   onRefuse: (o: ApiOrder) => void;
 }) {
-  const stage = String(order.kds_stage ?? "").toLowerCase();
-  const isPending = ["pendente", "pending", "new"].includes(stage);
-  const isAccepted = ["aceito", "accepted", "confirmed", "preparing"].includes(stage);
-  const isWaiting = ["aguardando", "ready", "awaiting_dispatch", "waiting"].includes(stage);
-  const deliveryHint = String(order.delivery_type ?? "").toLowerCase();
-  const isIfoodOwnDelivery =
-    order.platform === "ifood" &&
-    /(merchant|própr|propria|own|estabelec)/.test(deliveryHint);
-  const canDispatch = isWaiting && isIfoodOwnDelivery;
+  const actions = Array.isArray(order.available_actions) ? order.available_actions : [];
+  const [running, setRunning] = useState<string | null>(null);
+  const anyBusy = busy || running !== null;
 
-  // Estados terminais / em rota (avançam via plataforma): sem botões de ação.
-  const isEnRouteOrTerminal = [
-    "entregando", "dispatched",
-    "no_destino", "arrived", "arriving",
-    "entregue", "delivered",
-    "cancelado", "cancelled", "canceled",
-  ].includes(stage);
+  if (actions.length === 0) return null;
 
-  const primary = isPending
-    ? { kind: "accept" as const, label: "ACEITAR", icon: <Check className="h-4 w-4" />, bg: "#16A34A", run: () => onAccept(order) }
-    : isAccepted
-    ? { kind: "ready" as const, label: "PRONTO", icon: <ChefHat className="h-4 w-4" />, bg: "#2196F3", run: () => onReady(order) }
-    : canDispatch
-    ? { kind: "dispatch" as const, label: "SAIU P/ ENTREGA", icon: <Bike className="h-4 w-4" />, bg: "#8B5CF6", run: () => onDispatch(order) }
-    : null;
-
-  // "Cancelar" só até 'aguardando'. Não em rota / terminais.
-  const showCancel = !isEnRouteOrTerminal && (isPending || isAccepted || isWaiting);
-
-  const [action, setAction] = useState<null | "accept" | "ready" | "dispatch">(null);
-  const anyBusy = busy || action !== null;
-
-  const handlePrimary = async () => {
-    if (!primary || anyBusy) return;
-    setAction(primary.kind);
-    try {
-      await primary.run();
-    } finally {
-      setAction(null);
+  const styleFor = (action: string): { bg: string; icon: React.ReactNode } => {
+    switch (action) {
+      case "confirm": return { bg: "#16A34A", icon: <Check className="h-4 w-4" /> };
+      case "ready":   return { bg: "#2196F3", icon: <ChefHat className="h-4 w-4" /> };
+      case "dispatch":return { bg: "#8B5CF6", icon: <Bike className="h-4 w-4" /> };
+      case "cancel":  return { bg: "#DC2626", icon: <X className="h-4 w-4" /> };
+      default:        return { bg: "#475569", icon: null };
     }
   };
 
-  if (!primary && !showCancel) return null;
+  const runAction = async (action: string) => {
+    if (anyBusy) return;
+    // "cancel" passa pelo modal de confirmação (sem POST direto aqui)
+    if (action === "cancel") {
+      onRefuse(order);
+      return;
+    }
+    setRunning(action);
+    try {
+      if (action === "confirm") await onAccept(order);
+      else if (action === "ready") await onReady(order);
+      else if (action === "dispatch") await onDispatch(order);
+    } finally {
+      setRunning(null);
+    }
+  };
+
+  const cols = Math.min(actions.length, 2);
 
   return (
-    <div className={`grid ${primary && showCancel ? "grid-cols-2" : "grid-cols-1"} gap-2 p-4 pt-3`}>
-      {primary && (
-        <button
-          onClick={handlePrimary}
-          disabled={anyBusy}
-          className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
-          style={{
-            background: primary.bg,
-            height: 40,
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 700,
-            border: "none",
-            opacity: anyBusy ? 0.7 : 1,
-          }}
-        >
-          {action === primary.kind ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
-            </>
-          ) : (
-            <>
-              {primary.icon} {primary.label}
-            </>
-          )}
-        </button>
-      )}
-      {showCancel && (
-        <button
-          onClick={() => onRefuse(order)}
-          disabled={anyBusy}
-          className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
-          style={{
-            background: "#DC2626",
-            height: 40,
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 700,
-            border: "none",
-            opacity: anyBusy ? 0.7 : 1,
-          }}
-        >
-          <X className="h-4 w-4" /> CANCELAR
-        </button>
-      )}
+    <div
+      className="grid gap-2 p-4 pt-3"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {actions.map((a) => {
+        const s = styleFor(a.action);
+        const isRunning = running === a.action;
+        return (
+          <button
+            key={a.action}
+            onClick={() => runAction(a.action)}
+            disabled={anyBusy}
+            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+            style={{
+              background: s.bg,
+              height: 40,
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              border: "none",
+              opacity: anyBusy ? 0.7 : 1,
+            }}
+          >
+            {isRunning ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
+              </>
+            ) : (
+              <>
+                {s.icon} <span className="uppercase tracking-wider">{a.label}</span>
+              </>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
