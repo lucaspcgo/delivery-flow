@@ -30,9 +30,11 @@ const items = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [user, setUser] = useState<AuthUser | null>(() => getUser());
+  const [authLoaded, setAuthLoaded] = useState(false);
   useEffect(() => {
     const sync = () => setUser(getUser());
     sync();
+    setAuthLoaded(true);
     window.addEventListener("auth-user-updated", sync);
     window.addEventListener("storage", sync);
     return () => {
@@ -107,6 +109,7 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                {authLoaded && (user as { is_admin?: boolean } | null)?.is_admin === true && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
@@ -119,6 +122,7 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                )}
                 </>
               )}
             </SidebarMenu>
