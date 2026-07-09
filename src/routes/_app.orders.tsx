@@ -103,6 +103,25 @@ function minutesSince(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - t) / 60000));
 }
 
+function formatElapsed(iso: string, nowMs: number): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "--:--";
+  const s = Math.max(0, Math.floor((nowMs - t) / 1000));
+  if (s < 3600) {
+    const mm = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+  return `há ${Math.floor(s / 60)} min`;
+}
+
+function formatSignedMMSS(totalSec: number): string {
+  const abs = Math.abs(totalSec);
+  const mm = String(Math.floor(abs / 60)).padStart(2, "0");
+  const ss = String(abs % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
 function formatHHmm(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "--:--";
