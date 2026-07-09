@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Copy, Loader2, RefreshCw, Search } from "lucide-react";
+import { Copy, ExternalLink, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_app/buscar-loja")({
   component: BuscarLojaPage,
@@ -41,6 +41,13 @@ interface StoreLookupResponse {
   name?: string | null;
   live_name?: string | null;
   status?: string | null;
+  [k: string]: unknown;
+}
+
+interface CheckStoreResponse {
+  has_access?: boolean;
+  name?: string | null;
+  already_connected?: boolean;
   [k: string]: unknown;
 }
 
@@ -63,6 +70,14 @@ function BuscarLojaPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [result, setResult] = useState<StoreLookupResponse | null>(null);
   const [searched, setSearched] = useState(false);
+
+  // 99Food helpers
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [checkId, setCheckId] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const [checkResult, setCheckResult] = useState<CheckStoreResponse | null>(null);
+  const [connecting, setConnecting] = useState(false);
 
   const loadStores = useCallback(async () => {
     setLoading(true);
@@ -132,6 +147,89 @@ function BuscarLojaPage() {
     result.found === false &&
     !result.live_name;
 
+  async function handleOpenPanel() {
+    setPanelLoading(true);
+    try {
+      const data = await http.get<{ url?: string }>(
+        "/tools/99food/panel-url",
+        { silent: true },
+      );
+      if (data?.url) {
+        window.open(data.url, "_blank", "noopener,noreferrer");
+      } else {
+        toast.error("URL do painel não disponível");
+      }
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Falha ao obter URL do painel";
+      toast.error(msg);
+    } finally {
+      setPanelLoading(false);
+    }
+  }
+
+  async function handleCheckStore(e: React.FormEvent) {
+    e.preventDefault();
+    const id = checkId.trim();
+    if (!id) {
+      toast.error("Informe o ID da loja");
+      return;
+    }
+    setChecking(true);
+    setCheckError(null);
+    setCheckResult(null);
+    try {
+      const data = await http.post<CheckStoreResponse>(
+        "/tools/99food/check-store",
+        { store_id: id },
+        { silent: true },
+      );
+      setCheckResult(data ?? {});
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Falha ao verificar loja";
+      setCheckError(msg);
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  async function handleConnectShop() {
+    const id = checkId.trim();
+    if (!id) return;
+    setConnecting(true);
+    try {
+      await http.post(
+        "/integrations/99food/connect-shop",
+        { shop_id: id },
+        { silent: true },
+      );
+      toast.success("Loja conectada!");
+      setCheckResult((prev) =>
+        prev ? { ...prev, already_connected: true } : prev,
+      );
+      loadStores();
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Falha ao conectar loja";
+      toast.error(msg);
+    } finally {
+      setConnecting(false);
+    }
+  }
+
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader
@@ -155,6 +253,108 @@ function BuscarLojaPage() {
       />
 
       <div className="flex flex-col gap-6 p-4 sm:p-8">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-1">
+              <h2 className="text-base font-semibold">Conectar loja 99Food</h2>
+              <p className="text-sm text-muted-foreground">
+                Faça login e copie o ID da sua loja, depois verifique e autorize
+                para automação.
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div>
+              <Button
+                variant="outline"
+                onClick={handleOpenPanel}
+                disabled={panelLoading}
+              >
+                {panelLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                )}
+                Abrir painel 99Food
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Faça login e copie o ID da sua loja.
+              </p>
+            </div>
+
+            <form
+              onSubmit={handleCheckStore}
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            >
+              <div className="flex flex-1 flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  ID da loja
+                </label>
+                <Input
+                  value={checkId}
+                  onChange={(e) => setCheckId(e.target.value)}
+                  placeholder="Ex.: 123456"
+                  disabled={checking}
+                />
+              </div>
+              <Button type="submit" disabled={checking}>
+                {checking ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="mr-2 h-4 w-4" />
+                )}
+                Verificar
+              </Button>
+            </form>
+
+            {checkError && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                {checkError}
+              </div>
+            )}
+
+            {checkResult && !checkError && (
+              <div className="rounded-md border p-4">
+                {checkResult.has_access ? (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-xs font-medium text-muted-foreground">
+                        Loja encontrada
+                      </div>
+                      <div className="mt-1 text-sm font-medium">
+                        {checkResult.name || "—"}
+                      </div>
+                      {checkResult.already_connected && (
+                        <div className="mt-2">
+                          <Badge variant="secondary">Já conectada</Badge>
+                        </div>
+                      )}
+                    </div>
+                    {!checkResult.already_connected && (
+                      <Button
+                        onClick={handleConnectShop}
+                        disabled={connecting}
+                      >
+                        {connecting ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                        )}
+                        Autorizar para automação
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Sem permissão para esta loja. Verifique se o ID está
+                    correto e se você tem acesso a ela no painel 99Food.
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-1">
