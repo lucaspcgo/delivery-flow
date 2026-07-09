@@ -37,12 +37,14 @@ import {
   disconnectPlatform,
   authorizeStore,
   getMeCached,
+  setPlatformAutomation,
   type ApiRestaurant,
   type RestaurantInput,
   type RestaurantPlatform,
   type RestaurantPlatformCode,
   type AuthorizeStoreResponse,
 } from "@/lib/api";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -683,6 +685,50 @@ function PlatformCard({
   });
   const [busy, setBusy] = useState(false);
   const [confirmDisc, setConfirmDisc] = useState(false);
+  const [automation, setAutomation] = useState<boolean>(
+    existing?.automation_enabled ?? false,
+  );
+  const [autoBusy, setAutoBusy] = useState(false);
+
+  useEffect(() => {
+    setAutomation(existing?.automation_enabled ?? false);
+  }, [existing?.automation_enabled]);
+
+  const automationStoreId =
+    code === "ifood"
+      ? existing?.platform_merchant_id ?? ""
+      : code === "99food"
+        ? existing?.app_shop_id ?? ""
+        : existing?.platform_store_id ?? "";
+
+  const handleToggleAutomation = async (next: boolean) => {
+    if (!automationStoreId) {
+      toast.error("ID da loja indisponível para alternar automação");
+      return;
+    }
+    const previous = automation;
+    setAutomation(next);
+    setAutoBusy(true);
+    try {
+      const res = await setPlatformAutomation({
+        platform: code,
+        store_id: automationStoreId,
+        enabled: next,
+      });
+      setAutomation(res.automation_enabled);
+      toast.success(
+        res.automation_enabled
+          ? `Automação ativada em ${title}`
+          : `Automação desativada em ${title}`,
+      );
+      onChanged();
+    } catch {
+      setAutomation(previous);
+      toast.error(`Não foi possível alterar a automação de ${title}`);
+    } finally {
+      setAutoBusy(false);
+    }
+  };
 
   useEffect(() => {
     setValues({
@@ -745,6 +791,27 @@ function PlatformCard({
         )}
       </div>
       <p className="text-xs text-muted-foreground">{hint}</p>
+      {connected && (
+        <div className="flex items-start justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium">Automação</Label>
+              {autoBusy && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Ligado = aceita e prepara pedidos automaticamente
+            </p>
+          </div>
+          <Switch
+            checked={automation}
+            disabled={autoBusy}
+            onCheckedChange={handleToggleAutomation}
+            aria-label={`Automação de ${title}`}
+          />
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map((f) => (
           <Field
