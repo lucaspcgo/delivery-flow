@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { http } from "@/lib/api";
+import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -195,6 +196,14 @@ function DebugCard({ order }: { order: DebugOrder }) {
 }
 
 function DebugPedidosPage() {
+  const navigate = useNavigate();
+  const user = getUser() as { is_admin?: boolean } | null;
+  const isAdmin = user?.is_admin === true;
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [isAdmin, navigate]);
   const [platform, setPlatform] = useState<Platform>("99food");
   const [limit, setLimit] = useState<number>(10);
   const [applied, setApplied] = useState<{ platform: Platform; limit: number }>({
@@ -209,7 +218,14 @@ function DebugPedidosPage() {
         query: { limit: applied.limit },
         silent: true,
       }),
+    enabled: isAdmin,
   });
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">Redirecionando…</div>
+    );
+  }
 
   const apply = () => {
     const clamped = Math.max(1, Math.min(50, Math.floor(limit || 1)));
