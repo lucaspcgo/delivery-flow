@@ -1206,3 +1206,16 @@ export async function fetchKdsColumnsStrict(): Promise<KdsColumn[]> {
   const data = await http.get<KdsSettingsResponse>("/settings/kds");
   return normalizeColumns((data?.config as { columns?: unknown } | undefined)?.columns);
 }
+
+/** Restaura as configurações do KDS ao padrão no backend e retorna o config atualizado. */
+export async function resetKdsSettings(): Promise<KdsSettingsResponse> {
+  const data = await http.post<KdsSettingsResponse>("/settings/kds/reset", {});
+  const available =
+    Array.isArray(data?.available_fields) && data.available_fields.length > 0
+      ? data.available_fields
+      : DEFAULT_KDS_FIELDS;
+  const defaults = buildDefaultKdsConfig(available);
+  const fields = { ...defaults, ...(data?.config?.fields ?? {}) };
+  const columns = normalizeColumns((data?.config as { columns?: unknown } | undefined)?.columns);
+  return { available_fields: available, config: { fields, columns } };
+}
