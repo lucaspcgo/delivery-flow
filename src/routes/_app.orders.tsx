@@ -518,42 +518,11 @@ function OrderCard({
         </div>
       </div>
 
-      {/* Faixa "Promessa" */}
-      {promise && (
-        <div
-          className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2"
-          style={{ background: "#FEF3C7", color: "#78350F" }}
-        >
-          <Clock className="h-4 w-4" />
-          <span className="text-xs font-black uppercase tracking-wider">Promessa:</span>
-          <span className="font-black tabular-nums" style={{ fontSize: 15 }}>
-            {promise}
-          </span>
-        </div>
-      )}
-
       {/* Nome da loja */}
       {order.store_name && (
         <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
           <Store className="h-4 w-4 text-muted-foreground" />
           <span className="truncate">{order.store_name}</span>
-        </div>
-      )}
-
-      {/* Chips: tipo + pagamento */}
-      {(show(kdsCfg, "order_type") || show(kdsCfg, "payment_method")) && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {show(kdsCfg, "order_type") && (order.order_type || order.delivery_type) && (
-            <span
-              className="rounded-full px-3 py-1 text-xs font-bold"
-              style={{
-                background: isTakeout ? "#7C3AED" : "#2563EB",
-                color: "#fff",
-              }}
-            >
-              {isTakeout ? "🏃 Retirada" : "🛵 Entrega"}
-            </span>
-          )}
         </div>
       )}
 
@@ -587,42 +556,58 @@ function OrderCard({
         </button>
       )}
 
-      {/* Endereço em duas linhas (rua / bairro) */}
-      {showAddress && (
-        <div
-          className="mt-4 flex items-start gap-2 pt-3"
-          style={{ borderTop: "1px dashed var(--border)" }}
-        >
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-          <div className="min-w-0 text-sm leading-snug">
-            <div className="truncate font-bold text-foreground">
-              {order.delivery_address}
-            </div>
-            {neighborhood && (
-              <div className="truncate text-muted-foreground">
-                {neighborhood}
-              </div>
-            )}
+      {/* Bloco abaixo dos itens: promessa, tipo, endereço, observação */}
+      <div className="mt-4 space-y-2 pt-3" style={{ borderTop: "1px dashed var(--border)" }}>
+        {promise && (
+          <div
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-black"
+            style={{ background: "#FEF3C7", color: "#78350F" }}
+          >
+            <span>⏱</span>
+            <span className="uppercase tracking-wider">Promessa:</span>
+            <span className="tabular-nums">{promise}</span>
           </div>
-        </div>
-      )}
-
-      {/* Observação do cliente */}
-      {note && (
-        <div
-          className="mt-3 rounded-lg px-3 py-2 text-sm font-bold"
-          style={{
-            background: "#FEF3C7",
-            color: "#78350F",
-            border: "1px solid #FCD34D",
-          }}
-        >
-          <span className="mr-1 font-black uppercase tracking-wider text-[11px]">
-            Obs:
-          </span>
-          <span className="font-semibold">{note}</span>
-        </div>
-      )}
+        )}
+        {(order.order_type || order.delivery_type) && (
+          <div>
+            <span
+              className="inline-block rounded-full px-3 py-1 text-xs font-bold"
+              style={{
+                background: isTakeout ? "#7C3AED" : "#2563EB",
+                color: "#fff",
+              }}
+            >
+              {order.order_type || order.delivery_type}
+            </span>
+          </div>
+        )}
+        {order.delivery_address && (
+          <div className="flex items-start gap-1.5 text-sm leading-snug">
+            <span className="mt-0.5">📍</span>
+            <div className="min-w-0">
+              <div className="font-bold text-foreground break-words">
+                {order.delivery_address}
+              </div>
+              {neighborhood && (
+                <div className="text-muted-foreground">{neighborhood}</div>
+              )}
+            </div>
+          </div>
+        )}
+        {note && (
+          <div
+            className="rounded-lg px-3 py-2 text-sm"
+            style={{
+              background: "#FEF3C7",
+              color: "#78350F",
+              border: "1px solid #FCD34D",
+            }}
+          >
+            <span className="mr-1 font-black">📝 Obs:</span>
+            <span className="font-semibold">{note}</span>
+          </div>
+        )}
+      </div>
 
       {/* Total */}
       {show(kdsCfg, "total_price") && (
