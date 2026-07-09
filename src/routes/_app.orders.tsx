@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, MapPin, Clock, Store } from "lucide-react";
 import { toast } from "sonner";
 import { getAllOrders, confirmOrder, cancelOrder, readyOrder, getKdsSettings } from "@/lib/api";
 import {
@@ -424,6 +424,13 @@ function OrderCard({
   const hasDetails = showSubs;
   const typeRaw = String(order.order_type || order.delivery_type || "").toLowerCase();
   const isTakeout = typeRaw.includes("take") || typeRaw.includes("retir");
+  const promise =
+    order.delivery_promise ||
+    (order.delivery_promise_at ? formatHHmm(order.delivery_promise_at) : null);
+  const km =
+    typeof order.distance_km === "number"
+      ? `${order.distance_km.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`
+      : null;
 
   return (
     <div
@@ -432,7 +439,8 @@ function OrderCard({
         background: "var(--card)",
         color: "var(--card-foreground)",
         borderRadius: 16,
-        padding: 16,
+        padding: 0,
+        overflow: "hidden",
         borderLeft: `6px solid ${border}`,
         boxShadow: urgent
           ? "0 0 0 2px rgba(239,68,68,0.4), 0 4px 12px rgba(0,0,0,0.08)"
@@ -440,10 +448,11 @@ function OrderCard({
         border: "1px solid var(--border)",
       }}
     >
-      {/* Topo: cliente + selo plataforma + horário */}
+      <div className="p-4">
+      {/* Cabeçalho: nome + selo + distância */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {show(kdsCfg, "platform_badge") && (
               <span
                 className="rounded-md px-2 py-1 text-[11px] font-black tracking-wider text-black"
@@ -455,7 +464,7 @@ function OrderCard({
             {show(kdsCfg, "customer_name") && (
               <span
                 className="truncate font-black"
-                style={{ fontSize: 22, lineHeight: 1.1 }}
+                style={{ fontSize: 20, lineHeight: 1.15 }}
               >
                 {order.customer_name ?? "Cliente"}
               </span>
@@ -464,7 +473,7 @@ function OrderCard({
           {show(kdsCfg, "order_number") && (
             <div
               className="mt-2 font-black tabular-nums"
-              style={{ fontSize: 28, color: "#B45309", letterSpacing: 1 }}
+              style={{ fontSize: 24, color: "#B45309", letterSpacing: 1 }}
             >
               #{shortOrderId(order.platform_order_id || order.id)}
             </div>
@@ -475,11 +484,19 @@ function OrderCard({
             </div>
           )}
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
+          {km && (
+            <div
+              className="inline-block rounded-md px-2 py-0.5 text-xs font-black"
+              style={{ background: "var(--muted)", color: "var(--foreground)" }}
+            >
+              {km}
+            </div>
+          )}
           {show(kdsCfg, "order_time") && (
             <div
-              className="font-mono font-black tabular-nums"
-              style={{ fontSize: 26, lineHeight: 1 }}
+              className="mt-1 font-mono font-black tabular-nums"
+              style={{ fontSize: 22, lineHeight: 1 }}
             >
               {formatHHmm(order.created_at)}
             </div>
@@ -498,6 +515,28 @@ function OrderCard({
         </div>
       </div>
 
+      {/* Faixa "Promessa" */}
+      {promise && (
+        <div
+          className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2"
+          style={{ background: "#FEF3C7", color: "#78350F" }}
+        >
+          <Clock className="h-4 w-4" />
+          <span className="text-xs font-black uppercase tracking-wider">Promessa:</span>
+          <span className="font-black tabular-nums" style={{ fontSize: 15 }}>
+            {promise}
+          </span>
+        </div>
+      )}
+
+      {/* Nome da loja */}
+      {order.store_name && (
+        <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
+          <Store className="h-4 w-4 text-muted-foreground" />
+          <span className="truncate">{order.store_name}</span>
+        </div>
+      )}
+
       {/* Chips: tipo + pagamento */}
       {(show(kdsCfg, "order_type") || show(kdsCfg, "payment_method")) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -510,15 +549,6 @@ function OrderCard({
               }}
             >
               {isTakeout ? "🏃 Retirada" : "🛵 Entrega"}
-            </span>
-          )}
-          {show(kdsCfg, "payment_method") && order.payment_method && (
-            <span
-              className="rounded-full px-3 py-1 text-xs font-bold"
-              style={{ background: "var(--muted)", color: "var(--foreground)" }}
-            >
-              💳 {order.payment_method}
-              {order.payment_when ? ` · ${order.payment_when}` : ""}
             </span>
           )}
         </div>
@@ -554,35 +584,62 @@ function OrderCard({
         </button>
       )}
 
-      {/* Rodapé: endereço + total */}
-      {(showAddress || show(kdsCfg, "total_price")) && (
+      {/* Endereço em duas linhas (rua / bairro) */}
+      {showAddress && (
         <div
-          className="mt-4 space-y-2 pt-3"
+          className="mt-4 flex items-start gap-2 pt-3"
           style={{ borderTop: "1px dashed var(--border)" }}
         >
-          {showAddress && (
-            <div className="text-sm leading-snug text-foreground/80">
-              <span className="font-black text-foreground">📍 </span>
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+          <div className="min-w-0 text-sm leading-snug">
+            <div className="truncate font-bold text-foreground">
               {order.delivery_address}
             </div>
-          )}
-          {show(kdsCfg, "total_price") && (
-            <div className="flex items-center justify-between">
-              <span
-                className="text-xs font-black uppercase tracking-widest text-muted-foreground"
-              >
-                Total
-              </span>
-              <span className="font-black tabular-nums" style={{ fontSize: 24, color: "#16A34A" }}>
-                {centsToBRL(subtotal)}
-              </span>
-            </div>
+            {order.delivery_neighborhood && (
+              <div className="truncate text-muted-foreground">
+                {order.delivery_neighborhood}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Total */}
+      {show(kdsCfg, "total_price") && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            Total
+          </span>
+          <span className="font-black tabular-nums" style={{ fontSize: 22, color: "#16A34A" }}>
+            {centsToBRL(subtotal)}
+          </span>
+        </div>
+      )}
+      </div>
+
+      {/* Faixa/etiqueta de pagamento */}
+      {show(kdsCfg, "payment_method") && order.payment_method && (
+        <div
+          className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm font-black"
+          style={{ background: "#0F172A", color: "#F8FAFC" }}
+        >
+          <span className="flex items-center gap-2">
+            <span>💳</span>
+            <span className="uppercase tracking-wider">{order.payment_method}</span>
+          </span>
+          {order.payment_when && (
+            <span
+              className="rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-wider"
+              style={{ background: "#F59E0B", color: "#1a1a1a" }}
+            >
+              {order.payment_when}
+            </span>
           )}
         </div>
       )}
 
       {colKey === "new" && (
-        <div className="mt-3 grid grid-cols-2" style={{ gap: 8 }}>
+        <div className="grid grid-cols-2 gap-2 p-4 pt-3">
           <button
             onClick={() => onAccept(order)}
             disabled={busy}
@@ -626,7 +683,7 @@ function OrderCard({
         </div>
       )}
       {colKey === "preparing" && (
-        <div className="mt-3">
+        <div className="p-4 pt-3">
           <button
             onClick={() => onReady(order)}
             disabled={busy}
