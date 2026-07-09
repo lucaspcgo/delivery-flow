@@ -650,6 +650,7 @@ export interface RestaurantPlatform {
   platform_store_id?: string | null;
   platform_merchant_id?: string | null;
   app_shop_id?: string | null;
+  automation_enabled?: boolean;
 }
 
 export interface ApiRestaurant {
@@ -716,6 +717,26 @@ export function disconnectPlatform(
   return http.delete<void>(
     `/restaurants/${restaurantId}/platforms/${platform}`,
   );
+}
+
+export interface SetAutomationInput {
+  platform: RestaurantPlatformCode | string;
+  store_id: string;
+  enabled: boolean;
+}
+
+export interface SetAutomationResponse {
+  platform: string;
+  store_id: string;
+  automation_enabled: boolean;
+}
+
+export function setPlatformAutomation(
+  data: SetAutomationInput,
+): Promise<SetAutomationResponse> {
+  return http.put<SetAutomationResponse>("/restaurants/automation", data, {
+    silent: true,
+  });
 }
 
 export interface AuthorizeStoreResponse {
