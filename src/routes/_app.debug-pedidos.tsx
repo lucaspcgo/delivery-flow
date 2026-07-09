@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useCallback } from "react";
 import { http } from "@/lib/api";
 import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,16 @@ export const Route = createFileRoute("/_app/debug-pedidos")({
 
 type Platform = "99food" | "ifood";
 
+type CheckStatus = "ok" | "divergente" | "vazio" | "sem_origem";
+
+interface FieldCheck {
+  field: string;
+  mapped?: unknown;
+  raw?: unknown;
+  source?: string | null;
+  status: CheckStatus;
+}
+
 interface DebugOrder {
   platform_order_id?: string | null;
   status?: string | null;
@@ -24,12 +33,18 @@ interface DebugOrder {
   mapped?: Record<string, unknown> | null;
   raw?: unknown;
   raw_keys?: string[] | null;
+  field_checks?: FieldCheck[] | null;
 }
 
 interface DebugResponse {
   platform: string;
   count: number;
   orders: DebugOrder[];
+  total?: number;
+  has_more?: boolean;
+  next_offset?: number | null;
+  offset?: number;
+  limit?: number;
 }
 
 function formatDateTime(iso?: string | null): string {
@@ -117,6 +132,70 @@ function MappedBlock({ mapped }: { mapped: Record<string, unknown> | null | unde
   );
 }
 
+const STATUS_META: Record<CheckStatus, { row: string; badge: string; label: string }> = {
+  divergente: {
+    row: "bg-red-50 border-red-200",
+    badge: "bg-red-100 text-red-800 border-red-300",
+    label: "Divergente",
+  },
+  vazio: {
+    row: "bg-yellow-50 border-yellow-200",
+    badge: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    label: "Dado perdido",
+  },
+  sem_origem: {
+    row: "bg-gray-50 border-gray-200",
+    badge: "bg-gray-100 text-gray-700 border-gray-300",
+    label: "Não veio da plataforma",
+  },
+  ok: {
+    row: "bg-green-50/40 border-green-100",
+    badge: "bg-green-100 text-green-800 border-green-300",
+    label: "OK",
+  },
+};
+
+function FieldChecksTable({ checks }: { checks: FieldCheck[] }) {
+  if (!checks || checks.length === 0) {
+    return <p className="text-sm text-muted-foreground">Sem verificações de campo.</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] border-collapse text-sm">
+        <thead>
+          <tr className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <th className="px-2 py-2">Campo</th>
+            <th className="px-2 py-2">Mapeado</th>
+            <th className="px-2 py-2">Bruto</th>
+            <th className="px-2 py-2">Origem</th>
+            <th className="px-2 py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {checks.map((c, idx) => {
+            const meta = STATUS_META[c.status] ?? STATUS_META.ok;
+            return (
+              <tr key={`${c.field}-${idx}`} className={`border-b ${meta.row}`}>
+                <td className="px-2 py-2 align-top font-mono text-xs font-semibold">{c.field}</td>
+                <td className="px-2 py-2 align-top">{renderScalar(c.mapped)}</td>
+                <td className="px-2 py-2 align-top">{renderScalar(c.raw)}</td>
+                <td className="px-2 py-2 align-top font-mono text-xs text-muted-foreground">
+                  {c.source ?? "—"}
+                </td>
+                <td className="px-2 py-2 align-top">
+                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${meta.badge}`}>
+                    {meta.label}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function DebugCard({ order }: { order: DebugOrder }) {
   const rawJson = (() => {
     try {
@@ -160,6 +239,14 @@ function DebugCard({ order }: { order: DebugOrder }) {
         </Button>
       </CardHeader>
       <CardContent className="pt-4">
+        {order.field_checks && order.field_checks.length > 0 && (
+          <section className="mb-4 min-w-0">
+            <h3 className="mb-3 text-sm font-semibold">
+              Verificação campo a campo
+            </h3>
+            <FieldChecksTable checks={order.field_checks} />
+          </section>
+        )}
         <div className="grid gap-4 lg:grid-cols-2">
           <section className="min-w-0">
             <h3 className="mb-3 text-sm font-semibold">
@@ -206,20 +293,52 @@ function DebugPedidosPage() {
   }, [isAdmin, navigate]);
   const [platform, setPlatform] = useState<Platform>("99food");
   const [limit, setLimit] = useState<number>(10);
-  const [applied, setApplied] = useState<{ platform: Platform; limit: number }>({
-    platform: "99food",
-    limit: 10,
-  });
+  const [orders, setOrders] = useState<DebugOrder[]>([]);
+  const [meta, setMeta] = useState<{
+    platform: string;
+    total: number;
+    hasMore: boolean;
+    nextOffset: number | null;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const query = useQuery<DebugResponse, Error>({
-    queryKey: ["debug-orders", applied.platform, applied.limit],
-    queryFn: () =>
-      http.get<DebugResponse>(`/orders/${applied.platform}/debug`, {
-        query: { limit: applied.limit },
-        silent: true,
-      }),
-    enabled: isAdmin,
-  });
+  const fetchPage = useCallback(
+    async (opts: { platform: Platform; limit: number; offset: number; append: boolean }) => {
+      const { platform: pf, limit: lm, offset, append } = opts;
+      if (append) setIsFetchingMore(true);
+      else setIsLoading(true);
+      setError(null);
+      try {
+        const data = await http.get<DebugResponse>(`/orders/${pf}/debug`, {
+          query: { limit: lm, offset },
+          silent: true,
+        });
+        const next = data.orders ?? [];
+        setOrders((prev) => (append ? [...prev, ...next] : next));
+        setMeta({
+          platform: data.platform ?? pf,
+          total: typeof data.total === "number" ? data.total : (append ? (meta?.total ?? 0) : next.length),
+          hasMore: data.has_more === true,
+          nextOffset: typeof data.next_offset === "number" ? data.next_offset : null,
+        });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "erro desconhecido");
+      } finally {
+        setIsLoading(false);
+        setIsFetchingMore(false);
+      }
+    },
+    [meta?.total],
+  );
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchPage({ platform: "99food", limit: 10, offset: 0, append: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   if (!isAdmin) {
     return (
@@ -227,10 +346,19 @@ function DebugPedidosPage() {
     );
   }
 
+  const clampedLimit = () => Math.max(1, Math.min(50, Math.floor(limit || 1)));
+
   const apply = () => {
-    const clamped = Math.max(1, Math.min(50, Math.floor(limit || 1)));
-    setLimit(clamped);
-    setApplied({ platform, limit: clamped });
+    const lm = clampedLimit();
+    setLimit(lm);
+    setOrders([]);
+    setMeta(null);
+    fetchPage({ platform, limit: lm, offset: 0, append: false });
+  };
+
+  const loadMore = () => {
+    if (!meta || !meta.hasMore || meta.nextOffset === null) return;
+    fetchPage({ platform, limit: clampedLimit(), offset: meta.nextOffset, append: true });
   };
 
   return (
@@ -275,23 +403,23 @@ function DebugPedidosPage() {
               className="w-32"
             />
           </div>
-          <Button onClick={apply} disabled={query.isFetching}>
-            {query.isFetching ? (
+          <Button onClick={apply} disabled={isLoading || isFetchingMore}>
+            {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="mr-2 h-4 w-4" />
             )}
             Atualizar
           </Button>
-          {query.data && (
+          {meta && (
             <div className="ml-auto text-sm text-muted-foreground">
-              {query.data.count} pedido(s) · plataforma <strong>{query.data.platform}</strong>
+              {orders.length} de {meta.total} · plataforma <strong>{meta.platform}</strong>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {query.isLoading && (
+      {isLoading && (
         <Card>
           <CardContent className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -300,15 +428,15 @@ function DebugPedidosPage() {
         </Card>
       )}
 
-      {query.isError && (
+      {error && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardContent className="p-4 text-sm text-destructive">
-            Não foi possível carregar os pedidos: {query.error?.message ?? "erro desconhecido"}.
+            Não foi possível carregar os pedidos: {error}.
           </CardContent>
         </Card>
       )}
 
-      {query.data && query.data.orders.length === 0 && !query.isLoading && (
+      {!isLoading && !error && orders.length === 0 && (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
             Nenhum pedido retornado para os filtros atuais.
@@ -317,10 +445,21 @@ function DebugPedidosPage() {
       )}
 
       <div className="space-y-4">
-        {query.data?.orders.map((o, idx) => (
+        {orders.map((o: DebugOrder, idx: number) => (
           <DebugCard key={o.platform_order_id ?? idx} order={o} />
         ))}
       </div>
+
+      {meta?.hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={loadMore} disabled={isFetchingMore}>
+            {isFetchingMore ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Carregar mais
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
