@@ -426,7 +426,10 @@ function OrderCard({
   const isTakeout = typeRaw.includes("take") || typeRaw.includes("retir");
   const promise =
     order.delivery_promise ||
+    order.promise_time ||
     (order.delivery_promise_at ? formatHHmm(order.delivery_promise_at) : null);
+  const neighborhood = order.delivery_neighborhood || order.neighborhood || null;
+  const note = order.note?.trim() || null;
   const km =
     typeof order.distance_km === "number"
       ? `${order.distance_km.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`
@@ -595,12 +598,29 @@ function OrderCard({
             <div className="truncate font-bold text-foreground">
               {order.delivery_address}
             </div>
-            {order.delivery_neighborhood && (
+            {neighborhood && (
               <div className="truncate text-muted-foreground">
-                {order.delivery_neighborhood}
+                {neighborhood}
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Observação do cliente */}
+      {note && (
+        <div
+          className="mt-3 rounded-lg px-3 py-2 text-sm font-bold"
+          style={{
+            background: "#FEF3C7",
+            color: "#78350F",
+            border: "1px solid #FCD34D",
+          }}
+        >
+          <span className="mr-1 font-black uppercase tracking-wider text-[11px]">
+            Obs:
+          </span>
+          <span className="font-semibold">{note}</span>
         </div>
       )}
 
