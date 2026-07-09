@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -375,6 +375,11 @@ function OrdersKanban() {
         onSaved={(next) => {
           setColumns(next);
           setConfigOpen(false);
+        }}
+        onReset={(nextCols, nextFields) => {
+          setColumns(nextCols);
+          if (nextFields) setKdsCfg(nextFields);
+          load();
         }}
       />
 
@@ -922,17 +927,21 @@ function ColumnsConfigDialog({
   onOpenChange,
   columns,
   onSaved,
+  onReset,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   columns: KdsColumn[];
   onSaved: (next: KdsColumn[]) => void;
+  onReset: (nextCols: KdsColumn[], nextFields?: Record<string, boolean>) => void;
 }) {
   const [draft, setDraft] = useState<KdsColumn[]>(columns);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const dragIdx = useRef<number | null>(null);
 
   const loadConfig = useCallback(async () => {
@@ -984,6 +993,25 @@ function ColumnsConfigDialog({
       toast.error("Não foi possível salvar as colunas");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const doReset = async () => {
+    setResetting(true);
+    setSaveError(null);
+    try {
+      const resp = await resetKdsSettings();
+      const cols = resp.config.columns.map((c, i) => ({ ...c, order: i }));
+      setDraft(cols);
+      toast.success("Colunas restauradas ao padrão");
+      onReset(cols, resp.config.fields);
+      setConfirmResetOpen(false);
+      onOpenChange(false);
+    } catch {
+      setSaveError("Não foi possível restaurar o padrão. Tente novamente.");
+      toast.error("Não foi possível restaurar o padrão");
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -1066,14 +1094,46 @@ function ColumnsConfigDialog({
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button
+            variant="ghost"
+            onClick={() => setConfirmResetOpen(true)}
+            disabled={saving || resetting || loading}
+            className="mr-auto"
+          >
+            {resetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {resetting ? "Restaurando..." : "Restaurar padrão"}
+          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving || resetting}>
             Cancelar
           </Button>
-          <Button onClick={save} disabled={saving || loading || !!loadError}>
+          <Button onClick={save} disabled={saving || resetting || loading || !!loadError}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {saving ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
+        <AlertDialog open={confirmResetOpen} onOpenChange={(v) => !resetting && setConfirmResetOpen(v)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Restaurar colunas ao padrão?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Isto vai voltar as colunas ao padrão. Continuar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={resetting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  doReset();
+                }}
+                disabled={resetting}
+              >
+                {resetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {resetting ? "Restaurando..." : "Continuar"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
