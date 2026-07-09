@@ -350,10 +350,7 @@ function Column({
       className="flex min-w-0 flex-col p-3"
       style={{
         maxHeight: "calc(100vh - 8rem)",
-        background: "hsl(var(--muted) / 0.4)",
         borderRadius: 16,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-        border: "1px solid hsl(var(--border))",
       }}
     >
       <div
