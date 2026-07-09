@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +78,7 @@ const COLUMN_STYLE: Record<string, { bg: string; text: string; emoji: string }> 
   dispatched: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
   delivered:  { bg: "#10B981", text: "#052e1b", emoji: "✅" },
   cancelled:  { bg: "#DC2626", text: "#fff",     emoji: "❌" },
+  outros:     { bg: "#64748B", text: "#fff",     emoji: "📦" },
 };
 function styleFor(key: string) {
   return COLUMN_STYLE[key] ?? { bg: "#64748B", text: "#fff", emoji: "📋" };
