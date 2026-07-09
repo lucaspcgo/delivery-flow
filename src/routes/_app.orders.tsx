@@ -753,42 +753,61 @@ function StageActions({
 }: {
   order: ApiOrder;
   busy: boolean;
-  onAccept: (o: ApiOrder) => void;
-  onReady: (o: ApiOrder) => void;
-  onDispatch: (o: ApiOrder) => void;
+  onAccept: (o: ApiOrder) => void | Promise<void>;
+  onReady: (o: ApiOrder) => void | Promise<void>;
+  onDispatch: (o: ApiOrder) => void | Promise<void>;
   onRefuse: (o: ApiOrder) => void;
 }) {
   const stage = String(order.kds_stage ?? "").toLowerCase();
   const isPending = ["pendente", "pending", "new"].includes(stage);
   const isAccepted = ["aceito", "accepted", "confirmed", "preparing"].includes(stage);
   const isWaiting = ["aguardando", "ready", "awaiting_dispatch", "waiting"].includes(stage);
-  // "SÓ iFood entrega própria": platform iFood + logística do merchant
   const deliveryHint = String(order.delivery_type ?? "").toLowerCase();
   const isIfoodOwnDelivery =
     order.platform === "ifood" &&
     /(merchant|própr|propria|own|estabelec)/.test(deliveryHint);
   const canDispatch = isWaiting && isIfoodOwnDelivery;
 
-  // Terminais (entregando/no_destino/entregue/cancelado): sem botão de avanço,
-  // mas ainda oferecemos cancelar quando não é terminal absoluto.
-  const isTerminal = ["entregue", "delivered", "cancelled", "canceled"].includes(stage);
+  // Estados terminais / em rota (avançam via plataforma): sem botões de ação.
+  const isEnRouteOrTerminal = [
+    "entregando", "dispatched",
+    "no_destino", "arrived", "arriving",
+    "entregue", "delivered",
+    "cancelado", "cancelled", "canceled",
+  ].includes(stage);
 
   const primary = isPending
-    ? { label: "ACEITAR", icon: <Check className="h-4 w-4" />, bg: "#16A34A", onClick: () => onAccept(order) }
+    ? { kind: "accept" as const, label: "ACEITAR", icon: <Check className="h-4 w-4" />, bg: "#16A34A", run: () => onAccept(order) }
     : isAccepted
-    ? { label: "PRONTO", icon: <ChefHat className="h-4 w-4" />, bg: "#2196F3", onClick: () => onReady(order) }
+    ? { kind: "ready" as const, label: "PRONTO", icon: <ChefHat className="h-4 w-4" />, bg: "#2196F3", run: () => onReady(order) }
     : canDispatch
-    ? { label: "SAIU P/ ENTREGA", icon: <Bike className="h-4 w-4" />, bg: "#8B5CF6", onClick: () => onDispatch(order) }
+    ? { kind: "dispatch" as const, label: "SAIU P/ ENTREGA", icon: <Bike className="h-4 w-4" />, bg: "#8B5CF6", run: () => onDispatch(order) }
     : null;
 
-  if (!primary && isTerminal) return null;
+  // "Cancelar" só até 'aguardando'. Não em rota / terminais.
+  const showCancel = !isEnRouteOrTerminal && (isPending || isAccepted || isWaiting);
+
+  const [action, setAction] = useState<null | "accept" | "ready" | "dispatch">(null);
+  const anyBusy = busy || action !== null;
+
+  const handlePrimary = async () => {
+    if (!primary || anyBusy) return;
+    setAction(primary.kind);
+    try {
+      await primary.run();
+    } finally {
+      setAction(null);
+    }
+  };
+
+  if (!primary && !showCancel) return null;
 
   return (
-    <div className={`grid ${primary ? "grid-cols-2" : "grid-cols-1"} gap-2 p-4 pt-3`}>
+    <div className={`grid ${primary && showCancel ? "grid-cols-2" : "grid-cols-1"} gap-2 p-4 pt-3`}>
       {primary && (
         <button
-          onClick={primary.onClick}
-          disabled={busy}
+          onClick={handlePrimary}
+          disabled={anyBusy}
           className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
           style={{
             background: primary.bg,
@@ -797,10 +816,10 @@ function StageActions({
             fontSize: 13,
             fontWeight: 700,
             border: "none",
-            opacity: busy ? 0.7 : 1,
+            opacity: anyBusy ? 0.7 : 1,
           }}
         >
-          {busy ? (
+          {action === primary.kind ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
             </>
@@ -811,22 +830,24 @@ function StageActions({
           )}
         </button>
       )}
-      <button
-        onClick={() => onRefuse(order)}
-        disabled={busy}
-        className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
-        style={{
-          background: "#DC2626",
-          height: 40,
-          borderRadius: 8,
-          fontSize: 13,
-          fontWeight: 700,
-          border: "none",
-          opacity: busy ? 0.7 : 1,
-        }}
-      >
-        <X className="h-4 w-4" /> CANCELAR
-      </button>
+      {showCancel && (
+        <button
+          onClick={() => onRefuse(order)}
+          disabled={anyBusy}
+          className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+          style={{
+            background: "#DC2626",
+            height: 40,
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            border: "none",
+            opacity: anyBusy ? 0.7 : 1,
+          }}
+        >
+          <X className="h-4 w-4" /> CANCELAR
+        </button>
+      )}
     </div>
   );
 }
