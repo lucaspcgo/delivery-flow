@@ -949,11 +949,32 @@ function ColumnsConfigDialog({
 }) {
   const [draft, setDraft] = useState<KdsColumn[]>(columns);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const dragIdx = useRef<number | null>(null);
 
+  const loadConfig = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const cols = await fetchKdsColumnsStrict();
+      setDraft(cols.map((c, i) => ({ ...c, order: i })));
+    } catch {
+      setLoadError("Não foi possível carregar as colunas.");
+      // ainda assim mostra a última cópia conhecida para o usuário poder tentar de novo
+      setDraft(columns.map((c) => ({ ...c })));
+    } finally {
+      setLoading(false);
+    }
+  }, [columns]);
+
   useEffect(() => {
-    if (open) setDraft(columns.map((c) => ({ ...c })));
-  }, [open, columns]);
+    if (open) {
+      setSaveError(null);
+      loadConfig();
+    }
+  }, [open, loadConfig]);
 
   const move = (from: number, to: number) => {
     if (from === to || to < 0 || to >= draft.length) return;
@@ -969,12 +990,16 @@ function ColumnsConfigDialog({
 
   const save = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
-      const ordered = draft.map((c, i) => ({ ...c, order: i }));
+      // garante order sequencial e único (1..N na ordem da lista)
+      const ordered = draft.map((c, i) => ({ ...c, order: i + 1 }));
       await updateKdsColumns(ordered);
       toast.success("Colunas atualizadas");
-      onSaved(ordered);
+      // devolve com order 0-based para consistência interna de sort
+      onSaved(ordered.map((c, i) => ({ ...c, order: i })));
     } catch {
+      setSaveError("Não foi possível salvar. Suas edições foram mantidas — tente novamente.");
       toast.error("Não foi possível salvar as colunas");
     } finally {
       setSaving(false);
@@ -988,8 +1013,21 @@ function ColumnsConfigDialog({
           <DialogTitle>Configurar colunas do KDS</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Desligue colunas que você não quer ver e arraste para reordenar.
+          Desligue colunas que você não quer ver e arraste para reordenar. O número mostra a ordem em que a coluna vai aparecer.
         </p>
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando colunas...
+          </div>
+        ) : loadError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+            <p className="mb-3 text-destructive">{loadError}</p>
+            <Button size="sm" variant="outline" onClick={loadConfig}>
+              Tentar de novo
+            </Button>
+          </div>
+        ) : (
         <ul className="mt-2 space-y-1">
           {draft.map((c, idx) => (
             <li
@@ -1004,6 +1042,12 @@ function ColumnsConfigDialog({
               className="flex items-center gap-2 rounded-md border bg-background px-2 py-2"
             >
               <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
+              <span
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black tabular-nums text-primary"
+                aria-label={`Posição ${idx + 1}`}
+              >
+                {idx + 1}
+              </span>
               <Checkbox
                 checked={c.visible}
                 onCheckedChange={(v) => toggle(idx, v === true)}
@@ -1034,13 +1078,19 @@ function ColumnsConfigDialog({
             </li>
           ))}
         </ul>
+        )}
+
+        {saveError && (
+          <p className="text-sm text-destructive" role="alert">{saveError}</p>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={save} disabled={saving}>
+          <Button onClick={save} disabled={saving || loading || !!loadError}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Salvar
+            {saving ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>
