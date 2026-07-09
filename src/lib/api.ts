@@ -1099,7 +1099,14 @@ export interface KdsField {
 
 export interface KdsSettingsResponse {
   available_fields: KdsField[];
-  config: { fields: Record<string, boolean> };
+  config: { fields: Record<string, boolean>; columns: KdsColumn[] };
+}
+
+export interface KdsColumn {
+  key: string;
+  label: string;
+  visible: boolean;
+  order: number;
 }
 
 const DEFAULT_KDS_FIELDS: KdsField[] = [
@@ -1120,6 +1127,35 @@ const DEFAULT_KDS_FIELDS: KdsField[] = [
   { key: "item_subitems", label: "Adicionais / subitens", group: "item", default: true },
 ];
 
+export const DEFAULT_KDS_COLUMNS: KdsColumn[] = [
+  { key: "new", label: "Aguardando", visible: true, order: 0 },
+  { key: "preparing", label: "Em preparo", visible: true, order: 1 },
+  { key: "ready", label: "Pronto", visible: true, order: 2 },
+  { key: "dispatched", label: "Saiu para entrega", visible: false, order: 3 },
+  { key: "delivered", label: "Entregue", visible: true, order: 4 },
+  { key: "cancelled", label: "Cancelado", visible: false, order: 5 },
+];
+
+function normalizeColumns(input: unknown): KdsColumn[] {
+  if (!Array.isArray(input) || input.length === 0) return DEFAULT_KDS_COLUMNS;
+  const byKey = new Map(DEFAULT_KDS_COLUMNS.map((c) => [c.key, c]));
+  const out: KdsColumn[] = [];
+  input.forEach((raw, idx) => {
+    if (!raw || typeof raw !== "object") return;
+    const r = raw as Record<string, unknown>;
+    const key = typeof r.key === "string" ? r.key : null;
+    if (!key) return;
+    const def = byKey.get(key);
+    out.push({
+      key,
+      label: typeof r.label === "string" ? r.label : def?.label ?? key,
+      visible: typeof r.visible === "boolean" ? r.visible : def?.visible ?? true,
+      order: typeof r.order === "number" ? r.order : idx,
+    });
+  });
+  return out.sort((a, b) => a.order - b.order);
+}
+
 function buildDefaultKdsConfig(fields: KdsField[]): Record<string, boolean> {
   const map: Record<string, boolean> = {};
   for (const f of fields) map[f.key] = f.default;
@@ -1135,11 +1171,12 @@ export async function getKdsSettings(): Promise<KdsSettingsResponse> {
         : DEFAULT_KDS_FIELDS;
     const defaults = buildDefaultKdsConfig(available);
     const fields = { ...defaults, ...(data?.config?.fields ?? {}) };
-    return { available_fields: available, config: { fields } };
+    const columns = normalizeColumns((data?.config as { columns?: unknown } | undefined)?.columns);
+    return { available_fields: available, config: { fields, columns } };
   } catch {
     return {
       available_fields: DEFAULT_KDS_FIELDS,
-      config: { fields: buildDefaultKdsConfig(DEFAULT_KDS_FIELDS) },
+      config: { fields: buildDefaultKdsConfig(DEFAULT_KDS_FIELDS), columns: DEFAULT_KDS_COLUMNS },
     };
   }
 }
@@ -1148,4 +1185,9 @@ export async function updateKdsSettings(
   fields: Record<string, boolean>,
 ): Promise<KdsSettingsResponse> {
   return http.put<KdsSettingsResponse>("/settings/kds", { fields });
+}
+
+export async function updateKdsColumns(columns: KdsColumn[]): Promise<KdsSettingsResponse> {
+  const payload = columns.map((c, idx) => ({ key: c.key, visible: c.visible, order: idx }));
+  return http.put<KdsSettingsResponse>("/settings/kds", { columns: payload });
 }

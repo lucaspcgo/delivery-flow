@@ -40,4 +40,5 @@ export interface ApiOrder {
   promise_time?: string | null;
   neighborhood?: string | null;
   note?: string | null;
+  kds_stage?: string | null;
 }
