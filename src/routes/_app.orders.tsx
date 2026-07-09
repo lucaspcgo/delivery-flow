@@ -432,81 +432,75 @@ function OrderCard({
   const showAddress = show(kdsCfg, "delivery_address") && !!order.delivery_address;
   const showSubs = show(kdsCfg, "item_subitems") &&
     order.items.some((it) => (it.sub_item_list ?? []).length > 0);
-  const hasDetails = showAddress || showSubs;
+  const hasDetails = showSubs;
+  const typeRaw = String(order.order_type || order.delivery_type || "").toLowerCase();
+  const isTakeout = typeRaw.includes("take") || typeRaw.includes("retir");
 
   return (
     <div
-      className="w-full bg-white"
+      className="w-full"
       style={{
-        borderLeft: `4px solid ${border}`,
-        color: "#1a1a1a",
-        borderRadius: 12,
-        padding: 12,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+        background: "#1F2937",
+        color: "#F9FAFB",
+        borderRadius: 16,
+        padding: 16,
+        borderLeft: `6px solid ${border}`,
+        boxShadow: urgent
+          ? "0 0 0 2px rgba(239,68,68,0.35), 0 8px 24px rgba(0,0,0,0.5)"
+          : "0 6px 20px rgba(0,0,0,0.45)",
       }}
     >
-      {/* Topo: cliente + horário */}
-      <div className="flex items-start justify-between gap-2">
+      {/* Topo: cliente + selo plataforma + horário */}
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {show(kdsCfg, "platform_badge") && (
               <span
-              className="rounded-full px-2 py-0.5 text-[9px] font-bold text-black"
-              style={{ background: border }}
-            >
-              {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
+                className="rounded-md px-2 py-1 text-[11px] font-black tracking-wider text-black"
+                style={{ background: border }}
+              >
+                {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
               </span>
             )}
             {show(kdsCfg, "customer_name") && (
-              <span className="truncate font-bold" style={{ fontSize: 15, color: "#1a1a1a" }}>
+              <span
+                className="truncate font-black"
+                style={{ fontSize: 22, color: "#F9FAFB", lineHeight: 1.1 }}
+              >
                 {order.customer_name ?? "Cliente"}
               </span>
             )}
           </div>
           {show(kdsCfg, "order_number") && (
-            <div className="mt-0.5 text-[11px]" style={{ color: "#9CA3AF" }}>
+            <div
+              className="mt-2 font-black tabular-nums"
+              style={{ fontSize: 28, color: "#FBBF24", letterSpacing: 1 }}
+            >
               #{shortOrderId(order.platform_order_id || order.id)}
             </div>
           )}
           {show(kdsCfg, "customer_phone") && order.customer_phone && (
-            <div className="mt-0.5 text-[11px]" style={{ color: "#6B7280" }}>
+            <div className="mt-1 text-sm" style={{ color: "#D1D5DB" }}>
               📞 {order.customer_phone}
-            </div>
-          )}
-          {show(kdsCfg, "order_type") && (order.order_type || order.delivery_type) && (
-            <div className="mt-1">
-              <span
-                className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={{ background: "#E0F2FE", color: "#075985" }}
-              >
-                {String(order.order_type || order.delivery_type)
-                  .toLowerCase()
-                  .includes("take") ||
-                String(order.order_type || order.delivery_type)
-                  .toLowerCase()
-                  .includes("retir")
-                  ? "Retirada"
-                  : "Entrega"}
-              </span>
-            </div>
-          )}
-          {show(kdsCfg, "payment_method") && order.payment_method && (
-            <div className="mt-1 text-[11px]" style={{ color: "#6B7280" }}>
-              💳 {order.payment_method}
-              {order.payment_when ? ` · ${order.payment_when}` : ""}
             </div>
           )}
         </div>
         <div className="text-right">
           {show(kdsCfg, "order_time") && (
-            <div className="font-mono font-bold tabular-nums" style={{ fontSize: 16, color: "#1a1a1a" }}>
+            <div
+              className="font-mono font-black tabular-nums"
+              style={{ fontSize: 26, color: "#F9FAFB", lineHeight: 1 }}
+            >
               {formatHHmm(order.created_at)}
             </div>
           )}
           {show(kdsCfg, "order_elapsed") && (
             <div
-              className="font-semibold tabular-nums"
-              style={{ color: urgent ? "#FF4444" : "#9CA3AF", fontSize: 11 }}
+              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              style={{
+                color: urgent ? "#fff" : "#F9FAFB",
+                background: urgent ? "#DC2626" : "rgba(255,255,255,0.08)",
+              }}
             >
               há {mins} min
             </div>
@@ -514,19 +508,49 @@ function OrderCard({
         </div>
       </div>
 
-      {/* Itens compactos com foto */}
-      <div className="mt-3 space-y-2">
+      {/* Chips: tipo + pagamento */}
+      {(show(kdsCfg, "order_type") || show(kdsCfg, "payment_method")) && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {show(kdsCfg, "order_type") && (order.order_type || order.delivery_type) && (
+            <span
+              className="rounded-full px-3 py-1 text-xs font-bold"
+              style={{
+                background: isTakeout ? "#7C3AED" : "#2563EB",
+                color: "#fff",
+              }}
+            >
+              {isTakeout ? "🏃 Retirada" : "🛵 Entrega"}
+            </span>
+          )}
+          {show(kdsCfg, "payment_method") && order.payment_method && (
+            <span
+              className="rounded-full px-3 py-1 text-xs font-bold"
+              style={{ background: "rgba(255,255,255,0.08)", color: "#E5E7EB" }}
+            >
+              💳 {order.payment_method}
+              {order.payment_when ? ` · ${order.payment_when}` : ""}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Itens grandes */}
+      <div className="mt-4 space-y-3 rounded-xl p-3" style={{ background: "rgba(0,0,0,0.25)" }}>
         {order.items.map((it, idx) => (
-          <ItemRow key={idx} item={it} showSubs={expanded && show(kdsCfg, "item_subitems")} kdsCfg={kdsCfg} />
+          <ItemRow
+            key={idx}
+            item={it}
+            showSubs={expanded && show(kdsCfg, "item_subitems")}
+            kdsCfg={kdsCfg}
+          />
         ))}
       </div>
 
-      {/* Ver mais: endereço + subitens escondidos */}
       {hasDetails && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline"
+          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-400 hover:underline"
         >
           {expanded ? (
             <>
@@ -534,28 +558,37 @@ function OrderCard({
             </>
           ) : (
             <>
-              <ChevronDown className="h-3 w-3" /> ver mais
+              <ChevronDown className="h-3 w-3" /> ver complementos
             </>
           )}
         </button>
       )}
-      {expanded && showAddress && (
-        <div className="mt-2 rounded-md bg-gray-50 p-2 text-[12px]" style={{ color: "#4B5563" }}>
-          <span className="font-bold">Endereço:</span> {order.delivery_address}
-        </div>
-      )}
 
-      {show(kdsCfg, "total_price") && (
+      {/* Rodapé: endereço + total */}
+      {(showAddress || show(kdsCfg, "total_price")) && (
         <div
-          className="mt-3 flex items-center justify-between pt-2"
-          style={{ color: "#1a1a1a", borderTop: "1px solid #F3F4F6" }}
+          className="mt-4 space-y-2 pt-3"
+          style={{ borderTop: "1px dashed rgba(255,255,255,0.15)" }}
         >
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
-            Total
-          </span>
-          <span className="font-bold" style={{ fontSize: 18, color: "#1a1a1a" }}>
-            {centsToBRL(subtotal)}
-          </span>
+          {showAddress && (
+            <div className="text-sm leading-snug" style={{ color: "#E5E7EB" }}>
+              <span className="font-black" style={{ color: "#F9FAFB" }}>📍 </span>
+              {order.delivery_address}
+            </div>
+          )}
+          {show(kdsCfg, "total_price") && (
+            <div className="flex items-center justify-between">
+              <span
+                className="text-xs font-black uppercase tracking-widest"
+                style={{ color: "#9CA3AF" }}
+              >
+                Total
+              </span>
+              <span className="font-black tabular-nums" style={{ fontSize: 24, color: "#4ADE80" }}>
+                {centsToBRL(subtotal)}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
