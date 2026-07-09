@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +78,7 @@ const COLUMN_STYLE: Record<string, { bg: string; text: string; emoji: string }> 
   dispatched: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
   delivered:  { bg: "#10B981", text: "#052e1b", emoji: "✅" },
   cancelled:  { bg: "#DC2626", text: "#fff",     emoji: "❌" },
+  outros:     { bg: "#64748B", text: "#fff",     emoji: "📦" },
 };
 function styleFor(key: string) {
   return COLUMN_STYLE[key] ?? { bg: "#64748B", text: "#fff", emoji: "📋" };
@@ -198,20 +199,37 @@ function OrdersKanban() {
     return () => clearInterval(t);
   }, []);
 
-  const visibleColumns = useMemo(
-    () => [...columns].filter((c) => c.visible).sort((a, b) => a.order - b.order),
-    [columns],
-  );
-
-  const grouped = useMemo(() => {
+  const { renderColumns, grouped } = useMemo(() => {
+    const visible = [...columns]
+      .filter((c) => c.visible)
+      .sort((a, b) => a.order - b.order);
+    const knownKeys = new Set(columns.map((c) => c.key));
     const g: Record<string, ApiOrder[]> = {};
-    for (const c of visibleColumns) g[c.key] = [];
+    for (const c of visible) g[c.key] = [];
+    const orphans: ApiOrder[] = [];
     for (const o of orders) {
-      const stage = o.kds_stage ?? legacyStageFromStatus(o.status);
-      if (g[stage]) g[stage].push(o);
+      const stage = String(o.kds_stage ?? legacyStageFromStatus(o.status));
+      if (g[stage]) {
+        g[stage].push(o);
+      } else if (knownKeys.has(stage) || stage === "outros") {
+        // known column but not visible → hide (respect user choice)
+        if (g["outros"]) g["outros"].push(o);
+        else orphans.push(o);
+      } else {
+        // unmatched stage → always land in outros
+        if (g["outros"]) g["outros"].push(o);
+        else orphans.push(o);
+      }
     }
-    return g;
-  }, [orders, visibleColumns]);
+    const render = [...visible];
+    if (orphans.length > 0 && !g["outros"]) {
+      const fallback: KdsColumn = { key: "outros", label: "Outros", visible: true, order: 9999 };
+      render.push(fallback);
+      g["outros"] = orphans;
+    }
+    return { renderColumns: render, grouped: g };
+  }, [orders, columns]);
+  const visibleColumns = renderColumns;
 
   const handleAccept = async (order: ApiOrder) => {
     setBusyId(order.id);
@@ -735,42 +753,61 @@ function StageActions({
 }: {
   order: ApiOrder;
   busy: boolean;
-  onAccept: (o: ApiOrder) => void;
-  onReady: (o: ApiOrder) => void;
-  onDispatch: (o: ApiOrder) => void;
+  onAccept: (o: ApiOrder) => void | Promise<void>;
+  onReady: (o: ApiOrder) => void | Promise<void>;
+  onDispatch: (o: ApiOrder) => void | Promise<void>;
   onRefuse: (o: ApiOrder) => void;
 }) {
   const stage = String(order.kds_stage ?? "").toLowerCase();
   const isPending = ["pendente", "pending", "new"].includes(stage);
   const isAccepted = ["aceito", "accepted", "confirmed", "preparing"].includes(stage);
   const isWaiting = ["aguardando", "ready", "awaiting_dispatch", "waiting"].includes(stage);
-  // "SÓ iFood entrega própria": platform iFood + logística do merchant
   const deliveryHint = String(order.delivery_type ?? "").toLowerCase();
   const isIfoodOwnDelivery =
     order.platform === "ifood" &&
     /(merchant|própr|propria|own|estabelec)/.test(deliveryHint);
   const canDispatch = isWaiting && isIfoodOwnDelivery;
 
-  // Terminais (entregando/no_destino/entregue/cancelado): sem botão de avanço,
-  // mas ainda oferecemos cancelar quando não é terminal absoluto.
-  const isTerminal = ["entregue", "delivered", "cancelled", "canceled"].includes(stage);
+  // Estados terminais / em rota (avançam via plataforma): sem botões de ação.
+  const isEnRouteOrTerminal = [
+    "entregando", "dispatched",
+    "no_destino", "arrived", "arriving",
+    "entregue", "delivered",
+    "cancelado", "cancelled", "canceled",
+  ].includes(stage);
 
   const primary = isPending
-    ? { label: "ACEITAR", icon: <Check className="h-4 w-4" />, bg: "#16A34A", onClick: () => onAccept(order) }
+    ? { kind: "accept" as const, label: "ACEITAR", icon: <Check className="h-4 w-4" />, bg: "#16A34A", run: () => onAccept(order) }
     : isAccepted
-    ? { label: "PRONTO", icon: <ChefHat className="h-4 w-4" />, bg: "#2196F3", onClick: () => onReady(order) }
+    ? { kind: "ready" as const, label: "PRONTO", icon: <ChefHat className="h-4 w-4" />, bg: "#2196F3", run: () => onReady(order) }
     : canDispatch
-    ? { label: "SAIU P/ ENTREGA", icon: <Bike className="h-4 w-4" />, bg: "#8B5CF6", onClick: () => onDispatch(order) }
+    ? { kind: "dispatch" as const, label: "SAIU P/ ENTREGA", icon: <Bike className="h-4 w-4" />, bg: "#8B5CF6", run: () => onDispatch(order) }
     : null;
 
-  if (!primary && isTerminal) return null;
+  // "Cancelar" só até 'aguardando'. Não em rota / terminais.
+  const showCancel = !isEnRouteOrTerminal && (isPending || isAccepted || isWaiting);
+
+  const [action, setAction] = useState<null | "accept" | "ready" | "dispatch">(null);
+  const anyBusy = busy || action !== null;
+
+  const handlePrimary = async () => {
+    if (!primary || anyBusy) return;
+    setAction(primary.kind);
+    try {
+      await primary.run();
+    } finally {
+      setAction(null);
+    }
+  };
+
+  if (!primary && !showCancel) return null;
 
   return (
-    <div className={`grid ${primary ? "grid-cols-2" : "grid-cols-1"} gap-2 p-4 pt-3`}>
+    <div className={`grid ${primary && showCancel ? "grid-cols-2" : "grid-cols-1"} gap-2 p-4 pt-3`}>
       {primary && (
         <button
-          onClick={primary.onClick}
-          disabled={busy}
+          onClick={handlePrimary}
+          disabled={anyBusy}
           className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
           style={{
             background: primary.bg,
@@ -779,10 +816,10 @@ function StageActions({
             fontSize: 13,
             fontWeight: 700,
             border: "none",
-            opacity: busy ? 0.7 : 1,
+            opacity: anyBusy ? 0.7 : 1,
           }}
         >
-          {busy ? (
+          {action === primary.kind ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
             </>
@@ -793,22 +830,24 @@ function StageActions({
           )}
         </button>
       )}
-      <button
-        onClick={() => onRefuse(order)}
-        disabled={busy}
-        className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
-        style={{
-          background: "#DC2626",
-          height: 40,
-          borderRadius: 8,
-          fontSize: 13,
-          fontWeight: 700,
-          border: "none",
-          opacity: busy ? 0.7 : 1,
-        }}
-      >
-        <X className="h-4 w-4" /> CANCELAR
-      </button>
+      {showCancel && (
+        <button
+          onClick={() => onRefuse(order)}
+          disabled={anyBusy}
+          className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+          style={{
+            background: "#DC2626",
+            height: 40,
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            border: "none",
+            opacity: anyBusy ? 0.7 : 1,
+          }}
+        >
+          <X className="h-4 w-4" /> CANCELAR
+        </button>
+      )}
     </div>
   );
 }
@@ -910,11 +949,32 @@ function ColumnsConfigDialog({
 }) {
   const [draft, setDraft] = useState<KdsColumn[]>(columns);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const dragIdx = useRef<number | null>(null);
 
+  const loadConfig = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const cols = await fetchKdsColumnsStrict();
+      setDraft(cols.map((c, i) => ({ ...c, order: i })));
+    } catch {
+      setLoadError("Não foi possível carregar as colunas.");
+      // ainda assim mostra a última cópia conhecida para o usuário poder tentar de novo
+      setDraft(columns.map((c) => ({ ...c })));
+    } finally {
+      setLoading(false);
+    }
+  }, [columns]);
+
   useEffect(() => {
-    if (open) setDraft(columns.map((c) => ({ ...c })));
-  }, [open, columns]);
+    if (open) {
+      setSaveError(null);
+      loadConfig();
+    }
+  }, [open, loadConfig]);
 
   const move = (from: number, to: number) => {
     if (from === to || to < 0 || to >= draft.length) return;
@@ -930,12 +990,16 @@ function ColumnsConfigDialog({
 
   const save = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
-      const ordered = draft.map((c, i) => ({ ...c, order: i }));
+      // garante order sequencial e único (1..N na ordem da lista)
+      const ordered = draft.map((c, i) => ({ ...c, order: i + 1 }));
       await updateKdsColumns(ordered);
       toast.success("Colunas atualizadas");
-      onSaved(ordered);
+      // devolve com order 0-based para consistência interna de sort
+      onSaved(ordered.map((c, i) => ({ ...c, order: i })));
     } catch {
+      setSaveError("Não foi possível salvar. Suas edições foram mantidas — tente novamente.");
       toast.error("Não foi possível salvar as colunas");
     } finally {
       setSaving(false);
@@ -949,8 +1013,21 @@ function ColumnsConfigDialog({
           <DialogTitle>Configurar colunas do KDS</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Desligue colunas que você não quer ver e arraste para reordenar.
+          Desligue colunas que você não quer ver e arraste para reordenar. O número mostra a ordem em que a coluna vai aparecer.
         </p>
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando colunas...
+          </div>
+        ) : loadError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+            <p className="mb-3 text-destructive">{loadError}</p>
+            <Button size="sm" variant="outline" onClick={loadConfig}>
+              Tentar de novo
+            </Button>
+          </div>
+        ) : (
         <ul className="mt-2 space-y-1">
           {draft.map((c, idx) => (
             <li
@@ -965,6 +1042,12 @@ function ColumnsConfigDialog({
               className="flex items-center gap-2 rounded-md border bg-background px-2 py-2"
             >
               <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
+              <span
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black tabular-nums text-primary"
+                aria-label={`Posição ${idx + 1}`}
+              >
+                {idx + 1}
+              </span>
               <Checkbox
                 checked={c.visible}
                 onCheckedChange={(v) => toggle(idx, v === true)}
@@ -995,13 +1078,19 @@ function ColumnsConfigDialog({
             </li>
           ))}
         </ul>
+        )}
+
+        {saveError && (
+          <p className="text-sm text-destructive" role="alert">{saveError}</p>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={save} disabled={saving}>
+          <Button onClick={save} disabled={saving || loading || !!loadError}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Salvar
+            {saving ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>

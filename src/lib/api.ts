@@ -1142,6 +1142,7 @@ export const DEFAULT_KDS_COLUMNS: KdsColumn[] = [
   { key: "dispatched", label: "Saiu para entrega", visible: false, order: 3 },
   { key: "delivered", label: "Entregue", visible: true, order: 4 },
   { key: "cancelled", label: "Cancelado", visible: false, order: 5 },
+  { key: "outros", label: "Outros", visible: false, order: 6 },
 ];
 
 function normalizeColumns(input: unknown): KdsColumn[] {
@@ -1198,4 +1199,10 @@ export async function updateKdsSettings(
 export async function updateKdsColumns(columns: KdsColumn[]): Promise<KdsSettingsResponse> {
   const payload = columns.map((c, idx) => ({ key: c.key, visible: c.visible, order: idx }));
   return http.put<KdsSettingsResponse>("/settings/kds", { columns: payload });
+}
+
+/** Version that THROWS on failure (for the config dialog to show error state). */
+export async function fetchKdsColumnsStrict(): Promise<KdsColumn[]> {
+  const data = await http.get<KdsSettingsResponse>("/settings/kds");
+  return normalizeColumns((data?.config as { columns?: unknown } | undefined)?.columns);
 }
