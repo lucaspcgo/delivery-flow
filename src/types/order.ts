@@ -50,4 +50,7 @@ export interface ApiOrder {
   note?: string | null;
   kds_stage?: string | null;
   available_actions?: OrderAvailableAction[];
+  courier_name?: string | null;
+  pickup_code?: string | null;
+  promise_epoch?: number | null;
 }
