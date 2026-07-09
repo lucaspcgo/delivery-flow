@@ -355,9 +355,10 @@ function Column({
       className="flex min-w-0 flex-col p-3"
       style={{
         maxHeight: "calc(100vh - 8rem)",
-        background: "#EFEFEF",
+        background: "#111827",
         borderRadius: 16,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
+        border: "1px solid rgba(255,255,255,0.06)",
       }}
     >
       <div
@@ -366,7 +367,7 @@ function Column({
       >
         <div className="flex items-center gap-2">
           <span className="text-2xl">{col.emoji}</span>
-          <h2 className="text-sm font-black tracking-wider">{col.title}</h2>
+          <h2 className="text-base font-black tracking-widest">{col.title}</h2>
         </div>
         <span
           className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold"
@@ -377,7 +378,7 @@ function Column({
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ rowGap: 12 }}>
         {orders.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-400">
+          <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-sm text-gray-500">
             Nenhum pedido
           </div>
         ) : (
