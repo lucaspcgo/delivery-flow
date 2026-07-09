@@ -60,40 +60,41 @@ function RuleCard({
   onChange: (next: AutomationRule) => void;
 }) {
   const meta = platformMeta(rule.platform);
-  const [delay, setDelay] = useState<string>(String(rule.delay_seconds ?? 0));
-  const [savingToggle, setSavingToggle] = useState(false);
-  const [savingDelay, setSavingDelay] = useState(false);
+  const [acceptDelay, setAcceptDelay] = useState<string>(
+    String(rule.accept_delay_seconds ?? 0),
+  );
+  const [readyDelay, setReadyDelay] = useState<string>(
+    String(rule.delay_seconds ?? 0),
+  );
+  const [enabled, setEnabled] = useState<boolean>(rule.enabled);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setDelay(String(rule.delay_seconds ?? 0));
-  }, [rule.delay_seconds]);
+    setAcceptDelay(String(rule.accept_delay_seconds ?? 0));
+    setReadyDelay(String(rule.delay_seconds ?? 0));
+    setEnabled(rule.enabled);
+  }, [rule.accept_delay_seconds, rule.delay_seconds, rule.enabled]);
 
-  const handleToggle = async (checked: boolean) => {
-    setSavingToggle(true);
-    try {
-      const updated = await updateAutomation(rule.id, { enabled: checked });
-      onChange({ ...rule, ...updated, enabled: checked });
-      toast.success(checked ? "Automação ativada!" : "Automação desativada!");
-    } catch (e) {
-      toast.error("Não foi possível atualizar a automação");
-    } finally {
-      setSavingToggle(false);
-    }
-  };
+  const dirty =
+    enabled !== rule.enabled ||
+    Math.max(0, Number(acceptDelay) || 0) !== (rule.accept_delay_seconds ?? 0) ||
+    Math.max(0, Number(readyDelay) || 0) !== (rule.delay_seconds ?? 0);
 
-  const handleDelayBlur = async () => {
-    const value = Math.max(0, Number(delay) || 0);
-    if (value === rule.delay_seconds) return;
-    setSavingDelay(true);
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      const updated = await updateAutomation(rule.id, { delay_seconds: value });
-      onChange({ ...rule, ...updated, delay_seconds: value });
-      toast.success("Delay atualizado");
+      const payload = {
+        enabled,
+        accept_delay_seconds: Math.max(0, Number(acceptDelay) || 0),
+        delay_seconds: Math.max(0, Number(readyDelay) || 0),
+      };
+      const updated = await updateAutomation(rule.id, payload);
+      onChange({ ...rule, ...updated, ...payload });
+      toast.success("Automação salva!");
     } catch {
-      setDelay(String(rule.delay_seconds));
-      toast.error("Não foi possível atualizar o delay");
+      toast.error("Não foi possível salvar a automação");
     } finally {
-      setSavingDelay(false);
+      setSaving(false);
     }
   };
 
@@ -137,28 +138,51 @@ function RuleCard({
           </div>
         </div>
         <Switch
-          checked={rule.enabled}
-          onCheckedChange={handleToggle}
-          disabled={savingToggle}
+          checked={enabled}
+          onCheckedChange={setEnabled}
+          disabled={saving}
           className="data-[state=checked]:bg-primary"
         />
       </div>
 
-      <div className="mt-5 flex items-end gap-3">
-        <div className="flex-1 space-y-1.5">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">
-            Aceitar após X segundos
+            Tempo para ACEITAR (segundos)
           </Label>
           <Input
             type="number"
             min={0}
-            value={delay}
-            onChange={(e) => setDelay(e.target.value)}
-            onBlur={handleDelayBlur}
-            disabled={!rule.enabled || savingDelay}
-            className="bg-background max-w-[160px]"
+            value={acceptDelay}
+            onChange={(e) => setAcceptDelay(e.target.value)}
+            disabled={!enabled || saving}
+            className="bg-background"
           />
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Tempo para marcar PRONTO (segundos)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={readyDelay}
+            onChange={(e) => setReadyDelay(e.target.value)}
+            disabled={!enabled || saving}
+            className="bg-background"
+          />
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+        O pedido espera o tempo de <strong>ACEITE</strong>, é aceito, e depois
+        espera o tempo de <strong>PRONTO</strong> para ser marcado como pronto.
+      </p>
+
+      <div className="mt-4 flex justify-end">
+        <Button onClick={handleSave} disabled={!dirty || saving} size="sm">
+          {saving ? "Salvando..." : "Salvar"}
+        </Button>
       </div>
     </Card>
   );
