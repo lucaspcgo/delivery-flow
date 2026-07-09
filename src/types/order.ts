@@ -27,6 +27,7 @@ export interface ApiOrder {
   platform: OrderPlatform;
   platform_order_id: string;
   app_shop_id: string | null;
+  order_number?: string | null;
   status: string;
   customer_name: string | null;
   customer_phone: string | null;
