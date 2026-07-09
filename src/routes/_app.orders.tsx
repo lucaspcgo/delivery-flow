@@ -689,8 +689,22 @@ function OrderCard({
                 color: urgent ? "#fff" : "var(--foreground)",
                 background: urgent ? "#DC2626" : "var(--muted)",
               }}
+              title="Tempo decorrido desde o pedido"
             >
-              há {mins} min
+              {elapsedText}
+            </div>
+          )}
+          {promiseDiffSec != null && (
+            <div
+              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              style={{
+                color: "#fff",
+                background: promiseLate ? "#DC2626" : "#0F172A",
+              }}
+              title="Contagem até a promessa"
+            >
+              {promiseLate ? "atrasado " : "faltam "}
+              {formatSignedMMSS(promiseDiffSec)}
             </div>
           )}
         </div>
