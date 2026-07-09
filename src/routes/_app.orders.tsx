@@ -1,8 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store } from "lucide-react";
+import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, getKdsSettings } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, getKdsSettings, updateKdsColumns, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,27 +61,27 @@ const PLATFORM_LABEL: Record<string, string> = {
   keeta: "KEETA",
 };
 
-type ColumnKey = "new" | "preparing" | "done";
-
-function columnOf(status: string): ColumnKey {
+function legacyStageFromStatus(status: string): string {
   const s = String(status ?? "").toLowerCase();
   if (s === "100" || s === "pending" || s === "new") return "new";
   if (s === "confirmed") return "preparing";
-  return "done";
+  if (s === "ready") return "ready";
+  if (s === "dispatched") return "dispatched";
+  if (s === "cancelled" || s === "canceled") return "cancelled";
+  return "delivered";
 }
 
-const COLUMNS: {
-  key: ColumnKey;
-  title: string;
-  accent: string;
-  headerBg: string;
-  headerText: string;
-  emoji: string;
-}[] = [
-  { key: "new", title: "AGUARDANDO", accent: "#F59E0B", headerBg: "#F59E0B", headerText: "#1a1a1a", emoji: "🟡" },
-  { key: "preparing", title: "EM PREPARO", accent: "#F97316", headerBg: "#F97316", headerText: "#1a1a1a", emoji: "🟠" },
-  { key: "done", title: "ENTREGUES", accent: "#10B981", headerBg: "#10B981", headerText: "#052e1b", emoji: "✅" },
-];
+const COLUMN_STYLE: Record<string, { bg: string; text: string; emoji: string }> = {
+  new:        { bg: "#F59E0B", text: "#1a1a1a", emoji: "🟡" },
+  preparing:  { bg: "#F97316", text: "#1a1a1a", emoji: "🟠" },
+  ready:      { bg: "#2196F3", text: "#0b1e2f", emoji: "🍽️" },
+  dispatched: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
+  delivered:  { bg: "#10B981", text: "#052e1b", emoji: "✅" },
+  cancelled:  { bg: "#DC2626", text: "#fff",     emoji: "❌" },
+};
+function styleFor(key: string) {
+  return COLUMN_STYLE[key] ?? { bg: "#64748B", text: "#fff", emoji: "📋" };
+}
 
 function shortOrderId(s: string): string {
   const clean = String(s ?? "");
@@ -132,6 +141,8 @@ function OrdersKanban() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
   const [kdsCfg, setKdsCfg] = useState<KdsFieldMap>(DEFAULT_KDS_MAP);
+  const [columns, setColumns] = useState<KdsColumn[]>(DEFAULT_KDS_COLUMNS);
+  const [configOpen, setConfigOpen] = useState(false);
   const todayStr = () => {
     const d = new Date();
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
@@ -173,7 +184,9 @@ function OrdersKanban() {
   useEffect(() => {
     let alive = true;
     getKdsSettings().then((r) => {
-      if (alive) setKdsCfg(r.config.fields);
+      if (!alive) return;
+      setKdsCfg(r.config.fields);
+      setColumns(r.config.columns);
     });
     return () => {
       alive = false;
@@ -185,11 +198,20 @@ function OrdersKanban() {
     return () => clearInterval(t);
   }, []);
 
+  const visibleColumns = useMemo(
+    () => [...columns].filter((c) => c.visible).sort((a, b) => a.order - b.order),
+    [columns],
+  );
+
   const grouped = useMemo(() => {
-    const g: Record<ColumnKey, ApiOrder[]> = { new: [], preparing: [], done: [] };
-    for (const o of orders) g[columnOf(o.status)].push(o);
+    const g: Record<string, ApiOrder[]> = {};
+    for (const c of visibleColumns) g[c.key] = [];
+    for (const o of orders) {
+      const stage = o.kds_stage ?? legacyStageFromStatus(o.status);
+      if (g[stage]) g[stage].push(o);
+    }
     return g;
-  }, [orders]);
+  }, [orders, visibleColumns]);
 
   const handleAccept = async (order: ApiOrder) => {
     setBusyId(order.id);
@@ -270,6 +292,13 @@ function OrdersKanban() {
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
           <button
+            onClick={() => setConfigOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-bold text-foreground hover:bg-muted/70"
+          >
+            <Settings2 className="h-4 w-4" />
+            Configurar colunas
+          </button>
+          <button
             onClick={load}
             className="rounded-lg bg-muted p-2 text-foreground hover:bg-muted/70"
             aria-label="Atualizar"
@@ -279,21 +308,43 @@ function OrdersKanban() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-        {COLUMNS.map((col) => (
-          <Column
-            key={col.key}
-            col={col}
-            orders={grouped[col.key]}
-            now={now}
-            busyId={busyId}
-            kdsCfg={kdsCfg}
-            onAccept={handleAccept}
-            onReady={handleReady}
-            onRefuse={(o) => setRefuseTarget(o)}
-          />
-        ))}
-      </div>
+      {visibleColumns.length === 0 ? (
+        <div className="p-8 text-center text-sm text-muted-foreground">
+          Nenhuma coluna visível. Clique em <strong>Configurar colunas</strong> para habilitar.
+        </div>
+      ) : (
+        <div
+          className="grid gap-4 p-4"
+          style={{ gridTemplateColumns: `repeat(${visibleColumns.length}, minmax(280px, 1fr))` }}
+        >
+          {visibleColumns.map((col) => {
+            const s = styleFor(col.key);
+            return (
+              <Column
+                key={col.key}
+                col={{ key: col.key, title: col.label.toUpperCase(), headerBg: s.bg, headerText: s.text, emoji: s.emoji }}
+                orders={grouped[col.key] ?? []}
+                now={now}
+                busyId={busyId}
+                kdsCfg={kdsCfg}
+                onAccept={handleAccept}
+                onReady={handleReady}
+                onRefuse={(o) => setRefuseTarget(o)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      <ColumnsConfigDialog
+        open={configOpen}
+        onOpenChange={setConfigOpen}
+        columns={columns}
+        onSaved={(next) => {
+          setColumns(next);
+          setConfigOpen(false);
+        }}
+      />
 
       <AlertDialog open={!!refuseTarget} onOpenChange={(open) => !open && setRefuseTarget(null)}>
         <AlertDialogContent>
@@ -336,7 +387,7 @@ function Column({
   onReady,
   onRefuse,
 }: {
-  col: { key: ColumnKey; title: string; accent: string; headerBg: string; headerText: string; emoji: string };
+  col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
   now: Date;
   busyId: string | null;
