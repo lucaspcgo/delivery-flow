@@ -342,6 +342,7 @@ function OrdersKanban() {
                 kdsCfg={kdsCfg}
                 onAccept={handleAccept}
                 onReady={handleReady}
+                onDispatch={handleDispatch}
                 onRefuse={(o) => setRefuseTarget(o)}
               />
             );
