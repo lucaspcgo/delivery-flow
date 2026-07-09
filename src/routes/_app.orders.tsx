@@ -799,6 +799,28 @@ function OrderCard({
             <span className="font-semibold">{note}</span>
           </div>
         )}
+        <div className="flex items-center gap-1.5 text-sm">
+          <Bike className="h-4 w-4 text-muted-foreground" />
+          {order.courier_name && order.courier_name.trim() ? (
+            <span className="font-bold text-foreground">
+              Entregador: {order.courier_name}
+            </span>
+          ) : (
+            <span className="font-semibold text-muted-foreground">
+              Aguardando entregador
+            </span>
+          )}
+        </div>
+        {order.pickup_code && String(order.pickup_code).trim() && (
+          <div
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-black"
+            style={{ background: "#DBEAFE", color: "#1E3A8A" }}
+          >
+            <span>🔑</span>
+            <span className="uppercase tracking-wider">Coleta:</span>
+            <span className="tabular-nums">{order.pickup_code}</span>
+          </div>
+        )}
       </div>
 
       {/* Total */}
