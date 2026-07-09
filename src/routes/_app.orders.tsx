@@ -245,15 +245,10 @@ function OrdersKanban() {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#0B0F17" }}>
-      <header
-        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 px-6 py-4"
-        style={{ background: "#111827" }}
-      >
+    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-background">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-background/95 px-6 py-4 backdrop-blur">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black" style={{ color: "#F9FAFB" }}>
-            Pedidos ao Vivo
-          </h1>
+          <h1 className="text-2xl font-black text-foreground">Pedidos ao Vivo</h1>
           <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
             {orders.length}
           </span>
@@ -261,7 +256,7 @@ function OrdersKanban() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="rounded-lg border border-white/10 bg-[#1F2937] px-3 py-1.5 text-sm font-medium text-gray-100 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none"
           />
           <button
             onClick={() => setSelectedDate(todayStr())}
@@ -271,12 +266,12 @@ function OrdersKanban() {
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#9CA3AF" }}>
+          <span className="font-mono text-xl font-bold tabular-nums text-muted-foreground">
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
           <button
             onClick={load}
-            className="rounded-lg bg-white/10 p-2 text-gray-100 hover:bg-white/20"
+            className="rounded-lg bg-muted p-2 text-foreground hover:bg-muted/70"
             aria-label="Atualizar"
           >
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
@@ -352,14 +347,8 @@ function Column({
 }) {
   return (
     <div
-      className="flex min-w-0 flex-col p-3"
-      style={{
-        maxHeight: "calc(100vh - 8rem)",
-        background: "#111827",
-        borderRadius: 16,
-        boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
-        border: "1px solid rgba(255,255,255,0.06)",
-      }}
+      className="flex min-w-0 flex-col rounded-2xl border bg-muted/40 p-3 shadow-sm"
+      style={{ maxHeight: "calc(100vh - 8rem)" }}
     >
       <div
         className="mb-3 flex items-center justify-between px-4 py-3"
@@ -378,7 +367,7 @@ function Column({
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ rowGap: 12 }}>
         {orders.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-sm text-gray-500">
+          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhum pedido
           </div>
         ) : (
@@ -440,14 +429,15 @@ function OrderCard({
     <div
       className="w-full"
       style={{
-        background: "#1F2937",
-        color: "#F9FAFB",
+        background: "var(--card)",
+        color: "var(--card-foreground)",
         borderRadius: 16,
         padding: 16,
         borderLeft: `6px solid ${border}`,
         boxShadow: urgent
-          ? "0 0 0 2px rgba(239,68,68,0.35), 0 8px 24px rgba(0,0,0,0.5)"
-          : "0 6px 20px rgba(0,0,0,0.45)",
+          ? "0 0 0 2px rgba(239,68,68,0.4), 0 4px 12px rgba(0,0,0,0.08)"
+          : "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+        border: "1px solid var(--border)",
       }}
     >
       {/* Topo: cliente + selo plataforma + horário */}
@@ -465,7 +455,7 @@ function OrderCard({
             {show(kdsCfg, "customer_name") && (
               <span
                 className="truncate font-black"
-                style={{ fontSize: 22, color: "#F9FAFB", lineHeight: 1.1 }}
+                style={{ fontSize: 22, lineHeight: 1.1 }}
               >
                 {order.customer_name ?? "Cliente"}
               </span>
@@ -474,13 +464,13 @@ function OrderCard({
           {show(kdsCfg, "order_number") && (
             <div
               className="mt-2 font-black tabular-nums"
-              style={{ fontSize: 28, color: "#FBBF24", letterSpacing: 1 }}
+              style={{ fontSize: 28, color: "#B45309", letterSpacing: 1 }}
             >
               #{shortOrderId(order.platform_order_id || order.id)}
             </div>
           )}
           {show(kdsCfg, "customer_phone") && order.customer_phone && (
-            <div className="mt-1 text-sm" style={{ color: "#D1D5DB" }}>
+            <div className="mt-1 text-sm text-muted-foreground">
               📞 {order.customer_phone}
             </div>
           )}
@@ -489,7 +479,7 @@ function OrderCard({
           {show(kdsCfg, "order_time") && (
             <div
               className="font-mono font-black tabular-nums"
-              style={{ fontSize: 26, color: "#F9FAFB", lineHeight: 1 }}
+              style={{ fontSize: 26, lineHeight: 1 }}
             >
               {formatHHmm(order.created_at)}
             </div>
@@ -498,8 +488,8 @@ function OrderCard({
             <div
               className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
               style={{
-                color: urgent ? "#fff" : "#F9FAFB",
-                background: urgent ? "#DC2626" : "rgba(255,255,255,0.08)",
+                color: urgent ? "#fff" : "var(--foreground)",
+                background: urgent ? "#DC2626" : "var(--muted)",
               }}
             >
               há {mins} min
@@ -525,7 +515,7 @@ function OrderCard({
           {show(kdsCfg, "payment_method") && order.payment_method && (
             <span
               className="rounded-full px-3 py-1 text-xs font-bold"
-              style={{ background: "rgba(255,255,255,0.08)", color: "#E5E7EB" }}
+              style={{ background: "var(--muted)", color: "var(--foreground)" }}
             >
               💳 {order.payment_method}
               {order.payment_when ? ` · ${order.payment_when}` : ""}
@@ -535,7 +525,7 @@ function OrderCard({
       )}
 
       {/* Itens grandes */}
-      <div className="mt-4 space-y-3 rounded-xl p-3" style={{ background: "rgba(0,0,0,0.25)" }}>
+      <div className="mt-4 space-y-3 rounded-xl bg-muted/60 p-3">
         {order.items.map((it, idx) => (
           <ItemRow
             key={idx}
@@ -550,7 +540,7 @@ function OrderCard({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-400 hover:underline"
+          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
         >
           {expanded ? (
             <>
@@ -568,23 +558,22 @@ function OrderCard({
       {(showAddress || show(kdsCfg, "total_price")) && (
         <div
           className="mt-4 space-y-2 pt-3"
-          style={{ borderTop: "1px dashed rgba(255,255,255,0.15)" }}
+          style={{ borderTop: "1px dashed var(--border)" }}
         >
           {showAddress && (
-            <div className="text-sm leading-snug" style={{ color: "#E5E7EB" }}>
-              <span className="font-black" style={{ color: "#F9FAFB" }}>📍 </span>
+            <div className="text-sm leading-snug text-foreground/80">
+              <span className="font-black text-foreground">📍 </span>
               {order.delivery_address}
             </div>
           )}
           {show(kdsCfg, "total_price") && (
             <div className="flex items-center justify-between">
               <span
-                className="text-xs font-black uppercase tracking-widest"
-                style={{ color: "#9CA3AF" }}
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground"
               >
                 Total
               </span>
-              <span className="font-black tabular-nums" style={{ fontSize: 24, color: "#4ADE80" }}>
+              <span className="font-black tabular-nums" style={{ fontSize: 24, color: "#16A34A" }}>
                 {centsToBRL(subtotal)}
               </span>
             </div>
@@ -694,7 +683,7 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
         {showImage && (
           <div
             className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg"
-            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)" }}
+            style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
           >
             {hasImg ? (
               <img
@@ -705,7 +694,7 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
                 loading="lazy"
               />
             ) : (
-              <ImageIcon className="h-6 w-6 text-gray-500" />
+              <ImageIcon className="h-6 w-6 text-muted-foreground" />
             )}
           </div>
         )}
@@ -713,14 +702,14 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
           {showName && (
             <div
               className="font-black leading-tight"
-              style={{ fontSize: 17, color: "#F9FAFB" }}
+              style={{ fontSize: 17 }}
             >
               {item.name}
             </div>
           )}
         </div>
         {showPrice && item.total_price > 0 && (
-          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#4ADE80" }}>
+          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#16A34A" }}>
             {centsToBRL(item.total_price)}
           </div>
         )}
@@ -739,12 +728,12 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
 function SubItem({ sub }: { sub: OrderSubItem }) {
   const price = sub.total_price || 0;
   return (
-    <li className="flex justify-between" style={{ fontSize: 13, color: "#D1D5DB" }}>
+    <li className="flex justify-between text-muted-foreground" style={{ fontSize: 13 }}>
       <span>
-        <span style={{ color: "#6B7280" }}>•</span> {sub.name}
+        <span className="text-muted-foreground/60">•</span> {sub.name}
       </span>
       {price > 0 && (
-        <span className="font-bold" style={{ color: "#4ADE80" }}>
+        <span className="font-bold" style={{ color: "#16A34A" }}>
           +{centsToBRL(price)}
         </span>
       )}
