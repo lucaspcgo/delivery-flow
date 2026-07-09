@@ -25,7 +25,6 @@ const items = [
   { title: "Integrações", url: "/integrations", icon: Plug },
   { title: "Relatórios", url: "/reports", icon: BarChart3 },
   { title: "Configurações", url: "/settings", icon: Settings },
-  { title: "Depuração de Pedidos", url: "/debug-pedidos", icon: Bug },
 ] as const;
 
 export function AppSidebar() {
@@ -105,6 +104,18 @@ export function AppSidebar() {
                     <Link to="/menu-manager" className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4" />
                       <span>Cardápios</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/debug-pedidos")}
+                    tooltip="Depuração de Pedidos"
+                  >
+                    <Link to="/debug-pedidos" className="flex items-center gap-2">
+                      <Bug className="h-4 w-4" />
+                      <span>Depuração de Pedidos</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
