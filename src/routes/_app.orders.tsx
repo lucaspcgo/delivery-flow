@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical } from "lucide-react";
+import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, getKdsSettings, updateKdsColumns, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -246,6 +246,19 @@ function OrdersKanban() {
     }
   };
 
+  const handleDispatch = async (order: ApiOrder) => {
+    setBusyId(order.id);
+    try {
+      await dispatchOrder(order.platform, order.platform_order_id || order.id);
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} saiu para entrega!`);
+      await load();
+    } catch {
+      toast.error("Erro ao despachar pedido. Tente novamente.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const handleRefuseConfirm = async () => {
     const order = refuseTarget;
     if (!order) return;
@@ -329,6 +342,7 @@ function OrdersKanban() {
                 kdsCfg={kdsCfg}
                 onAccept={handleAccept}
                 onReady={handleReady}
+                onDispatch={handleDispatch}
                 onRefuse={(o) => setRefuseTarget(o)}
               />
             );
@@ -385,6 +399,7 @@ function Column({
   kdsCfg,
   onAccept,
   onReady,
+  onDispatch,
   onRefuse,
 }: {
   col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
@@ -394,6 +409,7 @@ function Column({
   kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
+  onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
 }) {
   return (
@@ -432,6 +448,7 @@ function Column({
               kdsCfg={kdsCfg}
               onAccept={onAccept}
               onReady={onReady}
+              onDispatch={onDispatch}
               onRefuse={onRefuse}
             />
           ))
@@ -449,6 +466,7 @@ function OrderCard({
   kdsCfg,
   onAccept,
   onReady,
+  onDispatch,
   onRefuse,
 }: {
   order: ApiOrder;
@@ -458,9 +476,11 @@ function OrderCard({
   kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
+  onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
 }) {
   void now; // re-render trigger
+  void colKey;
   const mins = minutesSince(order.created_at);
   const urgent = mins > 20;
   const border = PLATFORM_BORDER[order.platform] ?? "#888";
@@ -693,78 +713,102 @@ function OrderCard({
         </div>
       )}
 
-      {colKey === "new" && (
-        <div className="grid grid-cols-2 gap-2 p-4 pt-3">
-          <button
-            onClick={() => onAccept(order)}
-            disabled={busy}
-            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
-            style={{
-              background: "#16A34A",
-              height: 40,
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 700,
-              border: "none",
-              opacity: busy ? 0.7 : 1,
-            }}
-          >
-            {busy ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
-              </>
-            ) : (
-              <>
-                <Check className="h-4 w-4" /> ACEITAR
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => onRefuse(order)}
-            disabled={busy}
-            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
-            style={{
-              background: "#DC2626",
-              height: 40,
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 700,
-              border: "none",
-              opacity: busy ? 0.7 : 1,
-            }}
-          >
-            <X className="h-4 w-4" /> RECUSAR
-          </button>
-        </div>
+      <StageActions
+        order={order}
+        busy={busy}
+        onAccept={onAccept}
+        onReady={onReady}
+        onDispatch={onDispatch}
+        onRefuse={onRefuse}
+      />
+    </div>
+  );
+}
+
+function StageActions({
+  order,
+  busy,
+  onAccept,
+  onReady,
+  onDispatch,
+  onRefuse,
+}: {
+  order: ApiOrder;
+  busy: boolean;
+  onAccept: (o: ApiOrder) => void;
+  onReady: (o: ApiOrder) => void;
+  onDispatch: (o: ApiOrder) => void;
+  onRefuse: (o: ApiOrder) => void;
+}) {
+  const stage = String(order.kds_stage ?? "").toLowerCase();
+  const isPending = ["pendente", "pending", "new"].includes(stage);
+  const isAccepted = ["aceito", "accepted", "confirmed", "preparing"].includes(stage);
+  const isWaiting = ["aguardando", "ready", "awaiting_dispatch", "waiting"].includes(stage);
+  // "SÓ iFood entrega própria": platform iFood + logística do merchant
+  const deliveryHint = String(order.delivery_type ?? "").toLowerCase();
+  const isIfoodOwnDelivery =
+    order.platform === "ifood" &&
+    /(merchant|própr|propria|own|estabelec)/.test(deliveryHint);
+  const canDispatch = isWaiting && isIfoodOwnDelivery;
+
+  // Terminais (entregando/no_destino/entregue/cancelado): sem botão de avanço,
+  // mas ainda oferecemos cancelar quando não é terminal absoluto.
+  const isTerminal = ["entregue", "delivered", "cancelled", "canceled"].includes(stage);
+
+  const primary = isPending
+    ? { label: "ACEITAR", icon: <Check className="h-4 w-4" />, bg: "#16A34A", onClick: () => onAccept(order) }
+    : isAccepted
+    ? { label: "PRONTO", icon: <ChefHat className="h-4 w-4" />, bg: "#2196F3", onClick: () => onReady(order) }
+    : canDispatch
+    ? { label: "SAIU P/ ENTREGA", icon: <Bike className="h-4 w-4" />, bg: "#8B5CF6", onClick: () => onDispatch(order) }
+    : null;
+
+  if (!primary && isTerminal) return null;
+
+  return (
+    <div className={`grid ${primary ? "grid-cols-2" : "grid-cols-1"} gap-2 p-4 pt-3`}>
+      {primary && (
+        <button
+          onClick={primary.onClick}
+          disabled={busy}
+          className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+          style={{
+            background: primary.bg,
+            height: 40,
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            border: "none",
+            opacity: busy ? 0.7 : 1,
+          }}
+        >
+          {busy ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
+            </>
+          ) : (
+            <>
+              {primary.icon} {primary.label}
+            </>
+          )}
+        </button>
       )}
-      {colKey === "preparing" && (
-        <div className="p-4 pt-3">
-          <button
-            onClick={() => onReady(order)}
-            disabled={busy}
-            className="flex w-full items-center justify-center gap-2 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
-            style={{
-              background: "#2196F3",
-              height: 40,
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 700,
-              border: "none",
-              opacity: busy ? 0.7 : 1,
-            }}
-          >
-            {busy ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> AGUARDE...
-              </>
-            ) : (
-              <>
-                <ChefHat className="h-4 w-4" /> PRONTO
-              </>
-            )}
-          </button>
-        </div>
-      )}
+      <button
+        onClick={() => onRefuse(order)}
+        disabled={busy}
+        className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+        style={{
+          background: "#DC2626",
+          height: 40,
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 700,
+          border: "none",
+          opacity: busy ? 0.7 : 1,
+        }}
+      >
+        <X className="h-4 w-4" /> CANCELAR
+      </button>
     </div>
   );
 }

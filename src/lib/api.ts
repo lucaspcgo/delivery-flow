@@ -524,6 +524,14 @@ export async function readyOrder(
   return { success: true };
 }
 
+export async function dispatchOrder(
+  platform: string,
+  orderId: string,
+): Promise<{ success: true }> {
+  await http.post(`/orders/${platform}/${orderId}/dispatch`, {});
+  return { success: true };
+}
+
 export async function getAllOrders(
   platforms: OrderPlatform[] = ["99food", "ifood"],
   date?: string,
