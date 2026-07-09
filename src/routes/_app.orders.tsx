@@ -579,10 +579,18 @@ function OrderCard({
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
 }) {
-  void now; // re-render trigger
   void colKey;
+  const nowMs = now.getTime();
   const mins = minutesSince(order.created_at);
   const urgent = mins > 20;
+  const elapsedText = formatElapsed(order.created_at, nowMs);
+  const promiseEpochMs =
+    typeof order.promise_epoch === "number"
+      ? (order.promise_epoch > 1e12 ? order.promise_epoch : order.promise_epoch * 1000)
+      : null;
+  const promiseDiffSec =
+    promiseEpochMs != null ? Math.floor((promiseEpochMs - nowMs) / 1000) : null;
+  const promiseLate = promiseDiffSec != null && promiseDiffSec < 0;
   const border = PLATFORM_BORDER[order.platform] ?? "#888";
   const subtotal = order.items.reduce((acc, it) => {
     const subs = (it.sub_item_list ?? []).reduce((s, si) => s + (si.total_price || 0), 0);
