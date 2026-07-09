@@ -245,15 +245,10 @@ function OrdersKanban() {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)]" style={{ background: "#0B0F17" }}>
-      <header
-        className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 px-6 py-4"
-        style={{ background: "#111827" }}
-      >
+    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-background">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-background/95 px-6 py-4 backdrop-blur">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black" style={{ color: "#F9FAFB" }}>
-            Pedidos ao Vivo
-          </h1>
+          <h1 className="text-2xl font-black text-foreground">Pedidos ao Vivo</h1>
           <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
             {orders.length}
           </span>
@@ -261,7 +256,7 @@ function OrdersKanban() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="rounded-lg border border-white/10 bg-[#1F2937] px-3 py-1.5 text-sm font-medium text-gray-100 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none"
           />
           <button
             onClick={() => setSelectedDate(todayStr())}
@@ -271,12 +266,12 @@ function OrdersKanban() {
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-mono text-xl font-bold tabular-nums" style={{ color: "#9CA3AF" }}>
+          <span className="font-mono text-xl font-bold tabular-nums text-muted-foreground">
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
           <button
             onClick={load}
-            className="rounded-lg bg-white/10 p-2 text-gray-100 hover:bg-white/20"
+            className="rounded-lg bg-muted p-2 text-foreground hover:bg-muted/70"
             aria-label="Atualizar"
           >
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
@@ -355,10 +350,10 @@ function Column({
       className="flex min-w-0 flex-col p-3"
       style={{
         maxHeight: "calc(100vh - 8rem)",
-        background: "#111827",
+        background: "hsl(var(--muted) / 0.4)",
         borderRadius: 16,
-        boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        border: "1px solid hsl(var(--border))",
       }}
     >
       <div
@@ -378,7 +373,7 @@ function Column({
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ rowGap: 12 }}>
         {orders.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-sm text-gray-500">
+          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhum pedido
           </div>
         ) : (
