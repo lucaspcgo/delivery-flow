@@ -20,6 +20,7 @@ import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppOrdersRouteImport } from './routes/_app.orders'
 import { Route as AppMenuManagerRouteImport } from './routes/_app.menu-manager'
 import { Route as AppIntegrationsRouteImport } from './routes/_app.integrations'
+import { Route as AppDebugPedidosRouteImport } from './routes/_app.debug-pedidos'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAutomationsRouteImport } from './routes/_app.automations'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
@@ -78,6 +79,11 @@ const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
   path: '/integrations',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDebugPedidosRoute = AppDebugPedidosRouteImport.update({
+  id: '/debug-pedidos',
+  path: '/debug-pedidos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/debug-pedidos': typeof AppDebugPedidosRoute
   '/integrations': typeof AppIntegrationsRoute
   '/menu-manager': typeof AppMenuManagerRoute
   '/orders': typeof AppOrdersRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/debug-pedidos': typeof AppDebugPedidosRoute
   '/integrations': typeof AppIntegrationsRoute
   '/menu-manager': typeof AppMenuManagerRoute
   '/orders': typeof AppOrdersRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRoute
   '/_app/automations': typeof AppAutomationsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/debug-pedidos': typeof AppDebugPedidosRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/menu-manager': typeof AppMenuManagerRoute
   '/_app/orders': typeof AppOrdersRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/automations'
     | '/dashboard'
+    | '/debug-pedidos'
     | '/integrations'
     | '/menu-manager'
     | '/orders'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/automations'
     | '/dashboard'
+    | '/debug-pedidos'
     | '/integrations'
     | '/menu-manager'
     | '/orders'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/automations'
     | '/_app/dashboard'
+    | '/_app/debug-pedidos'
     | '/_app/integrations'
     | '/_app/menu-manager'
     | '/_app/orders'
@@ -277,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIntegrationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/debug-pedidos': {
+      id: '/_app/debug-pedidos'
+      path: '/debug-pedidos'
+      fullPath: '/debug-pedidos'
+      preLoaderRoute: typeof AppDebugPedidosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -305,6 +324,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAutomationsRoute: typeof AppAutomationsRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDebugPedidosRoute: typeof AppDebugPedidosRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppMenuManagerRoute: typeof AppMenuManagerRoute
   AppOrdersRoute: typeof AppOrdersRoute
@@ -317,6 +337,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAutomationsRoute: AppAutomationsRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDebugPedidosRoute: AppDebugPedidosRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppMenuManagerRoute: AppMenuManagerRoute,
   AppOrdersRoute: AppOrdersRoute,
@@ -337,13 +358,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
