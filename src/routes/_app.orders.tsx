@@ -683,7 +683,7 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
         {showImage && (
           <div
             className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg"
-            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)" }}
+            style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
           >
             {hasImg ? (
               <img
@@ -694,7 +694,7 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
                 loading="lazy"
               />
             ) : (
-              <ImageIcon className="h-6 w-6 text-gray-500" />
+              <ImageIcon className="h-6 w-6 text-muted-foreground" />
             )}
           </div>
         )}
@@ -702,14 +702,14 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
           {showName && (
             <div
               className="font-black leading-tight"
-              style={{ fontSize: 17, color: "#F9FAFB" }}
+              style={{ fontSize: 17 }}
             >
               {item.name}
             </div>
           )}
         </div>
         {showPrice && item.total_price > 0 && (
-          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#4ADE80" }}>
+          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#16A34A" }}>
             {centsToBRL(item.total_price)}
           </div>
         )}
@@ -728,12 +728,12 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
 function SubItem({ sub }: { sub: OrderSubItem }) {
   const price = sub.total_price || 0;
   return (
-    <li className="flex justify-between" style={{ fontSize: 13, color: "#D1D5DB" }}>
+    <li className="flex justify-between text-muted-foreground" style={{ fontSize: 13 }}>
       <span>
-        <span style={{ color: "#6B7280" }}>•</span> {sub.name}
+        <span className="text-muted-foreground/60">•</span> {sub.name}
       </span>
       {price > 0 && (
-        <span className="font-bold" style={{ color: "#4ADE80" }}>
+        <span className="font-bold" style={{ color: "#16A34A" }}>
           +{centsToBRL(price)}
         </span>
       )}
