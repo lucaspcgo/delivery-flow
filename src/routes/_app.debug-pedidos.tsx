@@ -204,11 +204,6 @@ function DebugPedidosPage() {
       navigate({ to: "/dashboard", replace: true });
     }
   }, [isAdmin, navigate]);
-  if (!isAdmin) {
-    return (
-      <div className="p-6 text-sm text-muted-foreground">Redirecionando…</div>
-    );
-  }
   const [platform, setPlatform] = useState<Platform>("99food");
   const [limit, setLimit] = useState<number>(10);
   const [applied, setApplied] = useState<{ platform: Platform; limit: number }>({
@@ -223,7 +218,14 @@ function DebugPedidosPage() {
         query: { limit: applied.limit },
         silent: true,
       }),
+    enabled: isAdmin,
   });
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">Redirecionando…</div>
+    );
+  }
 
   const apply = () => {
     const clamped = Math.max(1, Math.min(50, Math.floor(limit || 1)));
