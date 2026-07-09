@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield, BookOpen } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield, BookOpen, Bug } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUser, logout, type AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ const items = [
   { title: "Integrações", url: "/integrations", icon: Plug },
   { title: "Relatórios", url: "/reports", icon: BarChart3 },
   { title: "Configurações", url: "/settings", icon: Settings },
+  { title: "Depuração de Pedidos", url: "/debug-pedidos", icon: Bug },
 ] as const;
 
 export function AppSidebar() {
