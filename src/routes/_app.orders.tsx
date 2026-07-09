@@ -466,6 +466,7 @@ function OrderCard({
   kdsCfg,
   onAccept,
   onReady,
+  onDispatch,
   onRefuse,
 }: {
   order: ApiOrder;
@@ -475,9 +476,11 @@ function OrderCard({
   kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
+  onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
 }) {
   void now; // re-render trigger
+  void colKey;
   const mins = minutesSince(order.created_at);
   const urgent = mins > 20;
   const border = PLATFORM_BORDER[order.platform] ?? "#888";
