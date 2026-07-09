@@ -69,9 +69,9 @@ const COLUMNS: {
   headerText: string;
   emoji: string;
 }[] = [
-  { key: "new", title: "NOVOS", accent: "#F59E0B", headerBg: "#FFF9C4", headerText: "#92400E", emoji: "🟡" },
-  { key: "preparing", title: "EM PREPARO", accent: "#F97316", headerBg: "#FED7AA", headerText: "#92400E", emoji: "🟠" },
-  { key: "done", title: "ENTREGUES", accent: "#10B981", headerBg: "#D1FAE5", headerText: "#065F46", emoji: "✅" },
+  { key: "new", title: "AGUARDANDO", accent: "#F59E0B", headerBg: "#F59E0B", headerText: "#1a1a1a", emoji: "🟡" },
+  { key: "preparing", title: "EM PREPARO", accent: "#F97316", headerBg: "#F97316", headerText: "#1a1a1a", emoji: "🟠" },
+  { key: "done", title: "ENTREGUES", accent: "#10B981", headerBg: "#10B981", headerText: "#052e1b", emoji: "✅" },
 ];
 
 function shortOrderId(s: string): string {
