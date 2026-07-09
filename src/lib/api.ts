@@ -519,9 +519,16 @@ export async function cancelOrder(
 export async function readyOrder(
   platform: string,
   orderId: string,
-): Promise<{ success: true }> {
-  await http.post(`/orders/${platform}/${orderId}/ready`, {});
-  return { success: true };
+): Promise<{ success: true; platform_synced?: boolean; warning?: string | null }> {
+  const res = await http.post<{ platform_synced?: boolean; warning?: string | null } | null>(
+    `/orders/${platform}/${orderId}/ready`,
+    {},
+  );
+  return {
+    success: true,
+    platform_synced: res?.platform_synced,
+    warning: res?.warning ?? null,
+  };
 }
 
 export async function dispatchOrder(
