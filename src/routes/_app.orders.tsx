@@ -452,7 +452,7 @@ function OrderCard({
   onRefuse,
 }: {
   order: ApiOrder;
-  colKey: ColumnKey;
+  colKey: string;
   now: Date;
   busy: boolean;
   kdsCfg: KdsFieldMap;
