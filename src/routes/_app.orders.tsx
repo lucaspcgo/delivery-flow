@@ -266,11 +266,14 @@ function OrdersKanban() {
   const handleReady = async (order: ApiOrder) => {
     setBusyId(order.id);
     try {
-      await readyOrder(order.platform, order.platform_order_id || order.id);
+      const res = await readyOrder(order.platform, order.platform_order_id || order.id);
       setOrders((prev) =>
         prev.map((o) => (o.id === order.id ? { ...o, status: "ready" } : o)),
       );
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} finalizado!`);
+      if (res.platform_synced === false) {
+        toast.warning(res.warning || "Pedido avançou no painel, mas não foi sincronizado com a plataforma.");
+      }
       await load();
     } catch {
       toast.error("Erro ao finalizar pedido. Tente novamente.");
