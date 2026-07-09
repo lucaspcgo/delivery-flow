@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield, BookOpen, Bug } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield, BookOpen, Bug, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUser, logout, type AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ const items = [
   { title: "Automações", url: "/automations", icon: Zap },
   { title: "Integrações", url: "/integrations", icon: Plug },
   { title: "Relatórios", url: "/reports", icon: BarChart3 },
+  { title: "Buscar Loja", url: "/buscar-loja", icon: Search },
   { title: "Configurações", url: "/settings", icon: Settings },
 ] as const;
 

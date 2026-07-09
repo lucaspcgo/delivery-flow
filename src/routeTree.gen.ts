@@ -22,6 +22,7 @@ import { Route as AppMenuManagerRouteImport } from './routes/_app.menu-manager'
 import { Route as AppIntegrationsRouteImport } from './routes/_app.integrations'
 import { Route as AppDebugPedidosRouteImport } from './routes/_app.debug-pedidos'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppBuscarLojaRouteImport } from './routes/_app.buscar-loja'
 import { Route as AppAutomationsRouteImport } from './routes/_app.automations'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 
@@ -89,6 +90,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBuscarLojaRoute = AppBuscarLojaRouteImport.update({
+  id: '/buscar-loja',
+  path: '/buscar-loja',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAutomationsRoute = AppAutomationsRouteImport.update({
   id: '/automations',
   path: '/automations',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
+  '/buscar-loja': typeof AppBuscarLojaRoute
   '/dashboard': typeof AppDashboardRoute
   '/debug-pedidos': typeof AppDebugPedidosRoute
   '/integrations': typeof AppIntegrationsRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
+  '/buscar-loja': typeof AppBuscarLojaRoute
   '/dashboard': typeof AppDashboardRoute
   '/debug-pedidos': typeof AppDebugPedidosRoute
   '/integrations': typeof AppIntegrationsRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/_app/admin': typeof AppAdminRoute
   '/_app/automations': typeof AppAutomationsRoute
+  '/_app/buscar-loja': typeof AppBuscarLojaRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/debug-pedidos': typeof AppDebugPedidosRoute
   '/_app/integrations': typeof AppIntegrationsRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin'
     | '/automations'
+    | '/buscar-loja'
     | '/dashboard'
     | '/debug-pedidos'
     | '/integrations'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin'
     | '/automations'
+    | '/buscar-loja'
     | '/dashboard'
     | '/debug-pedidos'
     | '/integrations'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/_app/admin'
     | '/_app/automations'
+    | '/_app/buscar-loja'
     | '/_app/dashboard'
     | '/_app/debug-pedidos'
     | '/_app/integrations'
@@ -303,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/buscar-loja': {
+      id: '/_app/buscar-loja'
+      path: '/buscar-loja'
+      fullPath: '/buscar-loja'
+      preLoaderRoute: typeof AppBuscarLojaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/automations': {
       id: '/_app/automations'
       path: '/automations'
@@ -323,6 +342,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAutomationsRoute: typeof AppAutomationsRoute
+  AppBuscarLojaRoute: typeof AppBuscarLojaRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDebugPedidosRoute: typeof AppDebugPedidosRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
@@ -336,6 +356,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAutomationsRoute: AppAutomationsRoute,
+  AppBuscarLojaRoute: AppBuscarLojaRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDebugPedidosRoute: AppDebugPedidosRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
