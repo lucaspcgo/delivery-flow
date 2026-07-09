@@ -608,6 +608,7 @@ export interface AutomationRule {
   platform: "ifood" | "99food" | "keeta" | "all" | string;
   enabled: boolean;
   delay_seconds: number;
+  accept_delay_seconds: number;
 }
 
 export async function getAutomations(): Promise<AutomationRule[]> {
@@ -617,7 +618,9 @@ export async function getAutomations(): Promise<AutomationRule[]> {
 
 export async function updateAutomation(
   id: string,
-  data: Partial<Pick<AutomationRule, "enabled" | "delay_seconds">>,
+  data: Partial<
+    Pick<AutomationRule, "enabled" | "delay_seconds" | "accept_delay_seconds">
+  >,
 ): Promise<AutomationRule> {
   return http.put<AutomationRule>(`/automations/${id}`, data, { silent: true });
 }
