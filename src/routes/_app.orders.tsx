@@ -399,6 +399,7 @@ function Column({
   kdsCfg,
   onAccept,
   onReady,
+  onDispatch,
   onRefuse,
 }: {
   col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
@@ -408,6 +409,7 @@ function Column({
   kdsCfg: KdsFieldMap;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
+  onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
 }) {
   return (
@@ -446,6 +448,7 @@ function Column({
               kdsCfg={kdsCfg}
               onAccept={onAccept}
               onReady={onReady}
+              onDispatch={onDispatch}
               onRefuse={onRefuse}
             />
           ))
