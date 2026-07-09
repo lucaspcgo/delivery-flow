@@ -83,12 +83,18 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
-              {(user as { is_admin?: boolean } | null)?.is_admin === true && (
-                <>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        {authLoaded && (user as { is_admin?: boolean } | null)?.is_admin === true && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname.startsWith("/admin")}
+                    isActive={pathname === "/admin" || pathname.startsWith("/admin/")}
                     tooltip="Admin"
                   >
                     <Link to="/admin" className="flex items-center gap-2">
@@ -109,7 +115,6 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {authLoaded && (user as { is_admin?: boolean } | null)?.is_admin === true && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
@@ -122,12 +127,10 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                )}
-                </>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t">
