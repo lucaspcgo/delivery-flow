@@ -8,13 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Info, RefreshCw, Zap } from "lucide-react";
+import { Info, RefreshCw, Store, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   getAutomations,
   updateAutomation,
   type AutomationRule,
+  getRestaurants,
+  setPlatformAutomation,
+  type ApiRestaurant,
+  type RestaurantPlatform,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/automations")({
@@ -192,6 +196,10 @@ function AutomationsPage() {
   const [rules, setRules] = useState<AutomationRule[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restaurants, setRestaurants] = useState<ApiRestaurant[] | null>(null);
+  const [restLoading, setRestLoading] = useState(true);
+  const [restError, setRestError] = useState<string | null>(null);
+  const [autoBusy, setAutoBusy] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -207,9 +215,100 @@ function AutomationsPage() {
     }
   }, []);
 
+  const loadRestaurants = useCallback(async () => {
+    setRestLoading(true);
+    setRestError(null);
+    try {
+      const data = await getRestaurants();
+      setRestaurants(data);
+    } catch {
+      setRestError("Não foi possível carregar as lojas");
+    } finally {
+      setRestLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadRestaurants();
+  }, [load, loadRestaurants]);
+
+  const platformStoreId = (p: RestaurantPlatform): string => {
+    if (p.platform === "99food") return p.app_shop_id ?? "";
+    return p.platform_merchant_id ?? p.platform_store_id ?? "";
+  };
+
+  const rowKey = (restId: string, platform: string) => `${restId}:${platform}`;
+
+  const handleToggleAutomation = async (
+    rest: ApiRestaurant,
+    p: RestaurantPlatform,
+    next: boolean,
+  ) => {
+    const storeId = platformStoreId(p);
+    if (!storeId) {
+      toast.error("Loja sem identificador da plataforma");
+      return;
+    }
+    const key = rowKey(rest.id, String(p.platform));
+    const prev = p.automation_enabled ?? true;
+    // otimista
+    setRestaurants((rs) =>
+      rs
+        ? rs.map((r) =>
+            r.id === rest.id
+              ? {
+                  ...r,
+                  platforms: r.platforms?.map((pp) =>
+                    pp.platform === p.platform
+                      ? { ...pp, automation_enabled: next }
+                      : pp,
+                  ),
+                }
+              : r,
+          )
+        : rs,
+    );
+    setAutoBusy((b) => ({ ...b, [key]: true }));
+    try {
+      await setPlatformAutomation({
+        platform: String(p.platform),
+        store_id: storeId,
+        enabled: next,
+      });
+      toast.success(next ? "Automação ativada" : "Automação desativada");
+    } catch {
+      // reverte
+      setRestaurants((rs) =>
+        rs
+          ? rs.map((r) =>
+              r.id === rest.id
+                ? {
+                    ...r,
+                    platforms: r.platforms?.map((pp) =>
+                      pp.platform === p.platform
+                        ? { ...pp, automation_enabled: prev }
+                        : pp,
+                    ),
+                  }
+                : r,
+            )
+          : rs,
+      );
+      toast.error("Não foi possível alterar a automação desta loja");
+    } finally {
+      setAutoBusy((b) => {
+        const { [key]: _, ...rest2 } = b;
+        return rest2;
+      });
+    }
+  };
+
+  const storeRows = (restaurants ?? []).flatMap((r) =>
+    (r.platforms ?? [])
+      .filter((p) => p.status === "authorized")
+      .map((p) => ({ rest: r, platform: p })),
+  );
 
   const handleRuleChange = (next: AutomationRule) => {
     setRules((prev) =>
@@ -272,6 +371,96 @@ function AutomationsPage() {
             ))}
           </div>
         )}
+
+        <div className="pt-4">
+          <div className="mb-3">
+            <h2 className="text-lg font-semibold">Lojas</h2>
+            <p className="text-sm text-muted-foreground">
+              Quando ligado, esta loja aceita e marca pronto automaticamente
+              conforme os tempos configurados acima. Desligado, você controla
+              manualmente.
+            </p>
+          </div>
+
+          {restLoading && (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="p-4">
+                  <Skeleton className="h-10 w-full" />
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {!restLoading && restError && (
+            <Card className="p-6 text-center space-y-3">
+              <p className="text-sm text-muted-foreground">{restError}</p>
+              <Button onClick={loadRestaurants} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
+              </Button>
+            </Card>
+          )}
+
+          {!restLoading && !restError && storeRows.length === 0 && (
+            <Card className="p-8 text-center text-sm text-muted-foreground">
+              Nenhuma loja conectada.
+            </Card>
+          )}
+
+          {!restLoading && !restError && storeRows.length > 0 && (
+            <Card className="divide-y overflow-hidden">
+              {storeRows.map(({ rest, platform }) => {
+                const key = rowKey(rest.id, String(platform.platform));
+                const busy = !!autoBusy[key];
+                const enabled = platform.automation_enabled ?? true;
+                const meta = platformMeta(String(platform.platform));
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center gap-4 p-4"
+                  >
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ring-1",
+                        meta.bg,
+                        meta.text,
+                        meta.ring,
+                      )}
+                    >
+                      <Store className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{rest.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "text-[10px] uppercase tracking-wider font-bold",
+                            meta.bg,
+                            meta.text,
+                          )}
+                        >
+                          {meta.label}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {enabled ? "Automação ligada" : "Manual"}
+                        </span>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={enabled}
+                      disabled={busy}
+                      onCheckedChange={(v) =>
+                        handleToggleAutomation(rest, platform, v)
+                      }
+                      className="data-[state=checked]:bg-primary"
+                    />
+                  </div>
+                );
+              })}
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
