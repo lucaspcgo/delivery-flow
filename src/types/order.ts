@@ -32,4 +32,9 @@ export interface ApiOrder {
   delivery_type?: string | null;
   payment_method?: string | null;
   payment_when?: string | null;
+  store_name?: string | null;
+  distance_km?: number | null;
+  delivery_neighborhood?: string | null;
+  delivery_promise?: string | null;
+  delivery_promise_at?: string | null;
 }
