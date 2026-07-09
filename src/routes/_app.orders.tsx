@@ -199,20 +199,37 @@ function OrdersKanban() {
     return () => clearInterval(t);
   }, []);
 
-  const visibleColumns = useMemo(
-    () => [...columns].filter((c) => c.visible).sort((a, b) => a.order - b.order),
-    [columns],
-  );
-
-  const grouped = useMemo(() => {
+  const { renderColumns, grouped } = useMemo(() => {
+    const visible = [...columns]
+      .filter((c) => c.visible)
+      .sort((a, b) => a.order - b.order);
+    const knownKeys = new Set(columns.map((c) => c.key));
     const g: Record<string, ApiOrder[]> = {};
-    for (const c of visibleColumns) g[c.key] = [];
+    for (const c of visible) g[c.key] = [];
+    const orphans: ApiOrder[] = [];
     for (const o of orders) {
-      const stage = o.kds_stage ?? legacyStageFromStatus(o.status);
-      if (g[stage]) g[stage].push(o);
+      const stage = String(o.kds_stage ?? legacyStageFromStatus(o.status));
+      if (g[stage]) {
+        g[stage].push(o);
+      } else if (knownKeys.has(stage) || stage === "outros") {
+        // known column but not visible → hide (respect user choice)
+        if (g["outros"]) g["outros"].push(o);
+        else orphans.push(o);
+      } else {
+        // unmatched stage → always land in outros
+        if (g["outros"]) g["outros"].push(o);
+        else orphans.push(o);
+      }
     }
-    return g;
-  }, [orders, visibleColumns]);
+    const render = [...visible];
+    if (orphans.length > 0 && !g["outros"]) {
+      const fallback: KdsColumn = { key: "outros", label: "Outros", visible: true, order: 9999 };
+      render.push(fallback);
+      g["outros"] = orphans;
+    }
+    return { renderColumns: render, grouped: g };
+  }, [orders, columns]);
+  const visibleColumns = renderColumns;
 
   const handleAccept = async (order: ApiOrder) => {
     setBusyId(order.id);
