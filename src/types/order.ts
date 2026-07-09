@@ -37,4 +37,7 @@ export interface ApiOrder {
   delivery_neighborhood?: string | null;
   delivery_promise?: string | null;
   delivery_promise_at?: string | null;
+  promise_time?: string | null;
+  neighborhood?: string | null;
+  note?: string | null;
 }
