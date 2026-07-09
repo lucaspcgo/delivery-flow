@@ -1136,13 +1136,9 @@ const DEFAULT_KDS_FIELDS: KdsField[] = [
 ];
 
 export const DEFAULT_KDS_COLUMNS: KdsColumn[] = [
-  { key: "new", label: "Aguardando", visible: true, order: 0 },
-  { key: "preparing", label: "Em preparo", visible: true, order: 1 },
-  { key: "ready", label: "Pronto", visible: true, order: 2 },
-  { key: "dispatched", label: "Saiu para entrega", visible: false, order: 3 },
-  { key: "delivered", label: "Entregue", visible: true, order: 4 },
-  { key: "cancelled", label: "Cancelado", visible: false, order: 5 },
-  { key: "outros", label: "Outros", visible: false, order: 6 },
+  { key: "pendente", label: "Pendentes", visible: true, order: 0 },
+  { key: "aguardando", label: "Aguardando", visible: true, order: 1 },
+  { key: "entregando", label: "Entregando", visible: true, order: 2 },
 ];
 
 function normalizeColumns(input: unknown): KdsColumn[] {

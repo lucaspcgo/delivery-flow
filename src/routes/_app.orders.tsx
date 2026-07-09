@@ -78,7 +78,9 @@ const COLUMN_STYLE: Record<string, { bg: string; text: string; emoji: string }> 
   dispatched: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
   delivered:  { bg: "#10B981", text: "#052e1b", emoji: "✅" },
   cancelled:  { bg: "#DC2626", text: "#fff",     emoji: "❌" },
-  outros:     { bg: "#64748B", text: "#fff",     emoji: "📦" },
+  pendente:   { bg: "#F59E0B", text: "#1a1a1a", emoji: "🟡" },
+  aguardando: { bg: "#F97316", text: "#1a1a1a", emoji: "🟠" },
+  entregando: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
 };
 function styleFor(key: string) {
   return COLUMN_STYLE[key] ?? { bg: "#64748B", text: "#fff", emoji: "📋" };
@@ -228,31 +230,19 @@ function OrdersKanban() {
     const visible = [...columns]
       .filter((c) => c.visible)
       .sort((a, b) => a.order - b.order);
-    const knownKeys = new Set(columns.map((c) => c.key));
     const g: Record<string, ApiOrder[]> = {};
     for (const c of visible) g[c.key] = [];
-    const orphans: ApiOrder[] = [];
     for (const o of orders) {
       const stage = String(o.kds_stage ?? legacyStageFromStatus(o.status));
       if (g[stage]) {
         g[stage].push(o);
-      } else if (knownKeys.has(stage) || stage === "outros") {
-        // known column but not visible → hide (respect user choice)
-        if (g["outros"]) g["outros"].push(o);
-        else orphans.push(o);
-      } else {
-        // unmatched stage → always land in outros
-        if (g["outros"]) g["outros"].push(o);
-        else orphans.push(o);
+      } else if (g["pendente"]) {
+        // stage sem coluna correspondente → cai em "pendente"
+        g["pendente"].push(o);
       }
+      // se não há coluna "pendente" visível, o pedido simplesmente não aparece
     }
-    const render = [...visible];
-    if (orphans.length > 0 && !g["outros"]) {
-      const fallback: KdsColumn = { key: "outros", label: "Outros", visible: true, order: 9999 };
-      render.push(fallback);
-      g["outros"] = orphans;
-    }
-    return { renderColumns: render, grouped: g };
+    return { renderColumns: visible, grouped: g };
   }, [orders, columns]);
   const visibleColumns = renderColumns;
 
