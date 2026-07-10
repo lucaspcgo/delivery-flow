@@ -502,6 +502,7 @@ function Column({
   onReady,
   onDispatch,
   onRefuse,
+  onRefresh,
 }: {
   col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
