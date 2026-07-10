@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -439,6 +439,7 @@ function OrdersKanban() {
                 onReady={handleReady}
                 onDispatch={handleDispatch}
                 onRefuse={(o) => setRefuseTarget(o)}
+                onRefresh={load}
               />
             );
           })}
@@ -501,6 +502,7 @@ function Column({
   onReady,
   onDispatch,
   onRefuse,
+  onRefresh,
 }: {
   col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
@@ -511,6 +513,7 @@ function Column({
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
+  onRefresh: () => void | Promise<void>;
 }) {
   return (
     <div
@@ -550,6 +553,7 @@ function Column({
               onReady={onReady}
               onDispatch={onDispatch}
               onRefuse={onRefuse}
+              onRefresh={onRefresh}
             />
           ))
         )}
@@ -568,6 +572,7 @@ function OrderCard({
   onReady,
   onDispatch,
   onRefuse,
+  onRefresh,
 }: {
   order: ApiOrder;
   colKey: string;
@@ -578,6 +583,7 @@ function OrderCard({
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
+  onRefresh: () => void | Promise<void>;
 }) {
   void colKey;
   const nowMs = now.getTime();
@@ -860,10 +866,8 @@ function OrderCard({
       <StageActions
         order={order}
         busy={busy}
-        onAccept={onAccept}
-        onReady={onReady}
-        onDispatch={onDispatch}
         onRefuse={onRefuse}
+        onRefresh={onRefresh}
       />
     </div>
   );
@@ -872,17 +876,13 @@ function OrderCard({
 function StageActions({
   order,
   busy,
-  onAccept,
-  onReady,
-  onDispatch,
   onRefuse,
+  onRefresh,
 }: {
   order: ApiOrder;
   busy: boolean;
-  onAccept: (o: ApiOrder) => void | Promise<void>;
-  onReady: (o: ApiOrder) => void | Promise<void>;
-  onDispatch: (o: ApiOrder) => void | Promise<void>;
   onRefuse: (o: ApiOrder) => void;
+  onRefresh: () => void | Promise<void>;
 }) {
   const actions = Array.isArray(order.available_actions) ? order.available_actions : [];
   const [running, setRunning] = useState<string | null>(null);
@@ -909,9 +909,11 @@ function StageActions({
     }
     setRunning(action);
     try {
-      if (action === "confirm") await onAccept(order);
-      else if (action === "ready") await onReady(order);
-      else if (action === "dispatch") await onDispatch(order);
+      await runOrderAction(order.platform_order_id || order.id, action);
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} atualizado!`);
+      await onRefresh();
+    } catch {
+      toast.error("Erro ao executar ação. Tente novamente.");
     } finally {
       setRunning(null);
     }
