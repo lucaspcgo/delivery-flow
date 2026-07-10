@@ -721,12 +721,12 @@ function OrderCard({
               </span>
             )}
           </div>
-          {show(kdsCfg, "order_number") && (
+          {show(kdsCfg, "order_number") && order.order_number && (
             <div
               className="mt-2 font-black tabular-nums"
               style={{ fontSize: 24, color: "#B45309", letterSpacing: 1 }}
             >
-              #{order.order_number || order.platform_order_id}
+              Pedido #{order.order_number}
             </div>
           )}
           {show(kdsCfg, "customer_phone") && order.customer_phone && (
