@@ -543,12 +543,23 @@ export async function runOrderAction(
   platform: string,
   platformOrderId: string,
   action: string,
-): Promise<unknown> {
-  return http.post(
+): Promise<{ order?: ApiOrder } & Record<string, unknown>> {
+  const res = await http.post<unknown>(
     `/orders/${platform}/${platformOrderId}/${action}`,
     {},
     { silent: true },
   );
+  // Aceita tanto { order: {...} } quanto o objeto do pedido direto.
+  if (res && typeof res === "object") {
+    const obj = res as Record<string, unknown>;
+    if (obj.order && typeof obj.order === "object") {
+      return obj as { order: ApiOrder };
+    }
+    if (typeof obj.platform === "string" && typeof obj.platform_order_id === "string") {
+      return { order: obj as unknown as ApiOrder };
+    }
+  }
+  return {};
 }
 
 export async function getAllOrders(
