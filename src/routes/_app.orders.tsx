@@ -882,7 +882,7 @@ function OrderCard({
         order={order}
         busy={busy}
         onRefuse={onRefuse}
-        onRefresh={onRefresh}
+        onOrderUpdated={onOrderUpdated}
       />
     </div>
   );
@@ -892,12 +892,12 @@ function StageActions({
   order,
   busy,
   onRefuse,
-  onRefresh,
+  onOrderUpdated,
 }: {
   order: ApiOrder;
   busy: boolean;
   onRefuse: (o: ApiOrder) => void;
-  onRefresh: () => void | Promise<void>;
+  onOrderUpdated: (updated: ApiOrder) => void;
 }) {
   const actions = Array.isArray(order.available_actions) ? order.available_actions : [];
   const [busySet, setBusySet] = useState<Set<string>>(new Set());
@@ -929,9 +929,11 @@ function StageActions({
       return next;
     });
     try {
-      await runOrderAction(order.platform, order.platform_order_id, action);
+      const res = await runOrderAction(order.platform, order.platform_order_id, action);
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} atualizado!`);
-      await onRefresh();
+      if (res.order) {
+        onOrderUpdated(res.order);
+      }
     } catch (err) {
       const details =
         err instanceof ApiError
