@@ -440,6 +440,16 @@ function OrdersKanban() {
                 onDispatch={handleDispatch}
                 onRefuse={(o) => setRefuseTarget(o)}
                 onRefresh={load}
+                onOrderUpdated={(updated) =>
+                  setOrders((prev) =>
+                    prev.map((o) =>
+                      o.platform === updated.platform &&
+                      o.platform_order_id === updated.platform_order_id
+                        ? { ...o, ...updated }
+                        : o,
+                    ),
+                  )
+                }
               />
             );
           })}
@@ -503,6 +513,7 @@ function Column({
   onDispatch,
   onRefuse,
   onRefresh,
+  onOrderUpdated,
 }: {
   col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
@@ -514,6 +525,7 @@ function Column({
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
   onRefresh: () => void | Promise<void>;
+  onOrderUpdated: (updated: ApiOrder) => void;
 }) {
   return (
     <div
@@ -554,6 +566,7 @@ function Column({
               onDispatch={onDispatch}
               onRefuse={onRefuse}
               onRefresh={onRefresh}
+              onOrderUpdated={onOrderUpdated}
             />
           ))
         )}
@@ -573,6 +586,7 @@ function OrderCard({
   onDispatch,
   onRefuse,
   onRefresh,
+  onOrderUpdated,
 }: {
   order: ApiOrder;
   colKey: string;
@@ -584,6 +598,7 @@ function OrderCard({
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
   onRefresh: () => void | Promise<void>;
+  onOrderUpdated: (updated: ApiOrder) => void;
 }) {
   void colKey;
   const nowMs = now.getTime();
@@ -867,7 +882,7 @@ function OrderCard({
         order={order}
         busy={busy}
         onRefuse={onRefuse}
-        onRefresh={onRefresh}
+        onOrderUpdated={onOrderUpdated}
       />
     </div>
   );
@@ -877,12 +892,12 @@ function StageActions({
   order,
   busy,
   onRefuse,
-  onRefresh,
+  onOrderUpdated,
 }: {
   order: ApiOrder;
   busy: boolean;
   onRefuse: (o: ApiOrder) => void;
-  onRefresh: () => void | Promise<void>;
+  onOrderUpdated: (updated: ApiOrder) => void;
 }) {
   const actions = Array.isArray(order.available_actions) ? order.available_actions : [];
   const [busySet, setBusySet] = useState<Set<string>>(new Set());
@@ -914,9 +929,11 @@ function StageActions({
       return next;
     });
     try {
-      await runOrderAction(order.platform, order.platform_order_id, action);
+      const res = await runOrderAction(order.platform, order.platform_order_id, action);
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} atualizado!`);
-      await onRefresh();
+      if (res.order) {
+        onOrderUpdated(res.order);
+      }
     } catch (err) {
       const details =
         err instanceof ApiError
