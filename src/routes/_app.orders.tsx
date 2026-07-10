@@ -513,6 +513,7 @@ function Column({
   onDispatch,
   onRefuse,
   onRefresh,
+  onOrderUpdated,
 }: {
   col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
@@ -524,6 +525,7 @@ function Column({
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
   onRefresh: () => void | Promise<void>;
+  onOrderUpdated: (updated: ApiOrder) => void;
 }) {
   return (
     <div
@@ -564,6 +566,7 @@ function Column({
               onDispatch={onDispatch}
               onRefuse={onRefuse}
               onRefresh={onRefresh}
+              onOrderUpdated={onOrderUpdated}
             />
           ))
         )}
