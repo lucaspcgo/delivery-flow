@@ -421,6 +421,41 @@ function OrdersKanban() {
             Configurar colunas
           </button>
           <button
+            onClick={async () => {
+              if (reprocessing) return;
+              setReprocessing(true);
+              try {
+                const { processed } = await reprocess99FoodPending();
+                toast.success(`${processed} pedido${processed === 1 ? "" : "s"} reprocessado${processed === 1 ? "" : "s"}`);
+                await load();
+              } catch (err) {
+                const msg =
+                  err instanceof ApiError
+                    ? (() => {
+                        const p = err.payload as { details?: unknown; message?: unknown } | null;
+                        if (p && typeof p === "object") {
+                          if (typeof p.details === "string") return p.details;
+                          if (typeof p.message === "string") return p.message;
+                        }
+                        return err.message;
+                      })()
+                    : "Falha ao reprocessar pendentes";
+                toast.error(msg);
+              } finally {
+                setReprocessing(false);
+              }
+            }}
+            disabled={reprocessing}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-bold text-foreground hover:bg-muted/70 disabled:opacity-60"
+          >
+            {reprocessing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4" />
+            )}
+            Reprocessar pendentes
+          </button>
+          <button
             onClick={load}
             className="rounded-lg bg-muted p-2 text-foreground hover:bg-muted/70"
             aria-label="Atualizar"
