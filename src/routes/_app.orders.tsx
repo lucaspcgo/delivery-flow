@@ -571,6 +571,7 @@ function OrderCard({
   onReady,
   onDispatch,
   onRefuse,
+  onRefresh,
 }: {
   order: ApiOrder;
   colKey: string;
