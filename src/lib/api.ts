@@ -612,6 +612,26 @@ export async function runOrderAction(
   };
 }
 
+export async function reprocess99FoodPending(): Promise<{
+  processed: number;
+  raw: Record<string, unknown>;
+}> {
+  const res = await http.post<Record<string, unknown> | null>(
+    "/orders/99food/reprocess-pending",
+    {},
+    { silent: true },
+  );
+  const data = (res ?? {}) as Record<string, unknown>;
+  const candidates = [
+    data.processed,
+    data.count,
+    data.reprocessed,
+    (data.orders as unknown[] | undefined)?.length,
+  ];
+  const processed = candidates.find((v) => typeof v === "number") as number | undefined;
+  return { processed: processed ?? 0, raw: data };
+}
+
 export async function getAllOrders(
   platforms: OrderPlatform[] = ["99food", "ifood"],
   date?: string,
