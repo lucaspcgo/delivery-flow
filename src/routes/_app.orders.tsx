@@ -586,6 +586,7 @@ function OrderCard({
   onDispatch,
   onRefuse,
   onRefresh,
+  onOrderUpdated,
 }: {
   order: ApiOrder;
   colKey: string;
@@ -597,6 +598,7 @@ function OrderCard({
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
   onRefresh: () => void | Promise<void>;
+  onOrderUpdated: (updated: ApiOrder) => void;
 }) {
   void colKey;
   const nowMs = now.getTime();
