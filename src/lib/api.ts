@@ -539,6 +539,13 @@ export async function dispatchOrder(
   return { success: true };
 }
 
+export async function runOrderAction(
+  platformOrderId: string,
+  action: string,
+): Promise<unknown> {
+  return http.post(`/orders/99food/${platformOrderId}/${action}`, {});
+}
+
 export async function getAllOrders(
   platforms: OrderPlatform[] = ["99food", "ifood"],
   date?: string,
