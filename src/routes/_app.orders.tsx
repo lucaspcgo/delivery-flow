@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, ApiError, type KdsColumn } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
