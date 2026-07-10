@@ -439,6 +439,7 @@ function OrdersKanban() {
                 onReady={handleReady}
                 onDispatch={handleDispatch}
                 onRefuse={(o) => setRefuseTarget(o)}
+                onRefresh={load}
               />
             );
           })}
