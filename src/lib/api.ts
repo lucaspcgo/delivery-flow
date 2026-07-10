@@ -539,27 +539,77 @@ export async function dispatchOrder(
   return { success: true };
 }
 
+export interface OrderStagePatch {
+  platform_order_id: string;
+  status: string;
+  kds_stage: string;
+  available_actions: { action: string; label: string }[];
+}
+
+export type RunOrderActionResult =
+  | {
+      ok: true;
+      order: OrderStagePatch;
+      platform_synced?: boolean;
+      warning?: string | null;
+    }
+  | { ok: false; error: string; details?: string; status: number };
+
 export async function runOrderAction(
   platform: string,
   platformOrderId: string,
   action: string,
-): Promise<{ order?: ApiOrder } & Record<string, unknown>> {
-  const res = await http.post<unknown>(
-    `/orders/${platform}/${platformOrderId}/${action}`,
-    {},
-    { silent: true },
-  );
-  // Aceita tanto { order: {...} } quanto o objeto do pedido direto.
-  if (res && typeof res === "object") {
-    const obj = res as Record<string, unknown>;
-    if (obj.order && typeof obj.order === "object") {
-      return obj as { order: ApiOrder };
-    }
-    if (typeof obj.platform === "string" && typeof obj.platform_order_id === "string") {
-      return { order: obj as unknown as ApiOrder };
+): Promise<RunOrderActionResult> {
+  const url = `${API_URL}/orders/${platform}/${platformOrderId}/${action}`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  const token = authToken.get();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, { method: "POST", headers, body: "{}" });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Falha de rede";
+    return { ok: false, error: message, status: 0 };
+  }
+
+  const text = await res.text();
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
     }
   }
-  return {};
+
+  if (!res.ok) {
+    const d = (data ?? {}) as { error?: unknown; details?: unknown };
+    return {
+      ok: false,
+      error: typeof d.error === "string" ? d.error : `Erro ${res.status}`,
+      details: typeof d.details === "string" ? d.details : undefined,
+      status: res.status,
+    };
+  }
+
+  const ok = (data ?? {}) as {
+    order?: OrderStagePatch;
+    platform_synced?: boolean;
+    warning?: string | null;
+  };
+  if (!ok.order) {
+    return { ok: false, error: "Resposta inválida do servidor", status: res.status };
+  }
+  return {
+    ok: true,
+    order: ok.order,
+    platform_synced: ok.platform_synced,
+    warning: ok.warning ?? null,
+  };
 }
 
 export async function getAllOrders(

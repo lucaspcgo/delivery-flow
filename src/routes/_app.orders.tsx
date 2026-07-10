@@ -345,14 +345,27 @@ function OrdersKanban() {
     if (!order) return;
     setBusyId(order.id);
     try {
-      await cancelOrder(
-        order.platform_order_id,
-        order.app_shop_id ?? "",
-        order.platform,
+      const res = await runOrderAction(order.platform, order.platform_order_id, "cancel");
+      if (!res.ok) {
+        toast.error(res.details || res.error || "Falha ao cancelar pedido");
+        return;
+      }
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.platform === order.platform && o.platform_order_id === order.platform_order_id
+            ? {
+                ...o,
+                status: res.order.status,
+                kds_stage: res.order.kds_stage,
+                available_actions: res.order.available_actions as ApiOrder["available_actions"],
+              }
+            : o,
+        ),
       );
-      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} recusado`);
+      if (res.warning) toast.info(res.warning);
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} cancelado`);
       setRefuseTarget(null);
-      await load();
+      void Promise.resolve(load()).catch(() => undefined);
     } catch {
       toast.error("Erro ao recusar pedido. Tente novamente.");
     } finally {
@@ -883,6 +896,7 @@ function OrderCard({
         busy={busy}
         onRefuse={onRefuse}
         onOrderUpdated={onOrderUpdated}
+        onRefresh={onRefresh}
       />
     </div>
   );
@@ -893,15 +907,19 @@ function StageActions({
   busy,
   onRefuse,
   onOrderUpdated,
+  onRefresh,
 }: {
   order: ApiOrder;
   busy: boolean;
   onRefuse: (o: ApiOrder) => void;
   onOrderUpdated: (updated: ApiOrder) => void;
+  onRefresh: () => void | Promise<void>;
 }) {
   const actions = Array.isArray(order.available_actions) ? order.available_actions : [];
   const [busySet, setBusySet] = useState<Set<string>>(new Set());
-  const anyBusy = busy || busySet.size > 0;
+  const [runningAction, setRunningAction] = useState<string | null>(null);
+  const orderKey = order.platform_order_id;
+  const orderBusy = busy || busySet.has(orderKey);
 
   if (actions.length === 0) return null;
 
@@ -916,8 +934,8 @@ function StageActions({
   };
 
   const runAction = async (action: string) => {
-    const key = `${order.platform_order_id}:${action}`;
-    if (anyBusy || busySet.has(key)) return;
+    // Anti-duplo-clique por pedido: ignora se o mesmo pedido já está em ação.
+    if (busySet.has(orderKey)) return;
     // "cancel" passa pelo modal de confirmação (sem POST direto aqui)
     if (action === "cancel") {
       onRefuse(order);
@@ -925,32 +943,31 @@ function StageActions({
     }
     setBusySet((prev) => {
       const next = new Set(prev);
-      next.add(key);
+      next.add(orderKey);
       return next;
     });
+    setRunningAction(action);
     try {
       const res = await runOrderAction(order.platform, order.platform_order_id, action);
-      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} atualizado!`);
-      if (res.order) {
-        onOrderUpdated(res.order);
+      if (!res.ok) {
+        toast.error(res.details || res.error || "Falha na ação");
+        return;
       }
-    } catch (err) {
-      const details =
-        err instanceof ApiError
-          ? (() => {
-              const p = err.payload as { details?: unknown; message?: unknown } | null;
-              if (p && typeof p === "object") {
-                if (typeof p.details === "string") return p.details;
-                if (typeof p.message === "string") return p.message;
-              }
-              return err.message;
-            })()
-          : "Erro ao executar ação. Tente novamente.";
-      toast.error("Falha na ação", { description: details });
+      // Atualiza SÓ este card (anti-flicker).
+      onOrderUpdated({
+        ...order,
+        status: res.order.status,
+        kds_stage: res.order.kds_stage,
+        available_actions: res.order.available_actions as ApiOrder["available_actions"],
+      });
+      if (res.warning) toast.info(res.warning);
+      // Reconciliação em background — não bloqueia a UI.
+      void Promise.resolve(onRefresh()).catch(() => undefined);
     } finally {
+      setRunningAction(null);
       setBusySet((prev) => {
         const next = new Set(prev);
-        next.delete(key);
+        next.delete(orderKey);
         return next;
       });
     }
@@ -965,12 +982,12 @@ function StageActions({
     >
       {actions.map((a) => {
         const s = styleFor(a.action);
-        const isRunning = busySet.has(`${order.platform_order_id}:${a.action}`);
+        const isRunning = orderBusy && runningAction === a.action;
         return (
           <button
             key={a.action}
             onClick={() => runAction(a.action)}
-            disabled={anyBusy}
+            disabled={orderBusy}
             className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
             style={{
               background: s.bg,
@@ -979,7 +996,7 @@ function StageActions({
               fontSize: 13,
               fontWeight: 700,
               border: "none",
-              opacity: anyBusy ? 0.7 : 1,
+              opacity: orderBusy ? 0.7 : 1,
             }}
           >
             {isRunning ? (
