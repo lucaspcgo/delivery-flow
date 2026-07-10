@@ -440,6 +440,16 @@ function OrdersKanban() {
                 onDispatch={handleDispatch}
                 onRefuse={(o) => setRefuseTarget(o)}
                 onRefresh={load}
+                onOrderUpdated={(updated) =>
+                  setOrders((prev) =>
+                    prev.map((o) =>
+                      o.platform === updated.platform &&
+                      o.platform_order_id === updated.platform_order_id
+                        ? { ...o, ...updated }
+                        : o,
+                    ),
+                  )
+                }
               />
             );
           })}
