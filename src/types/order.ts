@@ -18,7 +18,7 @@ export interface OrderItem {
 export type OrderAction = "confirm" | "ready" | "dispatch" | "cancel";
 
 export interface OrderAvailableAction {
-  action: OrderAction | string;
+  action: OrderAction;
   label: string;
 }
 

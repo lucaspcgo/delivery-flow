@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike } from "lucide-react";
 import { toast } from "sonner";
-import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, type KdsColumn } from "@/lib/api";
+import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, ApiError, type KdsColumn } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -885,8 +885,8 @@ function StageActions({
   onRefresh: () => void | Promise<void>;
 }) {
   const actions = Array.isArray(order.available_actions) ? order.available_actions : [];
-  const [running, setRunning] = useState<string | null>(null);
-  const anyBusy = busy || running !== null;
+  const [busySet, setBusySet] = useState<Set<string>>(new Set());
+  const anyBusy = busy || busySet.size > 0;
 
   if (actions.length === 0) return null;
 
@@ -901,21 +901,41 @@ function StageActions({
   };
 
   const runAction = async (action: string) => {
-    if (anyBusy) return;
+    const key = `${order.platform_order_id}:${action}`;
+    if (anyBusy || busySet.has(key)) return;
     // "cancel" passa pelo modal de confirmação (sem POST direto aqui)
     if (action === "cancel") {
       onRefuse(order);
       return;
     }
-    setRunning(action);
+    setBusySet((prev) => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
     try {
-      await runOrderAction(order.platform_order_id || order.id, action);
+      await runOrderAction(order.platform, order.platform_order_id, action);
       toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} atualizado!`);
       await onRefresh();
-    } catch {
-      toast.error("Erro ao executar ação. Tente novamente.");
+    } catch (err) {
+      const details =
+        err instanceof ApiError
+          ? (() => {
+              const p = err.payload as { details?: unknown; message?: unknown } | null;
+              if (p && typeof p === "object") {
+                if (typeof p.details === "string") return p.details;
+                if (typeof p.message === "string") return p.message;
+              }
+              return err.message;
+            })()
+          : "Erro ao executar ação. Tente novamente.";
+      toast.error("Falha na ação", { description: details });
     } finally {
-      setRunning(null);
+      setBusySet((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     }
   };
 
@@ -928,7 +948,7 @@ function StageActions({
     >
       {actions.map((a) => {
         const s = styleFor(a.action);
-        const isRunning = running === a.action;
+        const isRunning = busySet.has(`${order.platform_order_id}:${a.action}`);
         return (
           <button
             key={a.action}

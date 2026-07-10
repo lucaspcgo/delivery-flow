@@ -540,10 +540,15 @@ export async function dispatchOrder(
 }
 
 export async function runOrderAction(
+  platform: string,
   platformOrderId: string,
   action: string,
 ): Promise<unknown> {
-  return http.post(`/orders/99food/${platformOrderId}/${action}`, {});
+  return http.post(
+    `/orders/${platform}/${platformOrderId}/${action}`,
+    {},
+    { silent: true },
+  );
 }
 
 export async function getAllOrders(
