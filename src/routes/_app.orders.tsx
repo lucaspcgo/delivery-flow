@@ -581,6 +581,7 @@ function OrderCard({
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
+  onRefresh: () => void | Promise<void>;
 }) {
   void colKey;
   const nowMs = now.getTime();
