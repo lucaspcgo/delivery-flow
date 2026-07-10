@@ -512,6 +512,7 @@ function Column({
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
   onRefuse: (o: ApiOrder) => void;
+  onRefresh: () => void | Promise<void>;
 }) {
   return (
     <div
@@ -551,6 +552,7 @@ function Column({
               onReady={onReady}
               onDispatch={onDispatch}
               onRefuse={onRefuse}
+              onRefresh={onRefresh}
             />
           ))
         )}
