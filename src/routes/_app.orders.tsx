@@ -345,14 +345,27 @@ function OrdersKanban() {
     if (!order) return;
     setBusyId(order.id);
     try {
-      await cancelOrder(
-        order.platform_order_id,
-        order.app_shop_id ?? "",
-        order.platform,
+      const res = await runOrderAction(order.platform, order.platform_order_id, "cancel");
+      if (!res.ok) {
+        toast.error(res.details || res.error || "Falha ao cancelar pedido");
+        return;
+      }
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.platform === order.platform && o.platform_order_id === order.platform_order_id
+            ? {
+                ...o,
+                status: res.order.status,
+                kds_stage: res.order.kds_stage,
+                available_actions: res.order.available_actions as ApiOrder["available_actions"],
+              }
+            : o,
+        ),
       );
-      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} recusado`);
+      if (res.warning) toast.info(res.warning);
+      toast.success(`Pedido #${shortOrderId(order.platform_order_id || order.id)} cancelado`);
       setRefuseTarget(null);
-      await load();
+      void Promise.resolve(load()).catch(() => undefined);
     } catch {
       toast.error("Erro ao recusar pedido. Tente novamente.");
     } finally {
