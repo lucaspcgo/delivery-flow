@@ -559,11 +559,6 @@ export async function runOrderAction(
   platform: string,
   platformOrderId: string,
   action: string,
-): Promise<RunOrderActionResult>;
-export async function runOrderAction(
-  platform: string,
-  platformOrderId: string,
-  action: string,
 ): Promise<RunOrderActionResult> {
   const url = `${API_URL}/orders/${platform}/${platformOrderId}/${action}`;
   const headers: Record<string, string> = {
