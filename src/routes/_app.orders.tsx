@@ -1,4 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { UsageCounter, OverLimitBanner } from "@/components/usage-banner";
+
+function OrdersUsageBlock() {
+  return (
+    <>
+      <UsageCounter kind="orders" />
+      <OverLimitBanner />
+    </>
+  );
+}
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
