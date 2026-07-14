@@ -465,6 +465,10 @@ function OrdersKanban() {
         </div>
       </header>
 
+      <div className="border-b bg-muted/20 px-6 py-2 space-y-2">
+        <OrdersUsageBlock />
+      </div>
+
       {visibleColumns.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">
           Nenhuma coluna visível. Clique em <strong>Configurar colunas</strong> para habilitar.
