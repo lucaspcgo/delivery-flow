@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useUsage } from "@/lib/usage-context";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Search, Copy, ArrowLeft } from "lucide-react";
@@ -110,6 +111,8 @@ function MenuManagerPage() {
 }
 
 function MenuManager() {
+  const { usage } = useUsage();
+  const menuSyncEnabled = usage?.capabilities?.menu_sync !== false;
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loadingRests, setLoadingRests] = useState(true);
 
@@ -264,8 +267,9 @@ function MenuManager() {
             </div>
             <Button
               onClick={fetchMenu}
-              disabled={fetching || !fromRest || !fromPlatform}
+              disabled={fetching || !fromRest || !fromPlatform || !menuSyncEnabled}
               className={primaryBtn}
+              title={!menuSyncEnabled ? "Sincronização de cardápio disponível em planos superiores" : undefined}
             >
               {fetching ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Buscando...</>
@@ -367,7 +371,8 @@ function MenuManager() {
               </div>
               <Button
                 onClick={copyItems}
-                disabled={copying || selected.size === 0 || !toRest || !toPlatform}
+                disabled={copying || selected.size === 0 || !toRest || !toPlatform || !menuSyncEnabled}
+                title={!menuSyncEnabled ? "Sincronização de cardápio disponível em planos superiores" : undefined}
                 className={primaryBtn}
               >
                 {copying ? (

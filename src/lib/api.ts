@@ -135,6 +135,21 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     if (!silent && !trialExpired && !paymentSuspended) {
       toast.error("Erro na requisição", { description: message });
     }
+    // Plan gating: emit event for centralized modal
+    if (res.status === 403 && typeof window !== "undefined") {
+      const errCode = (p.error as string | undefined) ?? (p.code as string | undefined);
+      const known = new Set([
+        "plan_upgrade_required",
+        "plan_limit_reached",
+        "account_inactive",
+        "trial_expired",
+      ]);
+      if (errCode && known.has(errCode)) {
+        window.dispatchEvent(
+          new CustomEvent("plan-gate", { detail: { ...p, error: errCode } }),
+        );
+      }
+    }
     if (trialExpired || paymentSuspended) {
       authToken.clear();
       if (
@@ -1145,10 +1160,13 @@ export interface DBPlan {
   slug: string;
   price: number;
   period: PlanPeriod;
+  billing_period?: string;
   features: string[];
   popular: boolean;
   is_free: boolean;
   active: boolean;
+  menu_sync?: boolean;
+  auto_accept?: boolean;
   max_restaurants: number;
   max_orders_per_month: number;
   display_order: number;
@@ -1170,6 +1188,24 @@ export const updatePlanDB = (id: string, data: DBPlanInput) =>
 
 export const deletePlan = (id: string) =>
   http.delete<void>(`/plans/${id}`);
+
+// ---------- Usage / plan gating ----------
+
+export interface UsageResponse {
+  plan: string;
+  plan_name?: string;
+  capabilities: { menu_sync: boolean; auto_accept: boolean };
+  restaurants_count: number;
+  max_restaurants: number;
+  orders_this_month: number;
+  max_orders_month: number;
+  over_limit: boolean;
+  next_tier?: string | null;
+}
+
+export const getUsage = () =>
+  http.get<UsageResponse>("/usage", { silent: true });
+
 
 // ---------- Relatórios ----------
 

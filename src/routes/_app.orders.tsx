@@ -1,4 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { UsageCounter, OverLimitBanner } from "@/components/usage-banner";
+
+function OrdersUsageBlock() {
+  return (
+    <>
+      <UsageCounter kind="orders" />
+      <OverLimitBanner />
+    </>
+  );
+}
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
@@ -464,6 +474,10 @@ function OrdersKanban() {
           </button>
         </div>
       </header>
+
+      <div className="border-b bg-muted/20 px-6 py-2 space-y-2">
+        <OrdersUsageBlock />
+      </div>
 
       {visibleColumns.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">

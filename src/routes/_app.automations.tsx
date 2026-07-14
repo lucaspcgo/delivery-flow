@@ -20,6 +20,7 @@ import {
   type ApiRestaurant,
   type RestaurantPlatform,
 } from "@/lib/api";
+import { useUsage } from "@/lib/usage-context";
 
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automações — Zero Tempo" }] }),
@@ -193,6 +194,8 @@ function RuleCard({
 }
 
 function AutomationsPage() {
+  const { usage } = useUsage();
+  const autoAcceptCap = usage?.capabilities?.auto_accept;
   const [rules, setRules] = useState<AutomationRule[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -245,6 +248,14 @@ function AutomationsPage() {
     p: RestaurantPlatform,
     next: boolean,
   ) => {
+    if (autoAcceptCap === false && next) {
+      window.dispatchEvent(
+        new CustomEvent("plan-gate", {
+          detail: { error: "plan_upgrade_required", capability: "auto_accept" },
+        }),
+      );
+      return;
+    }
     const storeId = platformStoreId(p);
     if (!storeId) {
       toast.error("Loja sem identificador da plataforma");
@@ -449,11 +460,12 @@ function AutomationsPage() {
                     </div>
                     <Switch
                       checked={enabled}
-                      disabled={busy}
+                      disabled={busy || autoAcceptCap === false}
                       onCheckedChange={(v) =>
                         handleToggleAutomation(rest, platform, v)
                       }
                       className="data-[state=checked]:bg-primary"
+                      title={autoAcceptCap === false ? "Aceite automático disponível em planos superiores" : undefined}
                     />
                   </div>
                 );
