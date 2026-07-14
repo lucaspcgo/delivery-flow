@@ -611,62 +611,314 @@ function InvoicesTab() {
 function PlansTab() {
   const [plans, setPlans] = useState<AdminPlanRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<DBPlan | "new" | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<DBPlan | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     getPlansAdmin()
       .then((d) => setPlans(Array.isArray(d) ? d : []))
       .catch(() => toast.error("Erro ao carregar planos"))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const submit = async (data: DBPlanInput, id?: string) => {
+    // slug validation
+    if (!data.slug || !/^[a-z0-9-]+$/.test(data.slug)) {
+      toast.error("Slug deve conter apenas letras minúsculas, números e hifens");
+      return;
+    }
+    if (data.price != null && data.price < 0) {
+      toast.error("Preço deve ser maior ou igual a zero");
+      return;
+    }
+    if (!id) {
+      const exists = plans.some((p) => p.slug === data.slug);
+      if (exists) {
+        toast.error("Slug já existe");
+        return;
+      }
+    }
+    setSaving(true);
+    try {
+      if (id) {
+        await updatePlanDB(id, data);
+        toast.success("Plano atualizado");
+      } else {
+        await createPlan(data);
+        toast.success("Plano criado");
+      }
+      setEditing(null);
+      load();
+    } catch {
+      toast.error("Erro ao salvar plano");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const doDelete = async (p: DBPlan) => {
+    try {
+      await deletePlan(p.id);
+      toast.success("Plano removido");
+      setConfirmDelete(null);
+      load();
+    } catch {
+      toast.error("Erro ao remover plano");
+    }
+  };
 
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardContent className="p-0">
-        {loading ? (
-          <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Preço</TableHead>
-                  <TableHead>Ativo</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plans.map((p, i) => (
-                  <TableRow key={p.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
-                    <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{p.slug}</TableCell>
-                    <TableCell>{BRL(p.price ?? 0)}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          p.active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-200 text-gray-700"
-                        }`}
-                      >
-                        {p.active ? "Ativo" : "Inativo"}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {plans.length === 0 && (
+    <>
+      <div className="mb-4 flex justify-end">
+        <Button onClick={() => setEditing("new")}>
+          <Plus className="h-4 w-4 mr-1" /> Novo plano
+        </Button>
+      </div>
+      <Card className="rounded-xl shadow-sm">
+        <CardContent className="p-0">
+          {loading ? (
+            <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                      Nenhum plano.
-                    </TableCell>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Preço</TableHead>
+                    <TableHead>Período</TableHead>
+                    <TableHead>Popular</TableHead>
+                    <TableHead>Free</TableHead>
+                    <TableHead>Ativo</TableHead>
+                    <TableHead>Max Rest.</TableHead>
+                    <TableHead>Max Pedidos</TableHead>
+                    <TableHead>Ordem</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                </TableHeader>
+                <TableBody>
+                  {plans.map((p, i) => (
+                    <TableRow key={p.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{p.slug}</TableCell>
+                      <TableCell>{BRL(p.price ?? 0)}</TableCell>
+                      <TableCell className="text-xs">{p.billing_period ?? p.period}</TableCell>
+                      <TableCell>
+                        {p.popular ? <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        {p.is_free ? <Badge variant="secondary">Free</Badge> : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.active ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}`}>
+                          {p.active ? "Ativo" : "Inativo"}
+                        </span>
+                      </TableCell>
+                      <TableCell>{p.max_restaurants === 0 ? "Ilimitado" : p.max_restaurants}</TableCell>
+                      <TableCell>{p.max_orders_per_month === 0 ? "Ilimitado" : p.max_orders_per_month}</TableCell>
+                      <TableCell>{p.display_order}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline" onClick={() => setEditing(p)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setConfirmDelete(p)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {plans.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
+                        Nenhum plano.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing === "new" ? "Novo plano" : "Editar plano"}</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <PlanForm
+              key={editing === "new" ? "new" : editing.id}
+              plan={editing === "new" ? null : editing}
+              saving={saving}
+              onCancel={() => setEditing(null)}
+              onSave={(data) => submit(data, editing === "new" ? undefined : editing.id)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover plano?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O plano "{confirmDelete?.name}" será desativado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmDelete && doDelete(confirmDelete)}>
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+function PlanForm({
+  plan,
+  saving,
+  onCancel,
+  onSave,
+}: {
+  plan: DBPlan | null;
+  saving: boolean;
+  onCancel: () => void;
+  onSave: (data: DBPlanInput) => void;
+}) {
+  const [name, setName] = useState(plan?.name ?? "");
+  const [slug, setSlug] = useState(plan?.slug ?? "");
+  const [price, setPrice] = useState<string>(String(plan?.price ?? 0));
+  const [period, setPeriod] = useState<string>(plan?.billing_period ?? plan?.period ?? "monthly");
+  const [active, setActive] = useState(plan?.active ?? true);
+  const [popular, setPopular] = useState(plan?.popular ?? false);
+  const [isFree, setIsFree] = useState(plan?.is_free ?? false);
+  const [menuSync, setMenuSync] = useState(plan?.menu_sync ?? false);
+  const [autoAccept, setAutoAccept] = useState(plan?.auto_accept ?? false);
+  const [features, setFeatures] = useState((plan?.features ?? []).join("\n"));
+  const [maxRest, setMaxRest] = useState<string>(String(plan?.max_restaurants ?? 0));
+  const [maxOrders, setMaxOrders] = useState<string>(String(plan?.max_orders_per_month ?? 0));
+  const [displayOrder, setDisplayOrder] = useState<string>(String(plan?.display_order ?? 0));
+
+  const submit = () => {
+    if (!name.trim()) return toast.error("Nome é obrigatório");
+    if (!slug.trim()) return toast.error("Slug é obrigatório");
+    const priceNum = Number(price);
+    if (Number.isNaN(priceNum)) return toast.error("Preço inválido");
+    onSave({
+      name: name.trim(),
+      slug: slug.trim(),
+      price: priceNum,
+      period: period as DBPlan["period"],
+      billing_period: period,
+      active,
+      popular,
+      is_free: isFree,
+      menu_sync: menuSync,
+      auto_accept: autoAccept,
+      features: features.split("\n").map((s) => s.trim()).filter(Boolean),
+      max_restaurants: Math.max(0, Math.floor(Number(maxRest) || 0)),
+      max_orders_per_month: Math.max(0, Math.floor(Number(maxOrders) || 0)),
+      display_order: Math.floor(Number(displayOrder) || 0),
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label>Nome</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label>Slug</Label>
+          <Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder="starter-pro" />
+        </div>
+        <div className="space-y-1">
+          <Label>Preço (R$)</Label>
+          <Input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label>Período</Label>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="monthly">Mensal</SelectItem>
+              <SelectItem value="yearly">Anual</SelectItem>
+              <SelectItem value="one_time">Único</SelectItem>
+              <SelectItem value="free">Gratuito</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="flex items-center justify-between rounded-lg border p-2">
+          <Label className="text-sm">Ativo</Label>
+          <Switch checked={active} onCheckedChange={setActive} />
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-2">
+          <Label className="text-sm">Popular</Label>
+          <Switch checked={popular} onCheckedChange={setPopular} />
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-2">
+          <Label className="text-sm">Gratuito</Label>
+          <Switch checked={isFree} onCheckedChange={setIsFree} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex items-center justify-between rounded-lg border p-2">
+          <Label className="text-sm">Menu Sync</Label>
+          <Switch checked={menuSync} onCheckedChange={setMenuSync} />
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-2">
+          <Label className="text-sm">Auto Accept</Label>
+          <Switch checked={autoAccept} onCheckedChange={setAutoAccept} />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Recursos (um por linha)</Label>
+        <Textarea
+          rows={5}
+          value={features}
+          onChange={(e) => setFeatures(e.target.value)}
+          placeholder="Aceite automático de pedidos&#10;Sincronização de cardápio&#10;App mobile"
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <Label>Max Restaurantes</Label>
+          <Input type="number" min="0" value={maxRest} onChange={(e) => setMaxRest(e.target.value)} />
+          <p className="text-[10px] text-muted-foreground">0 = ilimitado</p>
+        </div>
+        <div className="space-y-1">
+          <Label>Max Pedidos/mês</Label>
+          <Input type="number" min="0" value={maxOrders} onChange={(e) => setMaxOrders(e.target.value)} />
+          <p className="text-[10px] text-muted-foreground">0 = ilimitado</p>
+        </div>
+        <div className="space-y-1">
+          <Label>Ordem</Label>
+          <Input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(e.target.value)} />
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel}>Cancelar</Button>
+        <Button onClick={submit} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+      </DialogFooter>
+    </div>
   );
 }
 
