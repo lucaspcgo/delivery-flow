@@ -462,7 +462,7 @@ function UserEditForm({
   onSave: (data: { plan?: string; active?: boolean; payment_status?: string }) => void;
   onDeactivateAsk: (u: AdminUser) => void;
 }) {
-  const [plan, setPlan] = useState<string>(user.plan);
+  const [plan, setPlan] = useState<string>(user.plan ?? "");
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
 
@@ -498,13 +498,18 @@ function UserEditForm({
       <div className="space-y-2">
         <Label>Plano</Label>
         <Select value={plan} onValueChange={setPlan}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder={plans.length === 0 ? "Carregando planos..." : "Selecione um plano"} />
+          </SelectTrigger>
           <SelectContent>
             {plans.map((p) => (
               <SelectItem key={p.id} value={p.slug}>
                 {p.name} ({p.slug})
               </SelectItem>
             ))}
+            {plan && !plans.some((p) => p.slug === plan) && (
+              <SelectItem value={plan}>{plan} (atual)</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
