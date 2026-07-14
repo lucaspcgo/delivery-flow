@@ -245,6 +245,14 @@ function AutomationsPage() {
     p: RestaurantPlatform,
     next: boolean,
   ) => {
+    if (autoAcceptCap === false && next) {
+      window.dispatchEvent(
+        new CustomEvent("plan-gate", {
+          detail: { error: "plan_upgrade_required", capability: "auto_accept" },
+        }),
+      );
+      return;
+    }
     const storeId = platformStoreId(p);
     if (!storeId) {
       toast.error("Loja sem identificador da plataforma");
