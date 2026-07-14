@@ -111,7 +111,7 @@ function IntegrationsPage() {
     setError(false);
     try {
       const data = await getIntegrations();
-      setList(data);
+      setList(data && data.length > 0 ? data : FALLBACK_INTEGRATIONS);
       try {
         const restaurants = await getRestaurants();
         const counts: Record<Platform, number> = { ifood: 0, keeta: 0, "99food": 0 };
