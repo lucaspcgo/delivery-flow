@@ -304,16 +304,47 @@ function OverviewTab() {
 function UsersTab() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [plans, setPlans] = useState<DBPlan[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<AdminUser | null>(null);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     http
       .get<AdminUser[]>("/admin/users", { silent: true })
       .then((d) => setUsers(Array.isArray(d) ? d : []))
       .catch(() => toast.error("Erro ao carregar usuários"))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+    getPlansPublic()
+      .then((p) => setPlans(Array.isArray(p) ? p.filter((x) => x.active) : []))
+      .catch(() => {});
   }, []);
 
+  const save = async (
+    userId: string,
+    data: { plan?: string; active?: boolean; payment_status?: string },
+  ) => {
+    setSaving(true);
+    try {
+      await updateAdminUser(userId, data);
+      toast.success("Usuário atualizado");
+      setEditing(null);
+      setConfirmDeactivate(null);
+      load();
+    } catch {
+      toast.error("Erro ao atualizar usuário");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
+    <>
     <Card className="rounded-xl shadow-sm">
       <CardContent className="p-0">
         {loading ? (
@@ -328,6 +359,7 @@ function UsersTab() {
                   <TableHead>Plano</TableHead>
                   <TableHead>Status Pgto</TableHead>
                   <TableHead>Admin</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -348,11 +380,16 @@ function UsersTab() {
                         <span className="text-xs text-muted-foreground">Não</span>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
+                        <Pencil className="h-3 w-3 mr-1" /> Editar
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                       Nenhum usuário.
                     </TableCell>
                   </TableRow>
@@ -363,6 +400,143 @@ function UsersTab() {
         )}
       </CardContent>
     </Card>
+
+    <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Editar usuário</DialogTitle>
+          <DialogDescription>Ajuste plano e status da conta.</DialogDescription>
+        </DialogHeader>
+        {editing && (
+          <UserEditForm
+            key={editing.id}
+            user={editing}
+            plans={plans}
+            saving={saving}
+            onCancel={() => setEditing(null)}
+            onDeactivateAsk={(u) => setConfirmDeactivate(u)}
+            onSave={(data) => save(editing.id, data)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+
+    <AlertDialog open={!!confirmDeactivate} onOpenChange={(o) => !o && setConfirmDeactivate(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Desativar usuário?</AlertDialogTitle>
+          <AlertDialogDescription>
+            O usuário perderá o acesso ao sistema até ser reativado.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() =>
+              confirmDeactivate && save(confirmDeactivate.id, { active: false })
+            }
+          >
+            Desativar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
+  );
+}
+
+function UserEditForm({
+  user,
+  plans,
+  saving,
+  onCancel,
+  onSave,
+  onDeactivateAsk,
+}: {
+  user: AdminUser;
+  plans: DBPlan[];
+  saving: boolean;
+  onCancel: () => void;
+  onSave: (data: { plan?: string; active?: boolean; payment_status?: string }) => void;
+  onDeactivateAsk: (u: AdminUser) => void;
+}) {
+  const [plan, setPlan] = useState<string>(user.plan);
+  const [active, setActive] = useState<boolean>(user.active);
+  const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
+
+  const submit = () => {
+    if (user.active && !active) {
+      onDeactivateAsk(user);
+      return;
+    }
+    onSave({ plan, active, payment_status: paymentStatus });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <Label className="text-xs text-muted-foreground">ID</Label>
+          <p className="truncate">{user.id}</p>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Criado em</Label>
+          <p>{user.created_at ? new Date(user.created_at).toLocaleDateString("pt-BR") : "—"}</p>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Nome</Label>
+          <p>{user.name}</p>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Email</Label>
+          <p className="truncate">{user.email}</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Plano</Label>
+        <Select value={plan} onValueChange={setPlan}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {plans.map((p) => (
+              <SelectItem key={p.id} value={p.slug}>
+                {p.name} ({p.slug})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Status de pagamento</Label>
+        <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Ativo</SelectItem>
+            <SelectItem value="pending">Pendente</SelectItem>
+            <SelectItem value="suspended">Suspenso</SelectItem>
+            <SelectItem value="cancelled">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border p-3">
+        <div>
+          <p className="text-sm font-medium">Conta ativa</p>
+          <p className="text-xs text-muted-foreground">
+            Desativar remove o acesso do usuário.
+          </p>
+        </div>
+        <Switch checked={active} onCheckedChange={setActive} />
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel}>Cancelar</Button>
+        <Button onClick={submit} disabled={saving}>
+          {saving ? "Salvando..." : "Salvar"}
+        </Button>
+      </DialogFooter>
+    </div>
   );
 }
 
