@@ -55,8 +55,6 @@ const FALLBACK_INTEGRATIONS: Integration[] = [
     orders_count: 0,
     last_sync_at: null,
     api_status: "offline",
-    created_at: new Date(0).toISOString(),
-    updated_at: new Date(0).toISOString(),
   },
   {
     id: "fallback-99food",
@@ -67,8 +65,6 @@ const FALLBACK_INTEGRATIONS: Integration[] = [
     orders_count: 0,
     last_sync_at: null,
     api_status: "offline",
-    created_at: new Date(0).toISOString(),
-    updated_at: new Date(0).toISOString(),
   },
   {
     id: "fallback-keeta",
@@ -79,8 +75,6 @@ const FALLBACK_INTEGRATIONS: Integration[] = [
     orders_count: 0,
     last_sync_at: null,
     api_status: "offline",
-    created_at: new Date(0).toISOString(),
-    updated_at: new Date(0).toISOString(),
   },
 ];
 
