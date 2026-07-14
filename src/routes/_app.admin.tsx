@@ -333,7 +333,7 @@ function UsersTab() {
   ) => {
     setSaving(true);
     try {
-      await updateAdminUser(userId, data);
+      await updateAdminUser(userId, data as Partial<import("@/lib/api").AdminUser>);
       toast.success("Usuário atualizado");
       setEditing(null);
       setConfirmDeactivate(null);
@@ -463,7 +463,7 @@ function UserEditForm({
   onDeactivateAsk: (u: AdminUser) => void;
 }) {
   const [plan, setPlan] = useState<string>(user.plan);
-  const [active, setActive] = useState<boolean>(user.active);
+  const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
 
   const submit = () => {
