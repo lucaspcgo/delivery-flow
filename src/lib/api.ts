@@ -135,6 +135,21 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     if (!silent && !trialExpired && !paymentSuspended) {
       toast.error("Erro na requisição", { description: message });
     }
+    // Plan gating: emit event for centralized modal
+    if (res.status === 403 && typeof window !== "undefined") {
+      const errCode = (p.error as string | undefined) ?? (p.code as string | undefined);
+      const known = new Set([
+        "plan_upgrade_required",
+        "plan_limit_reached",
+        "account_inactive",
+        "trial_expired",
+      ]);
+      if (errCode && known.has(errCode)) {
+        window.dispatchEvent(
+          new CustomEvent("plan-gate", { detail: { ...p, error: errCode } }),
+        );
+      }
+    }
     if (trialExpired || paymentSuspended) {
       authToken.clear();
       if (
