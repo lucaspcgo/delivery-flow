@@ -193,7 +193,8 @@ function RuleCard({
 }
 
 function AutomationsPage() {
-  const { usage } = require("@/lib/usage-context").useUsage() as { usage: import("@/lib/api").UsageResponse | null };
+  const { usage } = useUsage();
+  const autoAcceptCap = usage?.capabilities?.auto_accept;
   const [rules, setRules] = useState<AutomationRule[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
