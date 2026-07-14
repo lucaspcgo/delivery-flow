@@ -45,6 +45,45 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   "99food": "#FFD300",
 };
 
+const FALLBACK_INTEGRATIONS: Integration[] = [
+  {
+    id: "fallback-ifood",
+    platform: "ifood",
+    name: "iFood",
+    description: "Maior marketplace de delivery do Brasil. Receba pedidos automaticamente.",
+    status: "disconnected",
+    orders_count: 0,
+    last_sync_at: null,
+    api_status: "offline",
+    created_at: new Date(0).toISOString(),
+    updated_at: new Date(0).toISOString(),
+  },
+  {
+    id: "fallback-99food",
+    platform: "99food",
+    name: "99Food",
+    description: "Serviço de delivery da 99, integrado ao app de mobilidade.",
+    status: "disconnected",
+    orders_count: 0,
+    last_sync_at: null,
+    api_status: "offline",
+    created_at: new Date(0).toISOString(),
+    updated_at: new Date(0).toISOString(),
+  },
+  {
+    id: "fallback-keeta",
+    platform: "keeta",
+    name: "Keeta",
+    description: "Plataforma global de delivery em rápida expansão no mercado.",
+    status: "disconnected",
+    orders_count: 0,
+    last_sync_at: null,
+    api_status: "offline",
+    created_at: new Date(0).toISOString(),
+    updated_at: new Date(0).toISOString(),
+  },
+];
+
 function formatRelative(iso: string | null): string {
   if (!iso) return "N/A";
   const diffMs = Date.now() - new Date(iso).getTime();
