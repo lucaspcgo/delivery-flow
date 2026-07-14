@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { UsageCounter, OverLimitBanner } from "@/components/usage-banner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -146,6 +147,10 @@ function RestaurantsPage() {
       />
 
       <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <UsageCounter kind="restaurants" />
+        </div>
+        <OverLimitBanner />
         {loading && (
           <div className="grid gap-5 md:grid-cols-2">
             {Array.from({ length: 2 }).map((_, i) => (
