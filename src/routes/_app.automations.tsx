@@ -460,11 +460,12 @@ function AutomationsPage() {
                     </div>
                     <Switch
                       checked={enabled}
-                      disabled={busy}
+                      disabled={busy || autoAcceptCap === false}
                       onCheckedChange={(v) =>
                         handleToggleAutomation(rest, platform, v)
                       }
                       className="data-[state=checked]:bg-primary"
+                      title={autoAcceptCap === false ? "Aceite automático disponível em planos superiores" : undefined}
                     />
                   </div>
                 );
