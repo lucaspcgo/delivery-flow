@@ -1189,13 +1189,6 @@ export const updatePlanDB = (id: string, data: DBPlanInput) =>
 export const deletePlan = (id: string) =>
   http.delete<void>(`/plans/${id}`);
 
-// ---------- Admin users ----------
-
-export const updateAdminUser = (
-  id: string,
-  data: { plan?: string; active?: boolean; payment_status?: string },
-) => http.put<unknown>(`/admin/users/${id}`, data);
-
 // ---------- Usage / plan gating ----------
 
 export interface UsageResponse {
