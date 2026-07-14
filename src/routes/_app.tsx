@@ -5,6 +5,8 @@ import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated } from "@/lib/auth";
 import { TrialBanner } from "@/components/trial-banner";
+import { UsageProvider } from "@/lib/usage-context";
+import { PlanLimitModal } from "@/components/plan-limit-modal";
 
 export const Route = createFileRoute("/_app")({
   ssr: false,
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
   return (
+    <UsageProvider>
     <SidebarProvider>
       <div className="flex min-h-screen w-full overflow-x-hidden bg-muted/30">
         <AppSidebar />
@@ -40,5 +43,7 @@ function AppLayout() {
         </div>
       </div>
     </SidebarProvider>
+    <PlanLimitModal />
+    </UsageProvider>
   );
 }
