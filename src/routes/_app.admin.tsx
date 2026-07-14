@@ -77,6 +77,8 @@ interface AdminUser {
   plan: Plan;
   payment_status: PaymentStatus;
   is_admin: boolean;
+  active?: boolean;
+  created_at?: string;
 }
 
 interface AdminInvoice {
