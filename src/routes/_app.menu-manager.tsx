@@ -267,8 +267,9 @@ function MenuManager() {
             </div>
             <Button
               onClick={fetchMenu}
-              disabled={fetching || !fromRest || !fromPlatform}
+              disabled={fetching || !fromRest || !fromPlatform || !menuSyncEnabled}
               className={primaryBtn}
+              title={!menuSyncEnabled ? "Sincronização de cardápio disponível em planos superiores" : undefined}
             >
               {fetching ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Buscando...</>
@@ -370,6 +371,8 @@ function MenuManager() {
               </div>
               <Button
                 onClick={copyItems}
+                disabled={!menuSyncEnabled}
+                title={!menuSyncEnabled ? "Sincronização de cardápio disponível em planos superiores" : undefined}
                 disabled={copying || selected.size === 0 || !toRest || !toPlatform}
                 className={primaryBtn}
               >
