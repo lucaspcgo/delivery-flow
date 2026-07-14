@@ -1160,10 +1160,13 @@ export interface DBPlan {
   slug: string;
   price: number;
   period: PlanPeriod;
+  billing_period?: string;
   features: string[];
   popular: boolean;
   is_free: boolean;
   active: boolean;
+  menu_sync?: boolean;
+  auto_accept?: boolean;
   max_restaurants: number;
   max_orders_per_month: number;
   display_order: number;
@@ -1185,6 +1188,31 @@ export const updatePlanDB = (id: string, data: DBPlanInput) =>
 
 export const deletePlan = (id: string) =>
   http.delete<void>(`/plans/${id}`);
+
+// ---------- Admin users ----------
+
+export const updateAdminUser = (
+  id: string,
+  data: { plan?: string; active?: boolean; payment_status?: string },
+) => http.put<unknown>(`/admin/users/${id}`, data);
+
+// ---------- Usage / plan gating ----------
+
+export interface UsageResponse {
+  plan: string;
+  plan_name?: string;
+  capabilities: { menu_sync: boolean; auto_accept: boolean };
+  restaurants_count: number;
+  max_restaurants: number;
+  orders_this_month: number;
+  max_orders_month: number;
+  over_limit: boolean;
+  next_tier?: string | null;
+}
+
+export const getUsage = () =>
+  http.get<UsageResponse>("/usage", { silent: true });
+
 
 // ---------- Relatórios ----------
 
