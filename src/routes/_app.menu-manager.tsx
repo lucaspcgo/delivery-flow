@@ -111,6 +111,8 @@ function MenuManagerPage() {
 }
 
 function MenuManager() {
+  const { usage } = useUsage();
+  const menuSyncEnabled = usage?.capabilities?.menu_sync !== false;
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loadingRests, setLoadingRests] = useState(true);
 
