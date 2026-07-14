@@ -20,6 +20,7 @@ import {
   type ApiRestaurant,
   type RestaurantPlatform,
 } from "@/lib/api";
+import { useUsage } from "@/lib/usage-context";
 
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automações — Zero Tempo" }] }),
