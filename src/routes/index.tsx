@@ -86,7 +86,7 @@ const faqs = [
   { q: "Quais plataformas são suportadas?", a: "Atualmente integramos com iFood, 99Food e Keeta. Novas plataformas chegam todo trimestre." },
   { q: "É realmente grátis por 7 dias?", a: "Sim! 7 dias de teste completo, sem cartão de crédito e sem compromisso." },
   { q: "Posso cancelar a qualquer momento?", a: "Claro. Cancelamento em 1 clique, sem multas ou penalidades." },
-  { q: "Como funciona o suporte?", a: "Oferecemos chat 24/7, email e telefone. PRO e Enterprise têm prioridade." },
+  { q: "Como funciona o suporte?", a: "Oferecemos chat 24/7, email e telefone. Contas PRO têm prioridade." },
   { q: "Minhas informações são seguras?", a: "Criptografia SSL, backups automáticos e total conformidade com a LGPD." },
 ];
 
