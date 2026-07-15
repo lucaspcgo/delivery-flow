@@ -45,6 +45,7 @@ import {
   type ReportsSummary,
   type ApiRestaurant,
 } from "@/lib/api";
+import { hasStoredAdminAccess } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/reports")({
@@ -123,6 +124,7 @@ function ReportsPage() {
   const [restaurants, setRestaurants] = useState<ApiRestaurant[]>([]);
   const [data, setData] = useState<ReportsSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const isAdmin = useMemo(() => hasStoredAdminAccess(), []);
 
   useEffect(() => {
     getRestaurants()
@@ -509,6 +511,7 @@ function ReportsPage() {
               <TableRow>
                 <TableHead>Restaurante</TableHead>
                 <TableHead>Plataforma</TableHead>
+                {isAdmin && <TableHead>Usuário</TableHead>}
                 <TableHead className="text-right">Pedidos</TableHead>
                 <TableHead className="text-right">Faturamento</TableHead>
               </TableRow>
@@ -516,7 +519,7 @@ function ReportsPage() {
             <TableBody>
               {(data?.por_restaurante ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">
                     <FileText className="mx-auto mb-2 h-6 w-6 opacity-40" />
                     Sem dados no período
                   </TableCell>
@@ -530,6 +533,11 @@ function ReportsPage() {
                       {PLATFORM_LABEL[r.platform] ?? r.platform}
                     </Badge>
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-muted-foreground">
+                      {r.usuario ?? "—"}
+                    </TableCell>
+                  )}
                   <TableCell className="text-right">{r.pedidos}</TableCell>
                   <TableCell className="text-right">{formatBRL(r.faturamento)}</TableCell>
                 </TableRow>
