@@ -65,7 +65,7 @@ const features = [
   { icon: Zap, title: "Auto-Accept", desc: "Aceite pedidos automaticamente em segundos, sem esforço." },
   { icon: Kanban, title: "Kanban Visual", desc: "Organize pedidos por status com drag-and-drop intuitivo." },
   { icon: BarChart3, title: "Relatórios", desc: "Métricas de vendas, performance e insights em tempo real." },
-  { icon: Code2, title: "API Aberta", desc: "Integre com seu ERP, PDV ou sistemas internos." },
+  { icon: Code2, title: "API Oficial", desc: "Temos as API oficial de cada delivery." },
   { icon: Headphones, title: "Suporte 24/7", desc: "Chat, email e telefone sempre que você precisar." },
 ];
 
