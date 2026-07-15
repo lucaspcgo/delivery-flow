@@ -322,9 +322,14 @@ function UsersTab() {
 
   useEffect(() => {
     load();
-    getPlansPublic()
-      .then((p) => setPlans(Array.isArray(p) ? p.filter((x) => x.active) : []))
-      .catch(() => {});
+    // Admin endpoint returns ALL plans (incl. inactive); fallback to public list on 403.
+    getPlansAdmin()
+      .then((p) => setPlans(Array.isArray(p) ? p : []))
+      .catch(() =>
+        getPlansPublic()
+          .then((p) => setPlans(Array.isArray(p) ? p : []))
+          .catch(() => setPlans([])),
+      );
   }, []);
 
   const save = async (
@@ -338,8 +343,12 @@ function UsersTab() {
       setEditing(null);
       setConfirmDeactivate(null);
       load();
-    } catch {
-      toast.error("Erro ao atualizar usuário");
+    } catch (e: unknown) {
+      const err = e as { status?: number; payload?: { error?: string }; message?: string };
+      const msg =
+        err?.payload?.error ||
+        (err?.status === 400 ? "Plano inválido" : "Erro ao atualizar usuário");
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
