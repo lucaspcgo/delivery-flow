@@ -423,8 +423,8 @@ function LandingPage() {
             <h4 className="text-sm font-bold">Contato</h4>
             <ul className="mt-3 space-y-2 text-sm text-white/60">
               <li>contato@zerotempo.com</li>
-              <li>(11) 99999-9999</li>
-              <li>São Paulo, BR</li>
+              <li>(62) 99261-5216</li>
+              <li>Goiânia - GO / BR</li>
             </ul>
           </div>
         </div>
