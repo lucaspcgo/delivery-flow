@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,8 @@ function RegisterPage() {
   const [confirmPwd, setConfirmPwd] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) navigate({ to: "/dashboard" });
@@ -136,26 +138,48 @@ function RegisterPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+                autoComplete="new-password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm">Confirmar senha</Label>
-            <Input
-              id="confirm"
-              type="password"
-              value={confirmPwd}
-              onChange={(e) => setConfirmPwd(e.target.value)}
-              required
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <Input
+                id="confirm"
+                type={showConfirm ? "text" : "password"}
+                value={confirmPwd}
+                onChange={(e) => setConfirmPwd(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                aria-label={showConfirm ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+              >
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <label className="flex items-start gap-2 text-sm">
             <Checkbox
