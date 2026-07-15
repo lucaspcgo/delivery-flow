@@ -903,6 +903,7 @@ export interface ReportsSummary {
   por_restaurante: {
     restaurante: string;
     platform: string;
+    usuario?: string | null;
     pedidos: number;
     faturamento: number;
   }[];
