@@ -371,15 +371,17 @@ function AutomationsPage() {
           </Card>
         )}
 
-        {!loading && !error && rules && rules.length > 0 && (
+        {!loading && !error && rules && rules.filter((r) => r.platform !== "all").length > 0 && (
           <div className="grid gap-5 md:grid-cols-2">
-            {rules.map((rule) => (
-              <RuleCard
-                key={rule.id}
-                rule={rule}
-                onChange={handleRuleChange}
-              />
-            ))}
+            {rules
+              .filter((r) => r.platform !== "all")
+              .map((rule) => (
+                <RuleCard
+                  key={rule.id}
+                  rule={rule}
+                  onChange={handleRuleChange}
+                />
+              ))}
           </div>
         )}
 
