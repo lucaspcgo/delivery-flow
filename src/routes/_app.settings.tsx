@@ -355,10 +355,7 @@ function PlansSection({
         };
         if (payload.requires_payment) {
           setPending(null);
-          navigate({
-            to: (payload.redirect as "/checkout") ?? "/checkout",
-            search: { plan: target } as never,
-          });
+          navigate({ to: "/checkout" });
           return;
         }
       }
