@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -40,6 +40,7 @@ import {
   getKdsSettings,
   updateKdsSettings,
   type KdsField,
+  ApiError,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -330,6 +331,7 @@ function PlansSection({
   const [pending, setPending] = useState<UserPlan | null>(null);
   const [plans, setPlans] = useState<DBPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getPlansPublic()
@@ -340,10 +342,26 @@ function PlansSection({
 
   const confirm = async () => {
     if (!pending) return;
+    const target = pending;
     try {
-      const p = await updatePlan(pending);
-      onChanged({ ...profile, ...p, plan: pending });
-      toast.success(`Plano atualizado para ${PLAN_LABELS[pending]}!`);
+      const p = await updatePlan(target);
+      onChanged({ ...profile, ...p, plan: target });
+      toast.success(`Plano atualizado para ${PLAN_LABELS[target]}!`);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) {
+        const payload = (err.payload ?? {}) as {
+          requires_payment?: boolean;
+          redirect?: string;
+        };
+        if (payload.requires_payment) {
+          setPending(null);
+          navigate({
+            to: (payload.redirect as "/checkout") ?? "/checkout",
+            search: { plan: target } as never,
+          });
+          return;
+        }
+      }
     } finally {
       setPending(null);
     }
