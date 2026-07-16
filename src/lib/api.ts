@@ -942,7 +942,7 @@ export function updateCompany(
 }
 
 export function updatePlan(plan: UserPlan): Promise<UserProfile> {
-  return http.put<UserProfile>("/settings/plan", { plan });
+  return http.put<UserProfile>("/settings/plan", { plan }, { silent: true });
 }
 
 export function changePassword(data: {

@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Check, ShieldCheck } from "lucide-react";
+import { Check, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -331,6 +331,7 @@ function PlansSection({
   const [pending, setPending] = useState<UserPlan | null>(null);
   const [plans, setPlans] = useState<DBPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
+  const [submitting, setSubmitting] = useState<UserPlan | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -343,6 +344,7 @@ function PlansSection({
   const confirm = async () => {
     if (!pending) return;
     const target = pending;
+    setSubmitting(target);
     try {
       const p = await updatePlan(target);
       onChanged({ ...profile, ...p, plan: target });
@@ -355,12 +357,21 @@ function PlansSection({
         };
         if (payload.requires_payment) {
           setPending(null);
-          navigate({ to: "/checkout" });
+          navigate({ to: "/checkout", search: { plan: target } });
           return;
         }
       }
+      const msg =
+        err instanceof ApiError && err.payload && typeof err.payload === "object" &&
+        "message" in err.payload
+          ? String((err.payload as { message: unknown }).message)
+          : err instanceof Error
+            ? err.message
+            : "Não foi possível atualizar o plano.";
+      toast.error("Erro ao atualizar plano", { description: msg });
     } finally {
       setPending(null);
+      setSubmitting(null);
     }
   };
 
@@ -415,10 +426,19 @@ function PlansSection({
                 className={`mt-6 w-full ${
                   current ? "border-emerald-600 text-emerald-700" : ""
                 }`}
-                disabled={current}
+                disabled={current || submitting !== null}
                 onClick={() => setPending(p.slug as UserPlan)}
               >
-                {current ? "Plano atual" : "Selecionar"}
+                {submitting === (p.slug as UserPlan) ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : current ? (
+                  "Plano atual"
+                ) : (
+                  "Selecionar"
+                )}
               </Button>
             </Card>
           );
