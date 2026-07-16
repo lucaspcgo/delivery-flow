@@ -357,7 +357,7 @@ function PlansSection({
         };
         if (payload.requires_payment) {
           setPending(null);
-          navigate({ to: "/checkout", search: { plan: target } as never });
+          navigate({ to: "/checkout", search: { plan: target } });
           return;
         }
       }
