@@ -18,10 +18,17 @@ import {
   type CheckoutCreateResponse,
   formatPlanPrice,
 } from "@/lib/api";
-import { ApiError, safeLocalStorageSet } from "@/lib/api";
+import { ApiError, safeLocalStorageSet, clearMeCache, getMeCached } from "@/lib/api";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
+
+const checkoutSearchSchema = z.object({
+  plan: fallback(z.string(), "").default(""),
+});
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Assinar — Zero Tempo" }] }),
+  validateSearch: zodValidator(checkoutSearchSchema),
   component: CheckoutPage,
 });
 
@@ -95,6 +102,7 @@ function Stepper({ step }: { step: Step }) {
 
 function CheckoutPage() {
   const navigate = useNavigate();
+  const { plan: planFromSearch } = Route.useSearch();
   const [step, setStep] = useState<Step>(1);
   const [plans, setPlans] = useState<DBPlan[]>(FALLBACK_PLANS);
   const [selectedPlan, setSelectedPlan] = useState("");
@@ -131,6 +139,23 @@ function CheckoutPage() {
       })
       .catch(() => {});
   }, []);
+
+  // Pré-seleção via ?plan=<slug>: se o usuário já está logado, inicia o
+  // checkout automaticamente para o plano escolhido nas Configurações.
+  const [autoStarted, setAutoStarted] = useState(false);
+  useEffect(() => {
+    if (autoStarted) return;
+    if (!planFromSearch) return;
+    if (!plans.length) return;
+    const match = plans.find((p) => getPlanKey(p) === planFromSearch);
+    if (!match) return;
+    setSelectedPlan(getPlanKey(match));
+    setAutoStarted(true);
+    if (isLogged && !match.is_free && match.price > 0) {
+      void startCheckout(getPlanKey(match));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plans, planFromSearch, autoStarted]);
 
   useEffect(() => {
     if (step !== 3 || paymentResult) return;
@@ -310,6 +335,13 @@ function CheckoutPage() {
         }
         if (res.user) {
           safeLocalStorageSet("auth_user", JSON.stringify(res.user));
+        }
+        // Recarrega o perfil real do backend para pegar o plano atualizado.
+        clearMeCache();
+        try {
+          await getMeCached(true);
+        } catch {
+          /* ignore — dashboard fará refetch */
         }
         setPaymentResult("success");
       } else {
