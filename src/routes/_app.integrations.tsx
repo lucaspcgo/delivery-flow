@@ -196,6 +196,19 @@ function IntegrationsPage() {
     } catch {
       setIfoodAuthorized(false);
     }
+    try {
+      const list = await ifoodAuth.stores();
+      const entries: StoreEntry[] = (list ?? []).map((s) => ({
+        id: s.restaurant_id,
+        name: s.name,
+        status: s.status,
+        platform: "ifood",
+        merchant_id: s.merchant_id ?? "",
+      }));
+      setStoresByPlatform((prev) => ({ ...prev, ifood: entries }));
+    } catch {
+      // ignore
+    }
   }, []);
 
   useEffect(() => {
