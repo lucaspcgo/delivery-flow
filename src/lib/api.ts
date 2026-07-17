@@ -442,6 +442,16 @@ export const ifoodAuth = {
     ),
   status: () =>
     http.get<IfoodAuthStatus>("/integrations/ifood/authorize/status", { silent: true }),
+  stores: () =>
+    http.get<
+      Array<{
+        restaurant_id: string;
+        name: string;
+        merchant_id?: string | null;
+        status: string;
+        automation_enabled?: boolean;
+      }>
+    >("/integrations/ifood/stores", { silent: true }),
 };
 
 // ---------- 99Food connect shop ----------
