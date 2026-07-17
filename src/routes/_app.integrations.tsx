@@ -119,6 +119,8 @@ function IntegrationsPage() {
 
   // iFood authorization-code flow state
   const [ifoodAuthorized, setIfoodAuthorized] = useState<boolean | null>(null);
+  const [ifoodAccounts, setIfoodAccounts] = useState<number>(0);
+  const [ifoodStoresCount, setIfoodStoresCount] = useState<number>(0);
   const [ifoodOpen, setIfoodOpen] = useState(false);
   const [ifoodStarting, setIfoodStarting] = useState(false);
   const [ifoodCompleting, setIfoodCompleting] = useState(false);
@@ -185,20 +187,20 @@ function IntegrationsPage() {
   }, [load]);
 
   // Verifica status inicial do iFood
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const s = await ifoodAuth.status();
-        if (!cancelled) setIfoodAuthorized(!!s.authorized);
-      } catch {
-        if (!cancelled) setIfoodAuthorized(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const refreshIfoodStatus = useCallback(async () => {
+    try {
+      const s = await ifoodAuth.status();
+      setIfoodAuthorized(!!s.authorized);
+      setIfoodAccounts(s.accounts ?? 0);
+      setIfoodStoresCount(s.stores_count ?? 0);
+    } catch {
+      setIfoodAuthorized(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshIfoodStatus();
+  }, [refreshIfoodStatus]);
 
   // Countdown do userCode
   useEffect(() => {
@@ -322,10 +324,20 @@ function IntegrationsPage() {
         setIfoodOpen(false);
         setIfoodCode(null);
         setAuthCode("");
-        toast.success("iFood conectado com sucesso!", {
-          description: names.length ? `Loja(s) conectada(s): ${names.join(", ")}` : undefined,
-        });
-        await load();
+        if (data.pending) {
+          toast.success("Autorização recebida!", {
+            description:
+              data.message ||
+              "As lojas podem levar até 10 minutos para aparecer.",
+          });
+        } else {
+          toast.success("iFood conectado com sucesso!", {
+            description: names.length
+              ? `Loja(s) conectada(s): ${names.join(", ")}`
+              : undefined,
+          });
+        }
+        await Promise.all([load(), refreshIfoodStatus()]);
       } else {
         setIfoodError("Autorização não concluída. Confirme o código no portal do iFood.");
       }
