@@ -119,6 +119,8 @@ function IntegrationsPage() {
 
   // iFood authorization-code flow state
   const [ifoodAuthorized, setIfoodAuthorized] = useState<boolean | null>(null);
+  const [ifoodAccounts, setIfoodAccounts] = useState<number>(0);
+  const [ifoodStoresCount, setIfoodStoresCount] = useState<number>(0);
   const [ifoodOpen, setIfoodOpen] = useState(false);
   const [ifoodStarting, setIfoodStarting] = useState(false);
   const [ifoodCompleting, setIfoodCompleting] = useState(false);
@@ -185,20 +187,20 @@ function IntegrationsPage() {
   }, [load]);
 
   // Verifica status inicial do iFood
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const s = await ifoodAuth.status();
-        if (!cancelled) setIfoodAuthorized(!!s.authorized);
-      } catch {
-        if (!cancelled) setIfoodAuthorized(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const refreshIfoodStatus = useCallback(async () => {
+    try {
+      const s = await ifoodAuth.status();
+      setIfoodAuthorized(!!s.authorized);
+      setIfoodAccounts(s.accounts ?? 0);
+      setIfoodStoresCount(s.stores_count ?? 0);
+    } catch {
+      setIfoodAuthorized(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshIfoodStatus();
+  }, [refreshIfoodStatus]);
 
   // Countdown do userCode
   useEffect(() => {
@@ -322,10 +324,20 @@ function IntegrationsPage() {
         setIfoodOpen(false);
         setIfoodCode(null);
         setAuthCode("");
-        toast.success("iFood conectado com sucesso!", {
-          description: names.length ? `Loja(s) conectada(s): ${names.join(", ")}` : undefined,
-        });
-        await load();
+        if (data.pending) {
+          toast.success("Autorização recebida!", {
+            description:
+              data.message ||
+              "As lojas podem levar até 10 minutos para aparecer.",
+          });
+        } else {
+          toast.success("iFood conectado com sucesso!", {
+            description: names.length
+              ? `Loja(s) conectada(s): ${names.join(", ")}`
+              : undefined,
+          });
+        }
+        await Promise.all([load(), refreshIfoodStatus()]);
       } else {
         setIfoodError("Autorização não concluída. Confirme o código no portal do iFood.");
       }
@@ -505,7 +517,15 @@ function IntegrationsPage() {
             <div className="p-5">
               <p className="text-sm text-muted-foreground">{i.description}</p>
               <dl className="mt-4 grid grid-cols-3 gap-3 border-t pt-4 text-sm">
-                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Lojas</dt><dd className="font-semibold">{storeCounts[i.platform] ?? 0}</dd></div>
+                <div>
+                  <dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Lojas</dt>
+                  <dd className="font-semibold">
+                    {isIfood ? ifoodStoresCount : (storeCounts[i.platform] ?? 0)}
+                  </dd>
+                  {isIfood && ifoodAccounts > 1 && (
+                    <dd className="text-[11px] text-muted-foreground">em {ifoodAccounts} contas</dd>
+                  )}
+                </div>
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Sync</dt><dd className="font-semibold truncate">{formatRelative(i.last_sync_at)}</dd></div>
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold capitalize">{i.api_status}</dd></div>
               </dl>
@@ -534,14 +554,19 @@ function IntegrationsPage() {
                 </div>
               )}
               {isIfood ? (
-                <div className="mt-5">
-                  {ifoodConnected ? (
+                <div className="mt-5 space-y-2">
+                  {ifoodConnected && (
+                    <p className="text-xs text-muted-foreground">
+                      {ifoodStoresCount} {ifoodStoresCount === 1 ? "loja conectada" : "lojas conectadas"}
+                      {ifoodAccounts > 1 ? ` em ${ifoodAccounts} contas` : ""}. Você pode conectar mais de uma conta iFood (uma por login diferente).
+                    </p>
+                  )}
+                  <Button className="w-full" onClick={openIfoodModal} disabled={ifoodAuthorized === null}>
+                    {ifoodConnected ? "Conectar outra conta iFood" : "Conectar loja iFood"}
+                  </Button>
+                  {ifoodConnected && (
                     <Button variant="outline" className="w-full" onClick={() => toggle(i)} disabled={pending === i.platform}>
                       Desconectar
-                    </Button>
-                  ) : (
-                    <Button className="w-full" onClick={openIfoodModal} disabled={ifoodAuthorized === null}>
-                      Conectar loja iFood
                     </Button>
                   )}
                 </div>
