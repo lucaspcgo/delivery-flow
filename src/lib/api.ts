@@ -418,7 +418,17 @@ export interface IfoodAuthStart {
 
 export interface IfoodAuthComplete {
   success: boolean;
-  connected: Array<{ id: string; name: string }>;
+  connected?: Array<{ id: string; name: string }>;
+  pending?: boolean;
+  message?: string;
+  stores_count?: number;
+  accounts?: number;
+}
+
+export interface IfoodAuthStatus {
+  authorized: boolean;
+  accounts?: number;
+  stores_count?: number;
 }
 
 export const ifoodAuth = {
@@ -431,7 +441,7 @@ export const ifoodAuth = {
       { silent: true },
     ),
   status: () =>
-    http.get<{ authorized: boolean }>("/integrations/ifood/authorize/status", { silent: true }),
+    http.get<IfoodAuthStatus>("/integrations/ifood/authorize/status", { silent: true }),
 };
 
 // ---------- 99Food connect shop ----------
