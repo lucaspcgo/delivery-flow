@@ -170,7 +170,12 @@ function IntegrationsPage() {
           }
         }
         setStoreCounts(counts);
-        setStoresByPlatform(byPlatform);
+        // ifood usa endpoint dedicado (/integrations/ifood/stores); preserve o que refreshIfoodStatus carregou.
+        setStoresByPlatform((prev) => ({
+          ifood: prev.ifood,
+          "99food": byPlatform["99food"],
+          keeta: byPlatform.keeta,
+        }));
       } catch {
         // ignore
       }
