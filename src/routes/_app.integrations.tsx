@@ -170,7 +170,12 @@ function IntegrationsPage() {
           }
         }
         setStoreCounts(counts);
-        setStoresByPlatform(byPlatform);
+        // ifood usa endpoint dedicado (/integrations/ifood/stores); preserve o que refreshIfoodStatus carregou.
+        setStoresByPlatform((prev) => ({
+          ifood: prev.ifood,
+          "99food": byPlatform["99food"],
+          keeta: byPlatform.keeta,
+        }));
       } catch {
         // ignore
       }
@@ -195,6 +200,19 @@ function IntegrationsPage() {
       setIfoodStoresCount(s.stores_count ?? 0);
     } catch {
       setIfoodAuthorized(false);
+    }
+    try {
+      const list = await ifoodAuth.stores();
+      const entries: StoreEntry[] = (list ?? []).map((s) => ({
+        id: s.restaurant_id,
+        name: s.name,
+        status: s.status,
+        platform: "ifood",
+        merchant_id: s.merchant_id ?? "",
+      }));
+      setStoresByPlatform((prev) => ({ ...prev, ifood: entries }));
+    } catch {
+      // ignore
     }
   }, []);
 
