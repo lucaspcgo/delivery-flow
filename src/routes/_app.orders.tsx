@@ -169,6 +169,7 @@ function playBeep() {
 function OrdersKanban() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
@@ -207,6 +208,7 @@ function OrdersKanban() {
   const firstLoad = useRef(true);
 
   const load = useCallback(async () => {
+    setRefreshing(true);
     try {
       const data = await getAllOrders(["99food", "ifood"], selectedDate);
       setOrders(data);
@@ -225,11 +227,13 @@ function OrdersKanban() {
       /* silent */
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [selectedDate]);
 
   useEffect(() => {
     firstLoad.current = true;
+    setLoading(true);
     load();
     let timer: ReturnType<typeof setInterval> | null = null;
     const start = () => {
