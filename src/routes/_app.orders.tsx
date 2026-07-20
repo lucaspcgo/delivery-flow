@@ -10,6 +10,7 @@ function OrdersUsageBlock() {
   );
 }
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw, Rows3 } from "lucide-react";
 import { toast } from "sonner";
 import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, reprocess99FoodPending, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, ApiError, type KdsColumn } from "@/lib/api";
@@ -216,6 +217,9 @@ function OrdersKanban() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("kds:compact", compact ? "1" : "0");
   }, [compact]);
+  // No celular, força modo compacto automaticamente (essenciais + SLA/etapa).
+  const isMobile = useIsMobile();
+  const effectiveCompact = compact || isMobile;
   const todayStr = () => {
     const d = new Date();
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
