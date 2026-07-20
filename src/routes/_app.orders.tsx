@@ -445,6 +445,16 @@ function OrdersKanban() {
           </select>
         </div>
         <div className="flex items-center gap-4">
+          {refreshing && !loading && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground"
+            >
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Atualizando…
+            </span>
+          )}
           <span className="font-mono text-xl font-bold tabular-nums text-muted-foreground">
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
