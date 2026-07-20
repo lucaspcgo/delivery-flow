@@ -730,7 +730,7 @@ function Column({
         ) : (
           orders.map((o) => (
             <OrderCard
-              key={o.id}
+              key={`${o.id}:${col.key}`}
               order={o}
               colKey={col.key}
               now={now}
@@ -847,7 +847,7 @@ function OrderCard({
 
   return (
     <div
-      className="w-full"
+      className="w-full animate-fade-in transition-shadow"
       style={{
         background: "var(--card)",
         color: "var(--card-foreground)",
