@@ -627,6 +627,16 @@ function IntegrationsPage() {
             </DialogDescription>
           </DialogHeader>
 
+          <div className="aspect-video w-full overflow-hidden rounded-lg border bg-black">
+            <iframe
+              className="h-full w-full"
+              src="https://www.youtube.com/embed/od5cVEBHBus"
+              title="Tutorial: Conectar loja iFood"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+
           {ifoodStarting || !ifoodCode ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
