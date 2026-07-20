@@ -993,15 +993,29 @@ function OrderCard({
           (compact ? "mt-2 space-y-1.5 p-2" : "mt-4 space-y-3 p-3")
         }
       >
-        {order.items.map((it, idx) => (
-          <ItemRow
-            key={idx}
-            item={it}
-            showSubs={expanded && show(kdsCfg, "item_subitems")}
-            kdsCfg={kdsCfg}
-            compact={compact}
-          />
-        ))}
+        {(compact && !itemsExpanded ? order.items.slice(0, 1) : order.items).map(
+          (it, idx) => (
+            <ItemRow
+              key={idx}
+              item={it}
+              showSubs={expanded && show(kdsCfg, "item_subitems")}
+              kdsCfg={kdsCfg}
+              compact={compact}
+            />
+          ),
+        )}
+        {compact && order.items.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setItemsExpanded((v) => !v)}
+            aria-expanded={itemsExpanded}
+            className="w-full rounded-md py-1 text-[11px] font-bold text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {itemsExpanded
+              ? "Recolher itens"
+              : `+${order.items.length - 1} ${order.items.length - 1 === 1 ? "item" : "itens"}`}
+          </button>
+        )}
       </div>
 
       {!compact && hasDetails && (
