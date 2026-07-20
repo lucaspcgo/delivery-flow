@@ -1098,9 +1098,14 @@ function OrderCard({
             <span className="font-bold text-foreground truncate">
               Entregador: {order.courier_name}
               {order.courier_phone && (
-                <span className="ml-2 font-mono text-xs text-muted-foreground">
+                <a
+                  href={`tel:${String(order.courier_phone).replace(/[^\d+]/g, "")}`}
+                  className="ml-2 inline-flex items-center gap-1 font-mono text-xs text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+                  aria-label={`Ligar para o entregador ${order.courier_name}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   📞 {order.courier_phone}
-                </span>
+                </a>
               )}
             </span>
           ) : (
