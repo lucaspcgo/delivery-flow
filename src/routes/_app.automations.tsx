@@ -153,7 +153,7 @@ function RuleCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">
-            Tempo para ACEITAR (segundos)
+            Tempo antes de aceitar (segundos)
           </Label>
           <Input
             type="number"
@@ -163,10 +163,14 @@ function RuleCard({
             disabled={!enabled || saving}
             className="bg-background"
           />
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Tempo que o pedido fica como novo antes de ser aceito. Aumente
+            (ex.: 60s) para dar tempo do gestor da 99 imprimir o pedido.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">
-            Tempo para marcar PRONTO (segundos)
+            Tempo antes de marcar Pronto (segundos)
           </Label>
           <Input
             type="number"
@@ -176,6 +180,9 @@ function RuleCard({
             disabled={!enabled || saving}
             className="bg-background"
           />
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Tempo após aceitar até marcar como pronto.
+          </p>
         </div>
       </div>
 
