@@ -1130,7 +1130,9 @@ function StageActions({
             key={a.action}
             onClick={() => runAction(a.action)}
             disabled={orderBusy}
-            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+            aria-label={`${a.label} — pedido ${order.platform_order_id}`}
+            aria-busy={isRunning}
+            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             style={{
               background: s.bg,
               height: compact ? 32 : 40,
