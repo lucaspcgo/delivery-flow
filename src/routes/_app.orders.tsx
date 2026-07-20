@@ -1014,28 +1014,51 @@ function OrderCard({
             <span className="tabular-nums">{promise}</span>
           </div>
         )}
-        {(order.order_type || order.delivery_type) && (
-          <div>
-            <span
-              className="inline-block rounded-full px-3 py-1 text-xs font-bold"
-              style={{
-                background: isTakeout ? "#7C3AED" : "#2563EB",
-                color: "#fff",
-              }}
-            >
-              {order.order_type || order.delivery_type}
-            </span>
+        {(order.order_type || order.delivery_type || deliveryByLabel) && (
+          <div className="flex flex-wrap gap-1.5">
+            {(order.order_type || order.delivery_type) && (
+              <span
+                className="inline-block rounded-full px-3 py-1 text-xs font-bold"
+                style={{
+                  background: isTakeout ? "#7C3AED" : "#2563EB",
+                  color: "#fff",
+                }}
+              >
+                {order.order_type || order.delivery_type}
+              </span>
+            )}
+            {deliveryByLabel && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold"
+                style={{ background: "#E0E7FF", color: "#3730A3" }}
+              >
+                <Bike className="h-3 w-3" />
+                {deliveryByLabel}
+              </span>
+            )}
           </div>
         )}
-        {order.delivery_address && (
+        {(addressLine1 || addressLine2) && (
           <div className="flex items-start gap-1.5 text-sm leading-snug">
             <span className="mt-0.5">📍</span>
             <div className="min-w-0">
-              <div className="font-bold text-foreground break-words">
-                {order.delivery_address}
-              </div>
-              {neighborhood && (
-                <div className="text-muted-foreground">{neighborhood}</div>
+              {addressLine1 && (
+                <div className="font-bold text-foreground break-words">
+                  {addressLine1}
+                </div>
+              )}
+              {addressLine2 && (
+                <div className="text-muted-foreground">{addressLine2}</div>
+              )}
+              {addressComplement && (
+                <div className="text-xs text-muted-foreground">
+                  Compl.: <span className="font-semibold">{addressComplement}</span>
+                </div>
+              )}
+              {addressReference && (
+                <div className="text-xs text-muted-foreground">
+                  Ref.: <span className="font-semibold">{addressReference}</span>
+                </div>
               )}
             </div>
           </div>
@@ -1056,8 +1079,13 @@ function OrderCard({
         <div className="flex items-center gap-1.5 text-sm">
           <Bike className="h-4 w-4 text-muted-foreground" />
           {order.courier_name && order.courier_name.trim() ? (
-            <span className="font-bold text-foreground">
+            <span className="font-bold text-foreground truncate">
               Entregador: {order.courier_name}
+              {order.courier_phone && (
+                <span className="ml-2 font-mono text-xs text-muted-foreground">
+                  📞 {order.courier_phone}
+                </span>
+              )}
             </span>
           ) : (
             <span className="font-semibold text-muted-foreground">
