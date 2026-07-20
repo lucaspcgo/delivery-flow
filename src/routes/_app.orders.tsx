@@ -816,6 +816,8 @@ function OrderCard({
     return acc + (it.total_price || 0) + subs;
   }, 0);
   const [expanded, setExpanded] = useState(false);
+  // Em compacto, colapsa a lista de itens para "1º item + N mais" com toggle.
+  const [itemsExpanded, setItemsExpanded] = useState(false);
   const showSubs = show(kdsCfg, "item_subitems") &&
     order.items.some((it) => (it.sub_item_list ?? []).length > 0);
   const hasDetails = showSubs;
