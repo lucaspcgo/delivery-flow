@@ -190,6 +190,8 @@ function OrdersKanban() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [lastError, setLastError] = useState<Date | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refuseTarget, setRefuseTarget] = useState<ApiOrder | null>(null);
@@ -246,8 +248,10 @@ function OrdersKanban() {
       }
       seenIds.current = ids;
       firstLoad.current = false;
+      setLastUpdatedAt(new Date());
+      setLastError(null);
     } catch {
-      /* silent */
+      setLastError(new Date());
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -478,6 +482,27 @@ function OrdersKanban() {
             >
               <Loader2 className="h-3 w-3 animate-spin" />
               Atualizando…
+            </span>
+          )}
+          {!refreshing && lastError && (
+            <span
+              role="status"
+              aria-live="polite"
+              title={`Falha ao atualizar às ${lastError.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-destructive" aria-hidden />
+              Falha ao atualizar
+            </span>
+          )}
+          {!refreshing && !lastError && lastUpdatedAt && (
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+              title={lastUpdatedAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+              aria-label={`Última atualização às ${lastUpdatedAt.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              Atualizado {lastUpdatedAt.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
             </span>
           )}
           <span className="font-mono text-xl font-bold tabular-nums text-muted-foreground">
