@@ -1332,7 +1332,10 @@ function ItemRow({
   const showName = show(kdsCfg, "item_name");
   const showQty = show(kdsCfg, "item_quantity");
   const showPrice = show(kdsCfg, "item_price");
-  const hasImg = showImage && !!item.image && !broken;
+  const imgSrc =
+    item.image ||
+    (Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : null);
+  const hasImg = showImage && !!imgSrc && !broken;
   const box = compact ? "h-9 w-9" : "h-14 w-14";
   const qtyFont = compact ? 16 : 26;
   const nameFont = compact ? 13 : 17;
@@ -1365,7 +1368,7 @@ function ItemRow({
           >
             {hasImg ? (
               <img
-                src={item.image as string}
+                src={imgSrc as string}
                 alt={item.name}
                 className="h-full w-full object-cover"
                 onError={() => setBroken(true)}
