@@ -439,6 +439,20 @@ function OrdersKanban() {
             Configurar colunas
           </button>
           <button
+            onClick={() => setCompact((v) => !v)}
+            aria-pressed={compact}
+            title={compact ? "Modo compacto ativado" : "Ativar modo compacto"}
+            className={
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition " +
+              (compact
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-muted text-foreground hover:bg-muted/70")
+            }
+          >
+            <Rows3 className="h-4 w-4" />
+            {compact ? "Compacto" : "Compactar"}
+          </button>
+          <button
             onClick={async () => {
               if (reprocessing) return;
               setReprocessing(true);
