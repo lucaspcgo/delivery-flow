@@ -894,17 +894,23 @@ function OrderCard({
               {elapsedText}
             </div>
           )}
-          {!compact && promiseDiffSec != null && (
+          {promiseDiffSec != null && (
             <div
-              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              className={
+                "mt-1 inline-flex items-center gap-1 rounded-full font-black tabular-nums " +
+                (compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs")
+              }
               style={{
                 color: "#fff",
                 background: promiseLate ? "#DC2626" : "#0F172A",
               }}
-              title="Contagem até a promessa"
+              title={promiseLate ? "SLA estourado" : "Tempo restante até a promessa"}
             >
-              {promiseLate ? "atrasado " : "faltam "}
-              {formatSignedMMSS(promiseDiffSec)}
+              <span aria-hidden>⏳</span>
+              <span>
+                {promiseLate ? "-" : ""}
+                {formatSignedMMSS(promiseDiffSec)}
+              </span>
             </div>
           )}
         </div>
@@ -1047,26 +1053,41 @@ function OrderCard({
       )}
       </div>
 
-      {/* Faixa/etiqueta de pagamento */}
-      {!compact && show(kdsCfg, "payment_method") && order.payment_method && (
-        <div
-          className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm font-black"
-          style={{ background: "#0F172A", color: "#F8FAFC" }}
-        >
-          <span className="flex items-center gap-2">
-            <span>💳</span>
-            <span className="uppercase tracking-wider">{order.payment_method}</span>
-          </span>
-          {order.payment_when && (
-            <span
-              className="rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-wider"
-              style={{ background: "#F59E0B", color: "#1a1a1a" }}
-            >
-              {order.payment_when}
+      {/* Faixa/etiqueta de pagamento — verde se Pago online, âmbar se Pagar na entrega */}
+      {!compact && show(kdsCfg, "payment_method") && (order.payment_method || order.payment_when) && (() => {
+        const whenRaw = String(order.payment_when ?? "").toLowerCase();
+        const methodRaw = String(order.payment_method ?? "").toLowerCase();
+        const isPrepaid =
+          whenRaw.includes("online") ||
+          whenRaw.includes("prepaid") ||
+          whenRaw.includes("pago") ||
+          whenRaw.includes("app") ||
+          methodRaw.includes("online") ||
+          methodRaw.includes("pix online");
+        const bg = isPrepaid ? "#16A34A" : "#F59E0B";
+        const fg = isPrepaid ? "#052E1B" : "#1a1a1a";
+        const label = isPrepaid ? "Pago online" : "Pagar na entrega";
+        const method = order.payment_method?.trim();
+        return (
+          <div
+            className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm font-black"
+            style={{ background: bg, color: fg }}
+          >
+            <span className="flex items-center gap-2">
+              <span aria-hidden>💳</span>
+              <span className="uppercase tracking-wider">{label}</span>
             </span>
-          )}
-        </div>
-      )}
+            {method && (
+              <span
+                className="rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-wider"
+                style={{ background: fg, color: bg }}
+              >
+                {method}
+              </span>
+            )}
+          </div>
+        );
+      })()}
 
       <StageActions
         order={order}
