@@ -741,7 +741,16 @@ function IntegrationsPage() {
                 <Input
                   id="nnf-shop-id"
                   value={nnfShopId}
-                  onChange={(e) => setNnfShopId(e.target.value)}
+                  onChange={(e) =>
+                    setNnfShopId(e.target.value.replace(/\D+/g, ""))
+                  }
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const txt = e.clipboardData.getData("text").replace(/\D+/g, "");
+                    setNnfShopId(txt);
+                  }}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="Ex.: 123456789"
                   autoComplete="off"
                 />
@@ -821,7 +830,10 @@ function IntegrationsPage() {
                 <Button variant="outline" onClick={() => setNnfOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={() => void goToNnfAuthStep()} disabled={!nnfShopId.trim()}>
+                <Button
+                  onClick={() => void goToNnfAuthStep()}
+                  disabled={!/^\d+$/.test(nnfShopId)}
+                >
                   Continuar
                 </Button>
               </>
