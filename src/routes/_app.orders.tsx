@@ -1132,23 +1132,39 @@ function StageActions({
   );
 }
 
-function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolean; kdsCfg: KdsFieldMap }) {
+function ItemRow({
+  item,
+  showSubs,
+  kdsCfg,
+  compact,
+}: {
+  item: OrderItem;
+  showSubs: boolean;
+  kdsCfg: KdsFieldMap;
+  compact?: boolean;
+}) {
   const [broken, setBroken] = useState(false);
   const showImage = show(kdsCfg, "item_image");
   const showName = show(kdsCfg, "item_name");
   const showQty = show(kdsCfg, "item_quantity");
   const showPrice = show(kdsCfg, "item_price");
   const hasImg = showImage && !!item.image && !broken;
+  const box = compact ? "h-9 w-9" : "h-14 w-14";
+  const qtyFont = compact ? 16 : 26;
+  const nameFont = compact ? 13 : 17;
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <div className={"flex items-center " + (compact ? "gap-2" : "gap-3")}>
         {showQty && (
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg font-black tabular-nums"
+            className={
+              "flex shrink-0 items-center justify-center rounded-lg font-black tabular-nums " +
+              box
+            }
             style={{
               background: "#FBBF24",
               color: "#1a1a1a",
-              fontSize: 26,
+              fontSize: qtyFont,
               lineHeight: 1,
             }}
           >
@@ -1157,7 +1173,10 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
         )}
         {showImage && (
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+            className={
+              "flex shrink-0 items-center justify-center overflow-hidden rounded-lg " +
+              box
+            }
             style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
           >
             {hasImg ? (
@@ -1169,22 +1188,29 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
                 loading="lazy"
               />
             ) : (
-              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+              <ImageIcon className={compact ? "h-4 w-4 text-muted-foreground" : "h-6 w-6 text-muted-foreground"} />
             )}
           </div>
         )}
         <div className="min-w-0 flex-1">
           {showName && (
             <div
-              className="font-black leading-tight"
-              style={{ fontSize: 17 }}
+              className={
+                "font-black leading-tight " + (compact ? "line-clamp-2" : "")
+              }
+              style={{ fontSize: nameFont }}
             >
               {item.name}
             </div>
           )}
         </div>
         {showPrice && item.total_price > 0 && (
-          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#16A34A" }}>
+          <div
+            className={
+              "shrink-0 font-black tabular-nums " + (compact ? "text-xs" : "text-sm")
+            }
+            style={{ color: "#16A34A" }}
+          >
             {centsToBRL(item.total_price)}
           </div>
         )}
