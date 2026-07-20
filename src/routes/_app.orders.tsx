@@ -10,7 +10,7 @@ function OrdersUsageBlock() {
   );
 }
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw } from "lucide-react";
+import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw, Rows3 } from "lucide-react";
 import { toast } from "sonner";
 import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, reprocess99FoodPending, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, ApiError, type KdsColumn } from "@/lib/api";
 import {
