@@ -509,6 +509,12 @@ function OrdersKanban() {
         </div>
       ) : (
         <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            try {
+              sessionStorage.setItem("kds-scroll-x", String(e.currentTarget.scrollLeft));
+            } catch {}
+          }}
           className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:grid md:snap-none md:overflow-x-visible"
           style={{
             ["--kds-cols" as string]: visibleColumns.length,
