@@ -107,6 +107,9 @@ const centsToBRL = (cents: number) =>
     currency: "BRL",
   });
 
+const reaisToBRL = (value: number) =>
+  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 function minutesSince(iso: string): number {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return 0;
@@ -410,6 +413,8 @@ function OrdersKanban() {
 
   return (
     <div className="w-full min-h-[calc(100vh-3.5rem)] bg-background">
+      {/* Garantia: o body nunca rola horizontalmente por causa do KDS */}
+      <style>{`body{overflow-x:hidden}`}</style>
       <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-background/95 px-6 py-4 backdrop-blur">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-black text-foreground">Pedidos ao Vivo</h1>
