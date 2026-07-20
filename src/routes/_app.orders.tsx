@@ -904,7 +904,8 @@ function OrderCard({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
+          className="mt-2 flex items-center gap-1 rounded text-xs font-bold text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          aria-expanded={expanded}
         >
           {expanded ? (
             <>
