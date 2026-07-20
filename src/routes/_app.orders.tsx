@@ -690,6 +690,7 @@ function OrderCard({
   now,
   busy,
   kdsCfg,
+  compact,
   onAccept,
   onReady,
   onDispatch,
@@ -702,6 +703,7 @@ function OrderCard({
   now: Date;
   busy: boolean;
   kdsCfg: KdsFieldMap;
+  compact: boolean;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
@@ -749,7 +751,7 @@ function OrderCard({
       style={{
         background: "var(--card)",
         color: "var(--card-foreground)",
-        borderRadius: 16,
+        borderRadius: compact ? 12 : 16,
         padding: 0,
         overflow: "hidden",
         borderLeft: `6px solid ${border}`,
@@ -759,14 +761,17 @@ function OrderCard({
         border: "1px solid var(--border)",
       }}
     >
-      <div className="p-4">
+      <div className={compact ? "p-2.5" : "p-4"}>
       {/* Cabeçalho: nome + selo + distância */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             {show(kdsCfg, "platform_badge") && (
               <span
-                className="rounded-md px-2 py-1 text-[11px] font-black tracking-wider text-black"
+                className={
+                  "rounded-md font-black tracking-wider text-black " +
+                  (compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-[11px]")
+                }
                 style={{ background: border }}
               >
                 {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
@@ -775,7 +780,7 @@ function OrderCard({
             {show(kdsCfg, "customer_name") && (
               <span
                 className="truncate font-black"
-                style={{ fontSize: 20, lineHeight: 1.15 }}
+                style={{ fontSize: compact ? 14 : 20, lineHeight: 1.15 }}
               >
                 {order.customer_name ?? "Cliente"}
               </span>
@@ -783,20 +788,20 @@ function OrderCard({
           </div>
           {show(kdsCfg, "order_number") && order.order_number && (
             <div
-              className="mt-2 font-black tabular-nums"
-              style={{ fontSize: 24, color: "#B45309", letterSpacing: 1 }}
+              className={"font-black tabular-nums " + (compact ? "mt-1" : "mt-2")}
+              style={{ fontSize: compact ? 16 : 24, color: "#B45309", letterSpacing: 1 }}
             >
               Pedido #{order.order_number}
             </div>
           )}
-          {show(kdsCfg, "customer_phone") && order.customer_phone && (
+          {!compact && show(kdsCfg, "customer_phone") && order.customer_phone && (
             <div className="mt-1 text-sm text-muted-foreground">
               📞 {order.customer_phone}
             </div>
           )}
         </div>
         <div className="text-right shrink-0">
-          {km && (
+          {!compact && km && (
             <div
               className="inline-block rounded-md px-2 py-0.5 text-xs font-black"
               style={{ background: "var(--muted)", color: "var(--foreground)" }}
@@ -806,15 +811,18 @@ function OrderCard({
           )}
           {show(kdsCfg, "order_time") && (
             <div
-              className="mt-1 font-mono font-black tabular-nums"
-              style={{ fontSize: 22, lineHeight: 1 }}
+              className={"font-mono font-black tabular-nums " + (compact ? "" : "mt-1")}
+              style={{ fontSize: compact ? 14 : 22, lineHeight: 1 }}
             >
               {formatHHmm(order.created_at)}
             </div>
           )}
           {show(kdsCfg, "order_elapsed") && (
             <div
-              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              className={
+                "mt-1 inline-block rounded-full font-black tabular-nums " +
+                (compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs")
+              }
               style={{
                 color: urgent ? "#fff" : "var(--foreground)",
                 background: urgent ? "#DC2626" : "var(--muted)",
@@ -824,7 +832,7 @@ function OrderCard({
               {elapsedText}
             </div>
           )}
-          {promiseDiffSec != null && (
+          {!compact && promiseDiffSec != null && (
             <div
               className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
               style={{
@@ -841,26 +849,34 @@ function OrderCard({
       </div>
 
       {/* Nome da loja */}
-      <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
-        <Store className="h-4 w-4 text-muted-foreground" />
-        <span className="truncate">
-          {order.store_name?.trim() || "Loja não identificada"}
-        </span>
-      </div>
+      {!compact && (
+        <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
+          <Store className="h-4 w-4 text-muted-foreground" />
+          <span className="truncate">
+            {order.store_name?.trim() || "Loja não identificada"}
+          </span>
+        </div>
+      )}
 
       {/* Itens grandes */}
-      <div className="mt-4 space-y-3 rounded-xl bg-muted/60 p-3">
+      <div
+        className={
+          "rounded-xl bg-muted/60 " +
+          (compact ? "mt-2 space-y-1.5 p-2" : "mt-4 space-y-3 p-3")
+        }
+      >
         {order.items.map((it, idx) => (
           <ItemRow
             key={idx}
             item={it}
             showSubs={expanded && show(kdsCfg, "item_subitems")}
             kdsCfg={kdsCfg}
+            compact={compact}
           />
         ))}
       </div>
 
-      {hasDetails && (
+      {!compact && hasDetails && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -879,6 +895,7 @@ function OrderCard({
       )}
 
       {/* Bloco abaixo dos itens: promessa, tipo, endereço, observação */}
+      {!compact && (
       <div className="mt-4 space-y-2 pt-3" style={{ borderTop: "1px dashed var(--border)" }}>
         {promise && (
           <div
@@ -952,9 +969,10 @@ function OrderCard({
           </div>
         )}
       </div>
+      )}
 
       {/* Total */}
-      {show(kdsCfg, "total_price") && (
+      {!compact && show(kdsCfg, "total_price") && (
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
             Total
@@ -967,7 +985,7 @@ function OrderCard({
       </div>
 
       {/* Faixa/etiqueta de pagamento */}
-      {show(kdsCfg, "payment_method") && order.payment_method && (
+      {!compact && show(kdsCfg, "payment_method") && order.payment_method && (
         <div
           className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm font-black"
           style={{ background: "#0F172A", color: "#F8FAFC" }}
@@ -990,6 +1008,7 @@ function OrderCard({
       <StageActions
         order={order}
         busy={busy}
+        compact={compact}
         onRefuse={onRefuse}
         onOrderUpdated={onOrderUpdated}
         onRefresh={onRefresh}
