@@ -663,7 +663,7 @@ function Column({
   return (
     <div
       className={
-        "flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 shadow-sm sm:w-[70vw] md:w-auto md:min-w-0 md:shrink " +
+        "flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 shadow-sm sm:w-[70vw] md:w-[22rem] " +
         (compact ? "p-2" : "p-3")
       }
       style={{ maxHeight: "calc(100vh - 8rem)" }}
