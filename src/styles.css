@@ -177,3 +177,15 @@ iframe {
 a[href*="lovable.dev"][target="_blank"] {
   display: none !important;
 }
+
+/* KDS horizontal scroll — thin scrollbar */
+.kds-scroll {
+  scrollbar-width: thin;
+}
+.kds-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.kds-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, currentColor 20%, transparent);
+  border-radius: 9999px;
+}

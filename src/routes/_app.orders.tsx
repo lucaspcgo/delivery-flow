@@ -485,8 +485,11 @@ function OrdersKanban() {
         </div>
       ) : (
         <div
-          className="grid gap-4 p-4"
-          style={{ gridTemplateColumns: `repeat(${visibleColumns.length}, minmax(280px, 1fr))` }}
+          className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:grid md:snap-none md:overflow-x-visible"
+          style={{
+            ["--kds-cols" as string]: visibleColumns.length,
+            gridTemplateColumns: `repeat(var(--kds-cols), minmax(280px, 1fr))`,
+          }}
         >
           {visibleColumns.map((col) => {
             const s = styleFor(col.key);
@@ -592,20 +595,20 @@ function Column({
 }) {
   return (
     <div
-      className="flex min-w-0 flex-col rounded-2xl border bg-muted/40 p-3 shadow-sm"
+      className="flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 p-3 shadow-sm sm:w-[70vw] md:w-auto md:min-w-0 md:shrink"
       style={{ maxHeight: "calc(100vh - 8rem)" }}
     >
       <div
         className="mb-3 flex items-center justify-between px-4 py-3"
         style={{ background: col.headerBg, color: col.headerText, borderRadius: 12 }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <span className="text-2xl">{col.emoji}</span>
-          <h2 className="text-base font-black tracking-widest">{col.title}</h2>
+          <h2 className="truncate text-base font-black tracking-widest">{col.title}</h2>
         </div>
         <span
-          className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold"
-          style={{ color: col.headerText }}
+          className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
+          style={{ background: col.headerText, color: col.headerBg }}
         >
           {orders.length}
         </span>
