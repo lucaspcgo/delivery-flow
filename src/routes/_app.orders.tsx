@@ -1020,12 +1020,14 @@ function OrderCard({
 function StageActions({
   order,
   busy,
+  compact,
   onRefuse,
   onOrderUpdated,
   onRefresh,
 }: {
   order: ApiOrder;
   busy: boolean;
+  compact?: boolean;
   onRefuse: (o: ApiOrder) => void;
   onOrderUpdated: (updated: ApiOrder) => void;
   onRefresh: () => void | Promise<void>;
@@ -1092,7 +1094,7 @@ function StageActions({
 
   return (
     <div
-      className="grid gap-2 p-4 pt-3"
+      className={"grid gap-2 " + (compact ? "p-2 pt-1.5" : "p-4 pt-3")}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
       {actions.map((a) => {
@@ -1106,9 +1108,9 @@ function StageActions({
             className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
             style={{
               background: s.bg,
-              height: 40,
+              height: compact ? 32 : 40,
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: compact ? 12 : 13,
               fontWeight: 700,
               border: "none",
               opacity: orderBusy ? 0.7 : 1,
