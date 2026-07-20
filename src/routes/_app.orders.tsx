@@ -811,6 +811,39 @@ function OrderCard({
     typeof order.distance_km === "number"
       ? `${order.distance_km.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`
       : null;
+  const addr = order.address ?? null;
+  const addressLine1 = (() => {
+    if (addr) {
+      const parts: string[] = [];
+      if (addr.street) parts.push(addr.street);
+      if (addr.number) parts.push(addr.number);
+      if (parts.length) return parts.join(", ");
+      if (addr.full) return addr.full;
+    }
+    return order.delivery_address ?? null;
+  })();
+  const addressLine2 = (() => {
+    if (addr) {
+      const parts: string[] = [];
+      const district = addr.district || neighborhood;
+      if (district) parts.push(district);
+      if (addr.city) parts.push(addr.city);
+      if (parts.length) return parts.join(" · ");
+    }
+    return neighborhood;
+  })();
+  const addressComplement = addr?.complement || null;
+  const addressReference = addr?.reference || null;
+  const amounts = order.amounts ?? null;
+  const deliveryByLabel = (() => {
+    const v = String(order.delivery_by ?? "").trim();
+    if (!v) return null;
+    const low = v.toLowerCase();
+    if (low.includes("merchant") || low.includes("loja") || low.includes("store")) return "Entrega da loja";
+    if (low.includes("ifood") || low.includes("marketplace")) return "Entrega iFood";
+    if (low.includes("99")) return "Entrega 99Food";
+    return v;
+  })();
 
   return (
     <div
