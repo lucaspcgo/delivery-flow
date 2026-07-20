@@ -547,10 +547,9 @@ function OrdersKanban() {
           }}
           role="region"
           aria-label="Painel de pedidos ao vivo"
-          className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:grid md:snap-none md:overflow-x-visible"
+          className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:snap-none"
           style={{
             ["--kds-cols" as string]: visibleColumns.length,
-            gridTemplateColumns: `repeat(var(--kds-cols), minmax(280px, 1fr))`,
           }}
         >
           {visibleColumns.map((col) => {
