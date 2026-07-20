@@ -420,7 +420,8 @@ function OrdersKanban() {
           />
           <button
             onClick={() => setSelectedDate(todayStr())}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700"
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label="Selecionar data de hoje"
           >
             Hoje
           </button>
@@ -445,7 +446,9 @@ function OrdersKanban() {
           </span>
           <button
             onClick={() => setConfigOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-bold text-foreground hover:bg-muted/70"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-bold text-foreground hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-haspopup="dialog"
+            aria-expanded={configOpen}
           >
             <Settings2 className="h-4 w-4" />
             Configurar colunas
@@ -453,9 +456,10 @@ function OrdersKanban() {
           <button
             onClick={() => setCompact((v) => !v)}
             aria-pressed={compact}
+            aria-label={compact ? "Desativar modo compacto" : "Ativar modo compacto"}
             title={compact ? "Modo compacto ativado" : "Ativar modo compacto"}
             className={
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition " +
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 " +
               (compact
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-muted text-foreground hover:bg-muted/70")
@@ -490,7 +494,8 @@ function OrdersKanban() {
               }
             }}
             disabled={reprocessing}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-bold text-foreground hover:bg-muted/70 disabled:opacity-60"
+            aria-busy={reprocessing}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-bold text-foreground hover:bg-muted/70 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {reprocessing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -501,8 +506,9 @@ function OrdersKanban() {
           </button>
           <button
             onClick={load}
-            className="rounded-lg bg-muted p-2 text-foreground hover:bg-muted/70"
+            className="rounded-lg bg-muted p-2 text-foreground hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Atualizar"
+            aria-busy={loading}
           >
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -525,6 +531,8 @@ function OrdersKanban() {
               sessionStorage.setItem("kds-scroll-x", String(e.currentTarget.scrollLeft));
             } catch {}
           }}
+          role="region"
+          aria-label="Painel de pedidos ao vivo"
           className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:grid md:snap-none md:overflow-x-visible"
           style={{
             ["--kds-cols" as string]: visibleColumns.length,
@@ -898,7 +906,8 @@ function OrderCard({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
+          className="mt-2 flex items-center gap-1 rounded text-xs font-bold text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          aria-expanded={expanded}
         >
           {expanded ? (
             <>
@@ -1123,7 +1132,9 @@ function StageActions({
             key={a.action}
             onClick={() => runAction(a.action)}
             disabled={orderBusy}
-            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
+            aria-label={`${a.label} — pedido ${order.platform_order_id}`}
+            aria-busy={isRunning}
+            className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             style={{
               background: s.bg,
               height: compact ? 32 : 40,
