@@ -588,7 +588,7 @@ function OrdersKanban() {
                 now={now}
                 busyId={busyId}
                 kdsCfg={kdsCfg}
-                compact={compact}
+                compact={effectiveCompact}
                 onAccept={handleAccept}
                 onReady={handleReady}
                 onDispatch={handleDispatch}
