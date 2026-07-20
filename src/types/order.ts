@@ -12,6 +12,7 @@ export interface OrderItem {
   amount: number;
   total_price: number;
   image?: string | null;
+  images?: string[] | null;
   sub_item_list?: OrderSubItem[];
 }
 
@@ -38,6 +39,7 @@ export interface ApiOrder {
   updated_at: string;
   order_type?: string | null;
   delivery_type?: string | null;
+  delivery_by?: string | null;
   payment_method?: string | null;
   payment_when?: string | null;
   store_name?: string | null;
@@ -51,6 +53,23 @@ export interface ApiOrder {
   kds_stage?: string | null;
   available_actions?: OrderAvailableAction[];
   courier_name?: string | null;
+  courier_phone?: string | null;
   pickup_code?: string | null;
   promise_epoch?: number | null;
+  address?: {
+    street?: string | null;
+    number?: string | null;
+    district?: string | null;
+    city?: string | null;
+    complement?: string | null;
+    reference?: string | null;
+    full?: string | null;
+  } | null;
+  amounts?: {
+    order_price?: number | null;
+    delivery_fee?: number | null;
+    customer_paid?: number | null;
+    items_discount?: number | null;
+    delivery_discount?: number | null;
+  } | null;
 }

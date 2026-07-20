@@ -107,6 +107,9 @@ const centsToBRL = (cents: number) =>
     currency: "BRL",
   });
 
+const reaisToBRL = (value: number) =>
+  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 function minutesSince(iso: string): number {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return 0;
@@ -410,6 +413,8 @@ function OrdersKanban() {
 
   return (
     <div className="w-full min-h-[calc(100vh-3.5rem)] bg-background">
+      {/* Garantia: o body nunca rola horizontalmente por causa do KDS */}
+      <style>{`body{overflow-x:hidden}`}</style>
       <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-background/95 px-6 py-4 backdrop-blur">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-black text-foreground">Pedidos ao Vivo</h1>
@@ -806,6 +811,39 @@ function OrderCard({
     typeof order.distance_km === "number"
       ? `${order.distance_km.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`
       : null;
+  const addr = order.address ?? null;
+  const addressLine1 = (() => {
+    if (addr) {
+      const parts: string[] = [];
+      if (addr.street) parts.push(addr.street);
+      if (addr.number) parts.push(addr.number);
+      if (parts.length) return parts.join(", ");
+      if (addr.full) return addr.full;
+    }
+    return order.delivery_address ?? null;
+  })();
+  const addressLine2 = (() => {
+    if (addr) {
+      const parts: string[] = [];
+      const district = addr.district || neighborhood;
+      if (district) parts.push(district);
+      if (addr.city) parts.push(addr.city);
+      if (parts.length) return parts.join(" · ");
+    }
+    return neighborhood;
+  })();
+  const addressComplement = addr?.complement || null;
+  const addressReference = addr?.reference || null;
+  const amounts = order.amounts ?? null;
+  const deliveryByLabel = (() => {
+    const v = String(order.delivery_by ?? "").trim();
+    if (!v) return null;
+    const low = v.toLowerCase();
+    if (low.includes("merchant") || low.includes("loja") || low.includes("store")) return "Entrega da loja";
+    if (low.includes("ifood") || low.includes("marketplace")) return "Entrega iFood";
+    if (low.includes("99")) return "Entrega 99Food";
+    return v;
+  })();
 
   return (
     <div
@@ -976,28 +1014,51 @@ function OrderCard({
             <span className="tabular-nums">{promise}</span>
           </div>
         )}
-        {(order.order_type || order.delivery_type) && (
-          <div>
-            <span
-              className="inline-block rounded-full px-3 py-1 text-xs font-bold"
-              style={{
-                background: isTakeout ? "#7C3AED" : "#2563EB",
-                color: "#fff",
-              }}
-            >
-              {order.order_type || order.delivery_type}
-            </span>
+        {(order.order_type || order.delivery_type || deliveryByLabel) && (
+          <div className="flex flex-wrap gap-1.5">
+            {(order.order_type || order.delivery_type) && (
+              <span
+                className="inline-block rounded-full px-3 py-1 text-xs font-bold"
+                style={{
+                  background: isTakeout ? "#7C3AED" : "#2563EB",
+                  color: "#fff",
+                }}
+              >
+                {order.order_type || order.delivery_type}
+              </span>
+            )}
+            {deliveryByLabel && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold"
+                style={{ background: "#E0E7FF", color: "#3730A3" }}
+              >
+                <Bike className="h-3 w-3" />
+                {deliveryByLabel}
+              </span>
+            )}
           </div>
         )}
-        {order.delivery_address && (
+        {(addressLine1 || addressLine2) && (
           <div className="flex items-start gap-1.5 text-sm leading-snug">
             <span className="mt-0.5">📍</span>
             <div className="min-w-0">
-              <div className="font-bold text-foreground break-words">
-                {order.delivery_address}
-              </div>
-              {neighborhood && (
-                <div className="text-muted-foreground">{neighborhood}</div>
+              {addressLine1 && (
+                <div className="font-bold text-foreground break-words">
+                  {addressLine1}
+                </div>
+              )}
+              {addressLine2 && (
+                <div className="text-muted-foreground">{addressLine2}</div>
+              )}
+              {addressComplement && (
+                <div className="text-xs text-muted-foreground">
+                  Compl.: <span className="font-semibold">{addressComplement}</span>
+                </div>
+              )}
+              {addressReference && (
+                <div className="text-xs text-muted-foreground">
+                  Ref.: <span className="font-semibold">{addressReference}</span>
+                </div>
               )}
             </div>
           </div>
@@ -1018,8 +1079,13 @@ function OrderCard({
         <div className="flex items-center gap-1.5 text-sm">
           <Bike className="h-4 w-4 text-muted-foreground" />
           {order.courier_name && order.courier_name.trim() ? (
-            <span className="font-bold text-foreground">
+            <span className="font-bold text-foreground truncate">
               Entregador: {order.courier_name}
+              {order.courier_phone && (
+                <span className="ml-2 font-mono text-xs text-muted-foreground">
+                  📞 {order.courier_phone}
+                </span>
+              )}
             </span>
           ) : (
             <span className="font-semibold text-muted-foreground">
@@ -1040,15 +1106,47 @@ function OrderCard({
       </div>
       )}
 
-      {/* Total */}
+      {/* Total + breakdown de valores (amounts em reais) */}
       {!compact && show(kdsCfg, "total_price") && (
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-            Total
-          </span>
-          <span className="font-black tabular-nums" style={{ fontSize: 22, color: "#16A34A" }}>
-            {centsToBRL(subtotal)}
-          </span>
+        <div className="mt-3 space-y-1">
+          {amounts && (
+            <div className="space-y-0.5 text-xs">
+              {typeof amounts.order_price === "number" && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Itens</span>
+                  <span className="tabular-nums">{reaisToBRL(amounts.order_price)}</span>
+                </div>
+              )}
+              {typeof amounts.delivery_fee === "number" && amounts.delivery_fee > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Taxa de entrega</span>
+                  <span className="tabular-nums">{reaisToBRL(amounts.delivery_fee)}</span>
+                </div>
+              )}
+              {typeof amounts.items_discount === "number" && amounts.items_discount > 0 && (
+                <div className="flex justify-between text-muted-foreground/80">
+                  <span>Desconto itens</span>
+                  <span className="tabular-nums">-{reaisToBRL(amounts.items_discount)}</span>
+                </div>
+              )}
+              {typeof amounts.delivery_discount === "number" && amounts.delivery_discount > 0 && (
+                <div className="flex justify-between text-muted-foreground/80">
+                  <span>Desconto entrega</span>
+                  <span className="tabular-nums">-{reaisToBRL(amounts.delivery_discount)}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              {amounts && typeof amounts.customer_paid === "number" ? "Cliente pagou" : "Total"}
+            </span>
+            <span className="font-black tabular-nums" style={{ fontSize: 22, color: "#16A34A" }}>
+              {amounts && typeof amounts.customer_paid === "number"
+                ? reaisToBRL(amounts.customer_paid)
+                : centsToBRL(subtotal)}
+            </span>
+          </div>
         </div>
       )}
       </div>
@@ -1234,7 +1332,10 @@ function ItemRow({
   const showName = show(kdsCfg, "item_name");
   const showQty = show(kdsCfg, "item_quantity");
   const showPrice = show(kdsCfg, "item_price");
-  const hasImg = showImage && !!item.image && !broken;
+  const imgSrc =
+    item.image ||
+    (Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : null);
+  const hasImg = showImage && !!imgSrc && !broken;
   const box = compact ? "h-9 w-9" : "h-14 w-14";
   const qtyFont = compact ? 16 : 26;
   const nameFont = compact ? 13 : 17;
@@ -1267,7 +1368,7 @@ function ItemRow({
           >
             {hasImg ? (
               <img
-                src={item.image as string}
+                src={imgSrc as string}
                 alt={item.name}
                 className="h-full w-full object-cover"
                 onError={() => setBroken(true)}
