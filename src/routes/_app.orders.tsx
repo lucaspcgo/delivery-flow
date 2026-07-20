@@ -176,6 +176,18 @@ function OrdersKanban() {
   const [columns, setColumns] = useState<KdsColumn[]>(DEFAULT_KDS_COLUMNS);
   const [configOpen, setConfigOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const restoredScrollRef = useRef(false);
+  useEffect(() => {
+    if (restoredScrollRef.current) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    try {
+      const saved = sessionStorage.getItem("kds-scroll-x");
+      if (saved) el.scrollLeft = Number(saved) || 0;
+    } catch {}
+    restoredScrollRef.current = true;
+  });
   const [compact, setCompact] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("kds:compact") === "1";
@@ -507,6 +519,12 @@ function OrdersKanban() {
         </div>
       ) : (
         <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            try {
+              sessionStorage.setItem("kds-scroll-x", String(e.currentTarget.scrollLeft));
+            } catch {}
+          }}
           className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:grid md:snap-none md:overflow-x-visible"
           style={{
             ["--kds-cols" as string]: visibleColumns.length,
