@@ -730,7 +730,7 @@ function Column({
         ) : (
           orders.map((o) => (
             <OrderCard
-              key={o.id}
+              key={`${o.id}:${col.key}`}
               order={o}
               colKey={col.key}
               now={now}
