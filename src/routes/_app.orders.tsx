@@ -176,6 +176,8 @@ function OrdersKanban() {
   const [columns, setColumns] = useState<KdsColumn[]>(DEFAULT_KDS_COLUMNS);
   const [configOpen, setConfigOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const restoredScrollRef = useRef(false);
   const [compact, setCompact] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("kds:compact") === "1";
