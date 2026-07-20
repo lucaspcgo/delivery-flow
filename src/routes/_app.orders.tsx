@@ -485,8 +485,11 @@ function OrdersKanban() {
         </div>
       ) : (
         <div
-          className="grid gap-4 p-4"
-          style={{ gridTemplateColumns: `repeat(${visibleColumns.length}, minmax(280px, 1fr))` }}
+          className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:grid md:snap-none md:overflow-x-visible"
+          style={{
+            ["--kds-cols" as string]: visibleColumns.length,
+            gridTemplateColumns: `repeat(var(--kds-cols), minmax(280px, 1fr))`,
+          }}
         >
           {visibleColumns.map((col) => {
             const s = styleFor(col.key);
