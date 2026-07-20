@@ -597,6 +597,7 @@ function Column({
   now,
   busyId,
   kdsCfg,
+  compact,
   onAccept,
   onReady,
   onDispatch,
@@ -609,6 +610,7 @@ function Column({
   now: Date;
   busyId: string | null;
   kdsCfg: KdsFieldMap;
+  compact: boolean;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
@@ -618,16 +620,29 @@ function Column({
 }) {
   return (
     <div
-      className="flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 p-3 shadow-sm sm:w-[70vw] md:w-auto md:min-w-0 md:shrink"
+      className={
+        "flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 shadow-sm sm:w-[70vw] md:w-auto md:min-w-0 md:shrink " +
+        (compact ? "p-2" : "p-3")
+      }
       style={{ maxHeight: "calc(100vh - 8rem)" }}
     >
       <div
-        className="mb-3 flex items-center justify-between px-4 py-3"
+        className={
+          "flex items-center justify-between " +
+          (compact ? "mb-2 px-3 py-2" : "mb-3 px-4 py-3")
+        }
         style={{ background: col.headerBg, color: col.headerText, borderRadius: 12 }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <span className="text-2xl">{col.emoji}</span>
-          <h2 className="truncate text-base font-black tracking-widest">{col.title}</h2>
+          <span className={compact ? "text-lg" : "text-2xl"}>{col.emoji}</span>
+          <h2
+            className={
+              "truncate font-black tracking-widest " +
+              (compact ? "text-xs" : "text-base")
+            }
+          >
+            {col.title}
+          </h2>
         </div>
         <span
           className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
@@ -636,7 +651,11 @@ function Column({
           {orders.length}
         </span>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ rowGap: 12 }}>
+      <div
+        className={
+          "flex-1 overflow-y-auto pr-1 " + (compact ? "space-y-2" : "space-y-3")
+        }
+      >
         {orders.length === 0 ? (
           <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhum pedido
@@ -650,6 +669,7 @@ function Column({
               now={now}
               busy={busyId === o.id}
               kdsCfg={kdsCfg}
+              compact={compact}
               onAccept={onAccept}
               onReady={onReady}
               onDispatch={onDispatch}
