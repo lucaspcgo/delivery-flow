@@ -635,6 +635,7 @@ function OrdersKanban() {
 function Column({
   col,
   orders,
+  loading,
   now,
   busyId,
   kdsCfg,
@@ -648,6 +649,7 @@ function Column({
 }: {
   col: { key: string; title: string; headerBg: string; headerText: string; emoji: string };
   orders: ApiOrder[];
+  loading?: boolean;
   now: Date;
   busyId: string | null;
   kdsCfg: KdsFieldMap;
@@ -697,7 +699,27 @@ function Column({
           "flex-1 overflow-y-auto pr-1 " + (compact ? "space-y-2" : "space-y-3")
         }
       >
-        {orders.length === 0 ? (
+        {orders.length === 0 && loading ? (
+          <div className="space-y-3" aria-busy="true" aria-live="polite">
+            <span className="sr-only">Carregando pedidos…</span>
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-xl border bg-background p-4 shadow-sm"
+              >
+                <div className="mb-3 h-4 w-2/3 rounded bg-muted" />
+                <div className="mb-2 h-3 w-1/3 rounded bg-muted" />
+                <div className="mt-4 flex gap-2">
+                  <div className="h-10 w-10 rounded bg-muted" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-3/4 rounded bg-muted" />
+                    <div className="h-3 w-1/2 rounded bg-muted" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
           <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhum pedido
           </div>
