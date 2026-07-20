@@ -176,6 +176,14 @@ function OrdersKanban() {
   const [columns, setColumns] = useState<KdsColumn[]>(DEFAULT_KDS_COLUMNS);
   const [configOpen, setConfigOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [compact, setCompact] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("kds:compact") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("kds:compact", compact ? "1" : "0");
+  }, [compact]);
   const todayStr = () => {
     const d = new Date();
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
