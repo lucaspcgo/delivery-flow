@@ -560,6 +560,7 @@ function OrdersKanban() {
                 key={col.key}
                 col={{ key: col.key, title: col.label.toUpperCase(), headerBg: s.bg, headerText: s.text, emoji: s.emoji }}
                 orders={grouped[col.key] ?? []}
+                loading={loading}
                 now={now}
                 busyId={busyId}
                 kdsCfg={kdsCfg}
