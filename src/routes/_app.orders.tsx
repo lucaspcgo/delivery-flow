@@ -81,6 +81,22 @@ function legacyStageFromStatus(status: string): string {
   return "delivered";
 }
 
+/**
+ * Mapeia a ação clicada para o próximo status/kds_stage esperado,
+ * usado para atualização otimista do card antes da resposta do servidor.
+ */
+function optimisticFromAction(
+  action: string,
+): { status: string; kds_stage: string } | null {
+  switch (action) {
+    case "confirm":  return { status: "confirmed",  kds_stage: "preparing" };
+    case "ready":    return { status: "ready",      kds_stage: "ready" };
+    case "dispatch": return { status: "dispatched", kds_stage: "dispatched" };
+    case "cancel":   return { status: "cancelled",  kds_stage: "cancelled" };
+    default: return null;
+  }
+}
+
 const COLUMN_STYLE: Record<string, { bg: string; text: string; emoji: string }> = {
   new:        { bg: "#F59E0B", text: "#1a1a1a", emoji: "🟡" },
   preparing:  { bg: "#F97316", text: "#1a1a1a", emoji: "🟠" },
