@@ -894,17 +894,23 @@ function OrderCard({
               {elapsedText}
             </div>
           )}
-          {!compact && promiseDiffSec != null && (
+          {promiseDiffSec != null && (
             <div
-              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              className={
+                "mt-1 inline-flex items-center gap-1 rounded-full font-black tabular-nums " +
+                (compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs")
+              }
               style={{
                 color: "#fff",
                 background: promiseLate ? "#DC2626" : "#0F172A",
               }}
-              title="Contagem até a promessa"
+              title={promiseLate ? "SLA estourado" : "Tempo restante até a promessa"}
             >
-              {promiseLate ? "atrasado " : "faltam "}
-              {formatSignedMMSS(promiseDiffSec)}
+              <span aria-hidden>⏳</span>
+              <span>
+                {promiseLate ? "-" : ""}
+                {formatSignedMMSS(promiseDiffSec)}
+              </span>
             </div>
           )}
         </div>
