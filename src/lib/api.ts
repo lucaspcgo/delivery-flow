@@ -509,11 +509,15 @@ function normalizeOrder(raw: ApiOrder): ApiOrder {
 export async function getOrders(
   platform?: string,
   date?: string,
+  includeFinished: boolean = true,
 ): Promise<ApiOrder[]> {
   const p = platform && platform !== "all" ? platform : "99food";
+  const query: Record<string, string | number> = {};
+  if (date) query.date = date;
+  if (includeFinished) query.include_finished = 1;
   const data = await http.get<ApiOrder[]>(`/orders/${p}/orders`, {
     silent: true,
-    query: date ? { date } : undefined,
+    query: Object.keys(query).length ? query : undefined,
   });
   return (Array.isArray(data) ? data : []).map(normalizeOrder);
 }
@@ -670,9 +674,10 @@ export async function reprocess99FoodPending(): Promise<{
 export async function getAllOrders(
   platforms: OrderPlatform[] = ["99food", "ifood"],
   date?: string,
+  includeFinished: boolean = true,
 ): Promise<ApiOrder[]> {
   const results = await Promise.allSettled(
-    platforms.map((p) => getOrders(p, date)),
+    platforms.map((p) => getOrders(p, date, includeFinished)),
   );
   const merged = results.flatMap((r) =>
     r.status === "fulfilled" ? r.value : [],
@@ -1317,6 +1322,9 @@ export const DEFAULT_KDS_COLUMNS: KdsColumn[] = [
   { key: "pendente", label: "Pendentes", visible: true, order: 0 },
   { key: "aguardando", label: "Aguardando", visible: true, order: 1 },
   { key: "entregando", label: "Entregando", visible: true, order: 2 },
+  { key: "no_destino", label: "No destino", visible: true, order: 3 },
+  { key: "entregue", label: "Entregues", visible: true, order: 4 },
+  { key: "cancelado", label: "Cancelados", visible: true, order: 5 },
 ];
 
 function normalizeColumns(input: unknown): KdsColumn[] {
