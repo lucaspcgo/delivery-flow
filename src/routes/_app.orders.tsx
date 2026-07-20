@@ -847,7 +847,7 @@ function OrderCard({
 
   return (
     <div
-      className="w-full"
+      className="w-full animate-fade-in transition-shadow"
       style={{
         background: "var(--card)",
         color: "var(--card-foreground)",
