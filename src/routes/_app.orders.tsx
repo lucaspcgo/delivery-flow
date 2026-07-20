@@ -1246,13 +1246,28 @@ function StageActions({
       return next;
     });
     setRunningAction(action);
+    // Snapshot para rollback em caso de erro
+    const snapshot: ApiOrder = { ...order };
+    // Atualização otimista: move o card imediatamente para a próxima etapa
+    const optimistic = optimisticFromAction(action);
+    if (optimistic) {
+      onOrderUpdated({
+        ...order,
+        status: optimistic.status,
+        kds_stage: optimistic.kds_stage,
+        // Zera ações enquanto processa para evitar clique duplo em outro botão
+        available_actions: [],
+      });
+    }
     try {
       const res = await runOrderAction(order.platform, order.platform_order_id, action);
       if (!res.ok) {
         toast.error(res.details || res.error || "Falha na ação");
+        // Rollback do estado otimista
+        onOrderUpdated(snapshot);
         return;
       }
-      // Atualiza SÓ este card (anti-flicker).
+      // Reconcilia com a resposta do servidor (sobrescreve o estado otimista).
       onOrderUpdated({
         ...order,
         status: res.order.status,
@@ -1262,6 +1277,10 @@ function StageActions({
       if (res.warning) toast.info(res.warning);
       // Reconciliação em background — não bloqueia a UI.
       void Promise.resolve(onRefresh()).catch(() => undefined);
+    } catch {
+      // Erro de rede: reverte o estado otimista
+      onOrderUpdated(snapshot);
+      toast.error("Falha de rede ao executar ação. Tente novamente.");
     } finally {
       setRunningAction(null);
       setBusySet((prev) => {
