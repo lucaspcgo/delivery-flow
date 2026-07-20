@@ -1106,15 +1106,47 @@ function OrderCard({
       </div>
       )}
 
-      {/* Total */}
+      {/* Total + breakdown de valores (amounts em reais) */}
       {!compact && show(kdsCfg, "total_price") && (
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-            Total
-          </span>
-          <span className="font-black tabular-nums" style={{ fontSize: 22, color: "#16A34A" }}>
-            {centsToBRL(subtotal)}
-          </span>
+        <div className="mt-3 space-y-1">
+          {amounts && (
+            <div className="space-y-0.5 text-xs">
+              {typeof amounts.order_price === "number" && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Itens</span>
+                  <span className="tabular-nums">{reaisToBRL(amounts.order_price)}</span>
+                </div>
+              )}
+              {typeof amounts.delivery_fee === "number" && amounts.delivery_fee > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Taxa de entrega</span>
+                  <span className="tabular-nums">{reaisToBRL(amounts.delivery_fee)}</span>
+                </div>
+              )}
+              {typeof amounts.items_discount === "number" && amounts.items_discount > 0 && (
+                <div className="flex justify-between text-muted-foreground/80">
+                  <span>Desconto itens</span>
+                  <span className="tabular-nums">-{reaisToBRL(amounts.items_discount)}</span>
+                </div>
+              )}
+              {typeof amounts.delivery_discount === "number" && amounts.delivery_discount > 0 && (
+                <div className="flex justify-between text-muted-foreground/80">
+                  <span>Desconto entrega</span>
+                  <span className="tabular-nums">-{reaisToBRL(amounts.delivery_discount)}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              {amounts && typeof amounts.customer_paid === "number" ? "Cliente pagou" : "Total"}
+            </span>
+            <span className="font-black tabular-nums" style={{ fontSize: 22, color: "#16A34A" }}>
+              {amounts && typeof amounts.customer_paid === "number"
+                ? reaisToBRL(amounts.customer_paid)
+                : centsToBRL(subtotal)}
+            </span>
+          </div>
         </div>
       )}
       </div>
