@@ -547,10 +547,9 @@ function OrdersKanban() {
           }}
           role="region"
           aria-label="Painel de pedidos ao vivo"
-          className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:grid md:snap-none md:overflow-x-visible"
+          className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:snap-none"
           style={{
             ["--kds-cols" as string]: visibleColumns.length,
-            gridTemplateColumns: `repeat(var(--kds-cols), minmax(280px, 1fr))`,
           }}
         >
           {visibleColumns.map((col) => {
@@ -664,7 +663,7 @@ function Column({
   return (
     <div
       className={
-        "flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 shadow-sm sm:w-[70vw] md:w-auto md:min-w-0 md:shrink " +
+        "flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 shadow-sm sm:w-[70vw] md:w-[22rem] " +
         (compact ? "p-2" : "p-3")
       }
       style={{ maxHeight: "calc(100vh - 8rem)" }}
