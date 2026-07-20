@@ -10,6 +10,7 @@ function OrdersUsageBlock() {
   );
 }
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw, Rows3 } from "lucide-react";
 import { toast } from "sonner";
 import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, reprocess99FoodPending, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, ApiError, type KdsColumn } from "@/lib/api";
@@ -216,6 +217,9 @@ function OrdersKanban() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("kds:compact", compact ? "1" : "0");
   }, [compact]);
+  // No celular, força modo compacto automaticamente (essenciais + SLA/etapa).
+  const isMobile = useIsMobile();
+  const effectiveCompact = compact || isMobile;
   const todayStr = () => {
     const d = new Date();
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
@@ -584,7 +588,7 @@ function OrdersKanban() {
                 now={now}
                 busyId={busyId}
                 kdsCfg={kdsCfg}
-                compact={compact}
+                compact={effectiveCompact}
                 onAccept={handleAccept}
                 onReady={handleReady}
                 onDispatch={handleDispatch}
@@ -812,6 +816,8 @@ function OrderCard({
     return acc + (it.total_price || 0) + subs;
   }, 0);
   const [expanded, setExpanded] = useState(false);
+  // Em compacto, colapsa a lista de itens para "1º item + N mais" com toggle.
+  const [itemsExpanded, setItemsExpanded] = useState(false);
   const showSubs = show(kdsCfg, "item_subitems") &&
     order.items.some((it) => (it.sub_item_list ?? []).length > 0);
   const hasDetails = showSubs;
@@ -987,15 +993,29 @@ function OrderCard({
           (compact ? "mt-2 space-y-1.5 p-2" : "mt-4 space-y-3 p-3")
         }
       >
-        {order.items.map((it, idx) => (
-          <ItemRow
-            key={idx}
-            item={it}
-            showSubs={expanded && show(kdsCfg, "item_subitems")}
-            kdsCfg={kdsCfg}
-            compact={compact}
-          />
-        ))}
+        {(compact && !itemsExpanded ? order.items.slice(0, 1) : order.items).map(
+          (it, idx) => (
+            <ItemRow
+              key={idx}
+              item={it}
+              showSubs={expanded && show(kdsCfg, "item_subitems")}
+              kdsCfg={kdsCfg}
+              compact={compact}
+            />
+          ),
+        )}
+        {compact && order.items.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setItemsExpanded((v) => !v)}
+            aria-expanded={itemsExpanded}
+            className="w-full rounded-md py-1 text-[11px] font-bold text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {itemsExpanded
+              ? "Recolher itens"
+              : `+${order.items.length - 1} ${order.items.length - 1 === 1 ? "item" : "itens"}`}
+          </button>
+        )}
       </div>
 
       {!compact && hasDetails && (
