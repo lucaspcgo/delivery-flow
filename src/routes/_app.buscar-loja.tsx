@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { http, ApiError } from "@/lib/api";
+import { http, ApiError, getMeCached, hasAdminAccess, hasStoredAdminAccess } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,8 +25,59 @@ import { toast } from "sonner";
 import { Copy, ExternalLink, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_app/buscar-loja")({
-  component: BuscarLojaPage,
+  component: BuscarLojaGuard,
 });
+
+function BuscarLojaGuard() {
+  const navigate = useNavigate();
+  const storedAdmin = hasStoredAdminAccess();
+  const [status, setStatus] = useState<"checking" | "ok" | "denied">(
+    storedAdmin ? "ok" : "checking",
+  );
+
+  useEffect(() => {
+    let alive = true;
+    if (hasStoredAdminAccess()) {
+      setStatus("ok");
+      return () => {
+        alive = false;
+      };
+    }
+    getMeCached(true)
+      .then((me) => {
+        if (!alive) return;
+        if (hasAdminAccess(me) || hasStoredAdminAccess()) setStatus("ok");
+        else {
+          setStatus("denied");
+          toast.error("Acesso negado", {
+            description: "Somente administradores podem acessar esta página.",
+          });
+          navigate({ to: "/dashboard" });
+        }
+      })
+      .catch(() => {
+        if (!alive) return;
+        if (hasStoredAdminAccess()) {
+          setStatus("ok");
+          return;
+        }
+        setStatus("denied");
+        navigate({ to: "/login" });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [navigate]);
+
+  if (!storedAdmin && status !== "ok") {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        {status === "checking" ? "Verificando permissões..." : "Redirecionando..."}
+      </div>
+    );
+  }
+  return <BuscarLojaPage />;
+}
 
 type Platform = "99food" | "ifood";
 

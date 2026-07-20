@@ -24,7 +24,6 @@ const items = [
   { title: "Automações", url: "/automations", icon: Zap },
   { title: "Integrações", url: "/integrations", icon: Plug },
   { title: "Relatórios", url: "/reports", icon: BarChart3 },
-  { title: "Buscar Loja", url: "/buscar-loja", icon: Search },
   { title: "Configurações", url: "/settings", icon: Settings },
 ] as const;
 
@@ -113,6 +112,18 @@ export function AppSidebar() {
                     <Link to="/menu-manager" className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4" />
                       <span>Cardápios</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/buscar-loja")}
+                    tooltip="Buscar Loja"
+                  >
+                    <Link to="/buscar-loja" className="flex items-center gap-2">
+                      <Search className="h-4 w-4" />
+                      <span>Buscar Loja</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
