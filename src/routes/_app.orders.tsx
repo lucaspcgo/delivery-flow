@@ -10,7 +10,7 @@ function OrdersUsageBlock() {
   );
 }
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw } from "lucide-react";
+import { RefreshCw, Check, X, ChefHat, Loader2, ImageIcon, ChevronDown, ChevronUp, Store, Settings2, GripVertical, Bike, RotateCcw, Rows3 } from "lucide-react";
 import { toast } from "sonner";
 import { getAllOrders, confirmOrder, cancelOrder, readyOrder, dispatchOrder, runOrderAction, reprocess99FoodPending, getKdsSettings, updateKdsColumns, fetchKdsColumnsStrict, resetKdsSettings, DEFAULT_KDS_COLUMNS, ApiError, type KdsColumn } from "@/lib/api";
 import {
@@ -176,6 +176,14 @@ function OrdersKanban() {
   const [columns, setColumns] = useState<KdsColumn[]>(DEFAULT_KDS_COLUMNS);
   const [configOpen, setConfigOpen] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [compact, setCompact] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("kds:compact") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("kds:compact", compact ? "1" : "0");
+  }, [compact]);
   const todayStr = () => {
     const d = new Date();
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
@@ -431,6 +439,20 @@ function OrdersKanban() {
             Configurar colunas
           </button>
           <button
+            onClick={() => setCompact((v) => !v)}
+            aria-pressed={compact}
+            title={compact ? "Modo compacto ativado" : "Ativar modo compacto"}
+            className={
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition " +
+              (compact
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-muted text-foreground hover:bg-muted/70")
+            }
+          >
+            <Rows3 className="h-4 w-4" />
+            {compact ? "Compacto" : "Compactar"}
+          </button>
+          <button
             onClick={async () => {
               if (reprocessing) return;
               setReprocessing(true);
@@ -501,6 +523,7 @@ function OrdersKanban() {
                 now={now}
                 busyId={busyId}
                 kdsCfg={kdsCfg}
+                compact={compact}
                 onAccept={handleAccept}
                 onReady={handleReady}
                 onDispatch={handleDispatch}
@@ -574,6 +597,7 @@ function Column({
   now,
   busyId,
   kdsCfg,
+  compact,
   onAccept,
   onReady,
   onDispatch,
@@ -586,6 +610,7 @@ function Column({
   now: Date;
   busyId: string | null;
   kdsCfg: KdsFieldMap;
+  compact: boolean;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
@@ -595,16 +620,29 @@ function Column({
 }) {
   return (
     <div
-      className="flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 p-3 shadow-sm sm:w-[70vw] md:w-auto md:min-w-0 md:shrink"
+      className={
+        "flex min-h-[16rem] w-[86vw] shrink-0 snap-start flex-col rounded-2xl border bg-muted/40 shadow-sm sm:w-[70vw] md:w-auto md:min-w-0 md:shrink " +
+        (compact ? "p-2" : "p-3")
+      }
       style={{ maxHeight: "calc(100vh - 8rem)" }}
     >
       <div
-        className="mb-3 flex items-center justify-between px-4 py-3"
+        className={
+          "flex items-center justify-between " +
+          (compact ? "mb-2 px-3 py-2" : "mb-3 px-4 py-3")
+        }
         style={{ background: col.headerBg, color: col.headerText, borderRadius: 12 }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <span className="text-2xl">{col.emoji}</span>
-          <h2 className="truncate text-base font-black tracking-widest">{col.title}</h2>
+          <span className={compact ? "text-lg" : "text-2xl"}>{col.emoji}</span>
+          <h2
+            className={
+              "truncate font-black tracking-widest " +
+              (compact ? "text-xs" : "text-base")
+            }
+          >
+            {col.title}
+          </h2>
         </div>
         <span
           className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
@@ -613,7 +651,11 @@ function Column({
           {orders.length}
         </span>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto pr-1" style={{ rowGap: 12 }}>
+      <div
+        className={
+          "flex-1 overflow-y-auto pr-1 " + (compact ? "space-y-2" : "space-y-3")
+        }
+      >
         {orders.length === 0 ? (
           <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhum pedido
@@ -627,6 +669,7 @@ function Column({
               now={now}
               busy={busyId === o.id}
               kdsCfg={kdsCfg}
+              compact={compact}
               onAccept={onAccept}
               onReady={onReady}
               onDispatch={onDispatch}
@@ -647,6 +690,7 @@ function OrderCard({
   now,
   busy,
   kdsCfg,
+  compact,
   onAccept,
   onReady,
   onDispatch,
@@ -659,6 +703,7 @@ function OrderCard({
   now: Date;
   busy: boolean;
   kdsCfg: KdsFieldMap;
+  compact: boolean;
   onAccept: (o: ApiOrder) => void;
   onReady: (o: ApiOrder) => void;
   onDispatch: (o: ApiOrder) => void;
@@ -706,7 +751,7 @@ function OrderCard({
       style={{
         background: "var(--card)",
         color: "var(--card-foreground)",
-        borderRadius: 16,
+        borderRadius: compact ? 12 : 16,
         padding: 0,
         overflow: "hidden",
         borderLeft: `6px solid ${border}`,
@@ -716,14 +761,17 @@ function OrderCard({
         border: "1px solid var(--border)",
       }}
     >
-      <div className="p-4">
+      <div className={compact ? "p-2.5" : "p-4"}>
       {/* Cabeçalho: nome + selo + distância */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             {show(kdsCfg, "platform_badge") && (
               <span
-                className="rounded-md px-2 py-1 text-[11px] font-black tracking-wider text-black"
+                className={
+                  "rounded-md font-black tracking-wider text-black " +
+                  (compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-[11px]")
+                }
                 style={{ background: border }}
               >
                 {PLATFORM_LABEL[order.platform] ?? order.platform.toUpperCase()}
@@ -732,7 +780,7 @@ function OrderCard({
             {show(kdsCfg, "customer_name") && (
               <span
                 className="truncate font-black"
-                style={{ fontSize: 20, lineHeight: 1.15 }}
+                style={{ fontSize: compact ? 14 : 20, lineHeight: 1.15 }}
               >
                 {order.customer_name ?? "Cliente"}
               </span>
@@ -740,20 +788,20 @@ function OrderCard({
           </div>
           {show(kdsCfg, "order_number") && order.order_number && (
             <div
-              className="mt-2 font-black tabular-nums"
-              style={{ fontSize: 24, color: "#B45309", letterSpacing: 1 }}
+              className={"font-black tabular-nums " + (compact ? "mt-1" : "mt-2")}
+              style={{ fontSize: compact ? 16 : 24, color: "#B45309", letterSpacing: 1 }}
             >
               Pedido #{order.order_number}
             </div>
           )}
-          {show(kdsCfg, "customer_phone") && order.customer_phone && (
+          {!compact && show(kdsCfg, "customer_phone") && order.customer_phone && (
             <div className="mt-1 text-sm text-muted-foreground">
               📞 {order.customer_phone}
             </div>
           )}
         </div>
         <div className="text-right shrink-0">
-          {km && (
+          {!compact && km && (
             <div
               className="inline-block rounded-md px-2 py-0.5 text-xs font-black"
               style={{ background: "var(--muted)", color: "var(--foreground)" }}
@@ -763,15 +811,18 @@ function OrderCard({
           )}
           {show(kdsCfg, "order_time") && (
             <div
-              className="mt-1 font-mono font-black tabular-nums"
-              style={{ fontSize: 22, lineHeight: 1 }}
+              className={"font-mono font-black tabular-nums " + (compact ? "" : "mt-1")}
+              style={{ fontSize: compact ? 14 : 22, lineHeight: 1 }}
             >
               {formatHHmm(order.created_at)}
             </div>
           )}
           {show(kdsCfg, "order_elapsed") && (
             <div
-              className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
+              className={
+                "mt-1 inline-block rounded-full font-black tabular-nums " +
+                (compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs")
+              }
               style={{
                 color: urgent ? "#fff" : "var(--foreground)",
                 background: urgent ? "#DC2626" : "var(--muted)",
@@ -781,7 +832,7 @@ function OrderCard({
               {elapsedText}
             </div>
           )}
-          {promiseDiffSec != null && (
+          {!compact && promiseDiffSec != null && (
             <div
               className="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-black tabular-nums"
               style={{
@@ -798,26 +849,34 @@ function OrderCard({
       </div>
 
       {/* Nome da loja */}
-      <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
-        <Store className="h-4 w-4 text-muted-foreground" />
-        <span className="truncate">
-          {order.store_name?.trim() || "Loja não identificada"}
-        </span>
-      </div>
+      {!compact && (
+        <div className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground/80">
+          <Store className="h-4 w-4 text-muted-foreground" />
+          <span className="truncate">
+            {order.store_name?.trim() || "Loja não identificada"}
+          </span>
+        </div>
+      )}
 
       {/* Itens grandes */}
-      <div className="mt-4 space-y-3 rounded-xl bg-muted/60 p-3">
+      <div
+        className={
+          "rounded-xl bg-muted/60 " +
+          (compact ? "mt-2 space-y-1.5 p-2" : "mt-4 space-y-3 p-3")
+        }
+      >
         {order.items.map((it, idx) => (
           <ItemRow
             key={idx}
             item={it}
             showSubs={expanded && show(kdsCfg, "item_subitems")}
             kdsCfg={kdsCfg}
+            compact={compact}
           />
         ))}
       </div>
 
-      {hasDetails && (
+      {!compact && hasDetails && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -836,6 +895,7 @@ function OrderCard({
       )}
 
       {/* Bloco abaixo dos itens: promessa, tipo, endereço, observação */}
+      {!compact && (
       <div className="mt-4 space-y-2 pt-3" style={{ borderTop: "1px dashed var(--border)" }}>
         {promise && (
           <div
@@ -909,9 +969,10 @@ function OrderCard({
           </div>
         )}
       </div>
+      )}
 
       {/* Total */}
-      {show(kdsCfg, "total_price") && (
+      {!compact && show(kdsCfg, "total_price") && (
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
             Total
@@ -924,7 +985,7 @@ function OrderCard({
       </div>
 
       {/* Faixa/etiqueta de pagamento */}
-      {show(kdsCfg, "payment_method") && order.payment_method && (
+      {!compact && show(kdsCfg, "payment_method") && order.payment_method && (
         <div
           className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm font-black"
           style={{ background: "#0F172A", color: "#F8FAFC" }}
@@ -947,6 +1008,7 @@ function OrderCard({
       <StageActions
         order={order}
         busy={busy}
+        compact={compact}
         onRefuse={onRefuse}
         onOrderUpdated={onOrderUpdated}
         onRefresh={onRefresh}
@@ -958,12 +1020,14 @@ function OrderCard({
 function StageActions({
   order,
   busy,
+  compact,
   onRefuse,
   onOrderUpdated,
   onRefresh,
 }: {
   order: ApiOrder;
   busy: boolean;
+  compact?: boolean;
   onRefuse: (o: ApiOrder) => void;
   onOrderUpdated: (updated: ApiOrder) => void;
   onRefresh: () => void | Promise<void>;
@@ -1030,7 +1094,7 @@ function StageActions({
 
   return (
     <div
-      className="grid gap-2 p-4 pt-3"
+      className={"grid gap-2 " + (compact ? "p-2 pt-1.5" : "p-4 pt-3")}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
       {actions.map((a) => {
@@ -1044,9 +1108,9 @@ function StageActions({
             className="flex w-full items-center justify-center gap-1 text-white transition hover:opacity-90 disabled:cursor-not-allowed"
             style={{
               background: s.bg,
-              height: 40,
+              height: compact ? 32 : 40,
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: compact ? 12 : 13,
               fontWeight: 700,
               border: "none",
               opacity: orderBusy ? 0.7 : 1,
@@ -1068,23 +1132,39 @@ function StageActions({
   );
 }
 
-function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolean; kdsCfg: KdsFieldMap }) {
+function ItemRow({
+  item,
+  showSubs,
+  kdsCfg,
+  compact,
+}: {
+  item: OrderItem;
+  showSubs: boolean;
+  kdsCfg: KdsFieldMap;
+  compact?: boolean;
+}) {
   const [broken, setBroken] = useState(false);
   const showImage = show(kdsCfg, "item_image");
   const showName = show(kdsCfg, "item_name");
   const showQty = show(kdsCfg, "item_quantity");
   const showPrice = show(kdsCfg, "item_price");
   const hasImg = showImage && !!item.image && !broken;
+  const box = compact ? "h-9 w-9" : "h-14 w-14";
+  const qtyFont = compact ? 16 : 26;
+  const nameFont = compact ? 13 : 17;
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <div className={"flex items-center " + (compact ? "gap-2" : "gap-3")}>
         {showQty && (
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg font-black tabular-nums"
+            className={
+              "flex shrink-0 items-center justify-center rounded-lg font-black tabular-nums " +
+              box
+            }
             style={{
               background: "#FBBF24",
               color: "#1a1a1a",
-              fontSize: 26,
+              fontSize: qtyFont,
               lineHeight: 1,
             }}
           >
@@ -1093,7 +1173,10 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
         )}
         {showImage && (
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+            className={
+              "flex shrink-0 items-center justify-center overflow-hidden rounded-lg " +
+              box
+            }
             style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
           >
             {hasImg ? (
@@ -1105,22 +1188,29 @@ function ItemRow({ item, showSubs, kdsCfg }: { item: OrderItem; showSubs: boolea
                 loading="lazy"
               />
             ) : (
-              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+              <ImageIcon className={compact ? "h-4 w-4 text-muted-foreground" : "h-6 w-6 text-muted-foreground"} />
             )}
           </div>
         )}
         <div className="min-w-0 flex-1">
           {showName && (
             <div
-              className="font-black leading-tight"
-              style={{ fontSize: 17 }}
+              className={
+                "font-black leading-tight " + (compact ? "line-clamp-2" : "")
+              }
+              style={{ fontSize: nameFont }}
             >
               {item.name}
             </div>
           )}
         </div>
         {showPrice && item.total_price > 0 && (
-          <div className="shrink-0 text-sm font-black tabular-nums" style={{ color: "#16A34A" }}>
+          <div
+            className={
+              "shrink-0 font-black tabular-nums " + (compact ? "text-xs" : "text-sm")
+            }
+            style={{ color: "#16A34A" }}
+          >
             {centsToBRL(item.total_price)}
           </div>
         )}
