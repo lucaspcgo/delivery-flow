@@ -1320,13 +1320,11 @@ const DEFAULT_KDS_FIELDS: KdsField[] = [
 
 export const DEFAULT_KDS_COLUMNS: KdsColumn[] = [
   { key: "pendente", label: "Pendentes", visible: true, order: 0 },
-  { key: "aceito", label: "Aceitos", visible: true, order: 1 },
-  { key: "preparando", label: "Preparando", visible: true, order: 2 },
-  { key: "aguardando", label: "Aguardando", visible: true, order: 3 },
-  { key: "entregando", label: "Entregando", visible: true, order: 4 },
-  { key: "no_destino", label: "No destino", visible: true, order: 5 },
-  { key: "entregue", label: "Entregues", visible: true, order: 6 },
-  { key: "cancelado", label: "Cancelados", visible: true, order: 7 },
+  { key: "aguardando", label: "Aguardando", visible: true, order: 1 },
+  { key: "entregando", label: "Entregando", visible: true, order: 2 },
+  { key: "no_destino", label: "No destino", visible: true, order: 3 },
+  { key: "entregue", label: "Entregues", visible: true, order: 4 },
+  { key: "cancelado", label: "Cancelados", visible: true, order: 5 },
 ];
 
 function normalizeColumns(input: unknown): KdsColumn[] {
@@ -1346,12 +1344,6 @@ function normalizeColumns(input: unknown): KdsColumn[] {
       order: typeof r.order === "number" ? r.order : idx,
     });
   });
-  // Anexa colunas padrão que ainda não estejam presentes (mantém usuários antigos com novas etapas).
-  const present = new Set(out.map((c) => c.key));
-  let nextOrder = out.length;
-  for (const def of DEFAULT_KDS_COLUMNS) {
-    if (!present.has(def.key)) out.push({ ...def, order: nextOrder++ });
-  }
   return out.sort((a, b) => a.order - b.order);
 }
 

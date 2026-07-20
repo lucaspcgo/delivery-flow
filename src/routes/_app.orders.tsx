@@ -106,13 +106,8 @@ const COLUMN_STYLE: Record<string, { bg: string; text: string; emoji: string }> 
   delivered:  { bg: "#10B981", text: "#052e1b", emoji: "✅" },
   cancelled:  { bg: "#DC2626", text: "#fff",     emoji: "❌" },
   pendente:   { bg: "#F59E0B", text: "#1a1a1a", emoji: "🟡" },
-  aceito:     { bg: "#0EA5E9", text: "#04283a", emoji: "✔️" },
-  preparando: { bg: "#F97316", text: "#1a1a1a", emoji: "🍳" },
   aguardando: { bg: "#F97316", text: "#1a1a1a", emoji: "🟠" },
   entregando: { bg: "#8B5CF6", text: "#1a1033", emoji: "🛵" },
-  no_destino: { bg: "#2196F3", text: "#0b1e2f", emoji: "📍" },
-  entregue:   { bg: "#10B981", text: "#052e1b", emoji: "✅" },
-  cancelado:  { bg: "#DC2626", text: "#fff",     emoji: "❌" },
 };
 function styleFor(key: string) {
   return COLUMN_STYLE[key] ?? { bg: "#64748B", text: "#fff", emoji: "📋" };
