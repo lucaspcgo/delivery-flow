@@ -301,15 +301,18 @@ function ReportsPage() {
       }
 
       // Desempenho por Plataforma
+      const porPlataformaData = [...(data?.por_plataforma ?? [])].sort(
+        (a, b) => b.pedidos - a.pedidos,
+      );
       sectionTitle("Desempenho por Plataforma");
       autoTable(pdf, {
         startY: cursorY,
         margin: { left: marginX, right: marginX, top: contentTop, bottom: marginBottom },
         head: [["Plataforma", "Pedidos", "Faturamento", "Ticket Médio"]],
         body:
-          porPlataforma.length === 0
+          porPlataformaData.length === 0
             ? [["Sem dados no período", "—", "—", "—"]]
-            : porPlataforma.map((p) => [
+            : porPlataformaData.map((p) => [
                 PLATFORM_LABEL[p.platform] ?? p.platform,
                 String(p.pedidos),
                 formatBRL(p.faturamento),
@@ -416,7 +419,7 @@ function ReportsPage() {
     } finally {
       setExporting(false);
     }
-  }, [startDate, endDate, platform, restaurantId, restaurants, data, porPlataforma, isAdmin]);
+  }, [startDate, endDate, platform, restaurantId, restaurants, data, isAdmin]);
 
   const resumo = data?.resumo;
 
