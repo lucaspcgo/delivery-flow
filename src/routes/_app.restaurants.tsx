@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2, RefreshCw, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import { KEETA_ENABLED } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import {
   getRestaurants,
@@ -184,9 +185,12 @@ function RestaurantsPage() {
         {!loading && !error && list && list.length > 0 && (
           <div className="grid gap-5 md:grid-cols-2">
             {list.map((r) => {
-              const connected = (
+              const allCodes = (
                 ["ifood", "99food", "keeta"] as RestaurantPlatformCode[]
-              ).filter((code) => isAuthorized(findPlatform(r, code)));
+              ).filter((code) => KEETA_ENABLED || code !== "keeta");
+              const connected = allCodes.filter((code) =>
+                isAuthorized(findPlatform(r, code)),
+              );
               return (
                 <Card
                   key={r.id}
@@ -450,7 +454,7 @@ function CreateRestaurantDialog({
               <SelectContent>
                 <SelectItem value="ifood">iFood</SelectItem>
                 <SelectItem value="99food">99Food</SelectItem>
-                <SelectItem value="keeta">Keeta</SelectItem>
+                {KEETA_ENABLED && <SelectItem value="keeta">Keeta</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -637,15 +641,17 @@ function ManageRestaurantDialog({
               ]}
               onChanged={onChanged}
             />
-            <PlatformCard
-              restaurant={restaurant}
-              code="keeta"
-              title="Keeta"
-              colorClass="bg-green-600 hover:bg-green-700 text-white"
-              hint="Informe o Store ID da Keeta para conectar a loja."
-              fields={[{ key: "platform_store_id", label: "Store ID" }]}
-              onChanged={onChanged}
-            />
+            {KEETA_ENABLED && (
+              <PlatformCard
+                restaurant={restaurant}
+                code="keeta"
+                title="Keeta"
+                colorClass="bg-green-600 hover:bg-green-700 text-white"
+                hint="Informe o Store ID da Keeta para conectar a loja."
+                fields={[{ key: "platform_store_id", label: "Store ID" }]}
+                onChanged={onChanged}
+              />
+            )}
           </div>
         </div>
 

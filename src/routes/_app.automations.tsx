@@ -21,6 +21,7 @@ import {
   type RestaurantPlatform,
 } from "@/lib/api";
 import { useUsage } from "@/lib/usage-context";
+import { KEETA_ENABLED } from "@/lib/feature-flags";
 
 export const Route = createFileRoute("/_app/automations")({
   head: () => ({ meta: [{ title: "Automações — Zero Tempo" }] }),
@@ -378,10 +379,10 @@ function AutomationsPage() {
           </Card>
         )}
 
-        {!loading && !error && rules && rules.filter((r) => r.platform !== "all").length > 0 && (
+        {!loading && !error && rules && rules.filter((r) => r.platform !== "all" && (KEETA_ENABLED || r.platform !== "keeta")).length > 0 && (
           <div className="grid gap-5 md:grid-cols-2">
             {rules
-              .filter((r) => r.platform !== "all")
+              .filter((r) => r.platform !== "all" && (KEETA_ENABLED || r.platform !== "keeta"))
               .map((rule) => (
                 <RuleCard
                   key={rule.id}

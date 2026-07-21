@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getDashboardSummary, type DashboardSummary } from "@/lib/api";
+import { KEETA_ENABLED } from "@/lib/feature-flags";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Zero Tempo" }] }),
@@ -103,7 +104,7 @@ function DashboardPage() {
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="ifood">iFood</SelectItem>
                 <SelectItem value="99food">99Food</SelectItem>
-                <SelectItem value="keeta">Keeta</SelectItem>
+                {KEETA_ENABLED && <SelectItem value="keeta">Keeta</SelectItem>}
               </SelectContent>
             </Select>
           </div>
