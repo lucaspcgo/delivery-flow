@@ -277,17 +277,34 @@ function ReportsPage() {
       });
       cursorY = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 
-      // Gráficos como imagem (mantidos como raster; não são textuais)
+      // Aguarda fontes carregarem antes de renderizar para evitar reflow/blur
+      if (
+        typeof document !== "undefined" &&
+        (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts
+      ) {
+        await (document as unknown as { fonts: { ready: Promise<unknown> } }).fonts.ready;
+      }
+
+      // Gráficos como imagem — captura em alta densidade (retina) usando PNG para
+      // preservar linhas nítidas de gráficos vetoriais (SVG do Recharts).
+      const captureScale = Math.max(3, (window.devicePixelRatio || 1) * 2);
       const captureChart = async (id: string) => {
         const el = document.getElementById(id);
         if (!el) return null;
+        const rect = el.getBoundingClientRect();
         const c = await html2canvas(el, {
-          scale: 2,
+          scale: captureScale,
           backgroundColor: "#ffffff",
           useCORS: true,
           logging: false,
+          imageTimeout: 0,
+          removeContainer: true,
+          windowWidth: document.documentElement.clientWidth,
+          windowHeight: document.documentElement.clientHeight,
+          width: Math.ceil(rect.width),
+          height: Math.ceil(rect.height),
         });
-        return { data: c.toDataURL("image/jpeg", 0.9), w: c.width, h: c.height };
+        return { data: c.toDataURL("image/png"), w: c.width, h: c.height };
       };
       const chartIds = ["pdf-chart-faturamento", "pdf-chart-hora", "pdf-chart-status"];
       for (const id of chartIds) {
@@ -296,7 +313,7 @@ function ReportsPage() {
         const drawW = contentWidth;
         const drawH = (img.h * drawW) / img.w;
         ensureSpace(drawH + 4);
-        pdf.addImage(img.data, "JPEG", marginX, cursorY, drawW, drawH);
+        pdf.addImage(img.data, "PNG", marginX, cursorY, drawW, drawH, undefined, "FAST");
         cursorY += drawH + 4;
       }
 
