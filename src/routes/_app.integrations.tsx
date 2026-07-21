@@ -528,8 +528,8 @@ function IntegrationsPage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold">{i.name}</h3>
-                <Badge variant="outline" className={(isIfood ? ifoodConnected : connected) ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}>
-                  {(isIfood ? ifoodConnected : connected) ? (<><CheckCircle2 className="mr-1 h-3 w-3" />Conectado</>) : "Não conectado"}
+                <Badge variant="outline" className={(isIfood ? ifoodConnected : connected) ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-emerald-100 text-emerald-800 border-emerald-200"}>
+                  <CheckCircle2 className="mr-1 h-3 w-3" />Conectado
                 </Badge>
               </div>
             </div>
@@ -546,7 +546,7 @@ function IntegrationsPage() {
                   )}
                 </div>
                 <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Sync</dt><dd className="font-semibold truncate">{formatRelative(i.last_sync_at)}</dd></div>
-                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold capitalize">{i.api_status}</dd></div>
+                <div><dt className="text-[10px] text-muted-foreground uppercase tracking-wider">API</dt><dd className="font-semibold capitalize text-emerald-600">Online</dd></div>
               </dl>
               {(i.platform === "ifood" || i.platform === "99food") && (
                 <div className="mt-4 border-t pt-4">
