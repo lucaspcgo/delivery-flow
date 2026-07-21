@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Bar,
@@ -125,6 +125,8 @@ function ReportsPage() {
   const [restaurants, setRestaurants] = useState<ApiRestaurant[]>([]);
   const [data, setData] = useState<ReportsSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   const isAdmin = useMemo(() => hasStoredAdminAccess(), []);
 
   useEffect(() => {
@@ -176,6 +178,50 @@ function ReportsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleExportPdf = useCallback(async () => {
+    const node = reportRef.current;
+    if (!node) return;
+    setExporting(true);
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      const [{ default: html2canvas }, { default: JsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+        windowWidth: node.scrollWidth,
+      });
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      const pdf = new JsPDF({ orientation: "p", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = margin;
+      pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - margin * 2;
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = margin - (imgHeight - heightLeft);
+        pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - margin * 2;
+      }
+      pdf.save(`relatorio_${startDate}_a_${endDate}.pdf`);
+      toast.success("PDF baixado com sucesso!", { id: toastId });
+    } catch (err) {
+      console.error("[reports] export pdf failed", err);
+      toast.error("Não foi possível gerar o PDF.", { id: toastId });
+    } finally {
+      setExporting(false);
+    }
+  }, [startDate, endDate]);
+
   const resumo = data?.resumo;
 
   const taxaAceiteTone = useMemo(() => {
@@ -200,20 +246,14 @@ function ReportsPage() {
         title="Relatórios"
         description="Indicadores operacionais e financeiros."
         actions={
-          <Button
-            variant="outline"
-            onClick={() => {
-              toast.info("Abrindo diálogo de impressão. Escolha 'Salvar como PDF'.");
-              setTimeout(() => window.print(), 150);
-            }}
-          >
+          <Button variant="outline" onClick={handleExportPdf} disabled={exporting || loading}>
             <Download className="mr-2 h-4 w-4" />
-            Exportar PDF
+            {exporting ? "Gerando..." : "Exportar PDF"}
           </Button>
         }
       />
 
-      <div className="space-y-6 p-4 sm:p-8">
+      <div ref={reportRef} className="space-y-6 bg-background p-4 sm:p-8">
         {/* Filtros */}
         <Card className="p-4">
           <div className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap">
