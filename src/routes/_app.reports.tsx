@@ -446,7 +446,7 @@ function ReportsPage() {
         </div>
 
         {/* Faturamento por dia */}
-        <Card className="p-5">
+        <Card id="pdf-chart-faturamento" className="p-5">
           <h3 className="text-sm font-semibold">Faturamento por Dia</h3>
           <p className="mb-4 text-xs text-muted-foreground">
             Receita e quantidade de pedidos no período
@@ -487,7 +487,7 @@ function ReportsPage() {
 
         {/* Pedidos por hora + Status */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="p-5">
+          <Card id="pdf-chart-hora" className="p-5">
             <h3 className="text-sm font-semibold">Pedidos por Hora</h3>
             <p className="mb-4 text-xs text-muted-foreground">Distribuição horária</p>
             <div className="h-72">
@@ -509,7 +509,7 @@ function ReportsPage() {
             </div>
           </Card>
 
-          <Card className="p-5">
+          <Card id="pdf-chart-status" className="p-5">
             <h3 className="text-sm font-semibold">Distribuição por Status</h3>
             <p className="mb-4 text-xs text-muted-foreground">Pedidos por estado final</p>
             <div className="h-72">
