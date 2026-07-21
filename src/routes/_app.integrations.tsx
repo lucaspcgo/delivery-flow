@@ -33,6 +33,7 @@ import {
   type Platform,
 } from "@/lib/api";
 import { nineNineFoodApi } from "@/lib/api";
+import { KEETA_ENABLED } from "@/lib/feature-flags";
 
 export const Route = createFileRoute("/_app/integrations")({
   head: () => ({ meta: [{ title: "Integrações — Zero Tempo" }] }),
@@ -92,7 +93,6 @@ function formatRelative(iso: string | null): string {
 }
 
 function IntegrationsPage() {
-  // Import kept local to avoid touching module-level imports block.
   const [list, setList] = useState<Integration[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -515,7 +515,7 @@ function IntegrationsPage() {
           </Card>
         )}
 
-        {list?.map((i) => {
+        {list?.filter((i) => KEETA_ENABLED || i.platform !== "keeta").map((i) => {
           const connected = i.status === "connected";
           const color = PLATFORM_COLORS[i.platform] ?? "#64748b";
           const isIfood = i.platform === "ifood";
