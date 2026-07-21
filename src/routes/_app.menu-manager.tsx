@@ -26,11 +26,13 @@ export const Route = createFileRoute("/_app/menu-manager")({
 
 type Platform = "ifood" | "99food" | "keeta";
 
-const PLATFORMS: { value: Platform; label: string }[] = [
-  { value: "99food", label: "99Food" },
-  { value: "ifood", label: "iFood" },
-  { value: "keeta", label: "Keeta" },
-].filter((p) => KEETA_ENABLED || p.value !== "keeta");
+const PLATFORMS: { value: Platform; label: string }[] = (
+  [
+    { value: "99food", label: "99Food" },
+    { value: "ifood", label: "iFood" },
+    { value: "keeta", label: "Keeta" },
+  ] as { value: Platform; label: string }[]
+).filter((p) => KEETA_ENABLED || p.value !== "keeta");
 
 interface Restaurant {
   id: string;
