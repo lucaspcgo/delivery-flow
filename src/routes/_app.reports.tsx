@@ -183,6 +183,36 @@ function ReportsPage() {
     if (!node) return;
     setExporting(true);
     const toastId = toast.loading("Gerando PDF...");
+    // Insere um cabeçalho temporário com o intervalo de datas e filtros aplicados,
+    // para que apareça no PDF exportado. Removido após a captura.
+    const header = document.createElement("div");
+    header.setAttribute("data-pdf-header", "true");
+    const fmt = (iso: string) => {
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+    };
+    const platformLabel =
+      PLATFORMS.find((p) => p.value === platform)?.label ?? platform;
+    const restaurantLabel =
+      restaurantId === "all"
+        ? "Todos"
+        : restaurants.find((r) => r.id === restaurantId)?.name ?? restaurantId;
+    const generatedAt = new Date().toLocaleString("pt-BR");
+    header.style.cssText =
+      "margin-bottom:16px;padding:16px 20px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;font-family:ui-sans-serif,system-ui,sans-serif;color:#0f172a;";
+    header.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:18px;font-weight:700;">Relatório</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">Gerado em ${generatedAt}</div>
+        </div>
+        <div style="font-size:12px;color:#0f172a;text-align:right;line-height:1.6;">
+          <div><strong>Período:</strong> ${fmt(startDate)} — ${fmt(endDate)}</div>
+          <div><strong>Plataforma:</strong> ${platformLabel}</div>
+          <div><strong>Restaurante:</strong> ${restaurantLabel}</div>
+        </div>
+      </div>`;
+    node.insertBefore(header, node.firstChild);
     try {
       const [{ default: html2canvas }, { default: JsPDF }] = await Promise.all([
         import("html2canvas"),
@@ -218,9 +248,10 @@ function ReportsPage() {
       console.error("[reports] export pdf failed", err);
       toast.error("Não foi possível gerar o PDF.", { id: toastId });
     } finally {
+      header.remove();
       setExporting(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, platform, restaurantId, restaurants]);
 
   const resumo = data?.resumo;
 
