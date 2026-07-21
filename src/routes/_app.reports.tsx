@@ -194,7 +194,7 @@ function ReportsPage() {
     const generatedAt = new Date().toLocaleString("pt-BR");
     try {
       const [{ default: html2canvas }, { default: JsPDF }, autoTableMod] = await Promise.all([
-        import("html2canvas"),
+        import("html2canvas-pro"),
         import("jspdf"),
         import("jspdf-autotable"),
       ]);
