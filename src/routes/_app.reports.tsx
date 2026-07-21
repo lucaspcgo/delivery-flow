@@ -179,8 +179,6 @@ function ReportsPage() {
   }, []);
 
   const handleExportPdf = useCallback(async () => {
-    const node = reportRef.current;
-    if (!node) return;
     setExporting(true);
     const toastId = toast.loading("Gerando PDF...");
     const fmt = (iso: string) => {
@@ -195,34 +193,25 @@ function ReportsPage() {
         : restaurants.find((r) => r.id === restaurantId)?.name ?? restaurantId;
     const generatedAt = new Date().toLocaleString("pt-BR");
     try {
-      const [{ default: html2canvas }, { default: JsPDF }] = await Promise.all([
+      const [{ default: html2canvas }, { default: JsPDF }, autoTableMod] = await Promise.all([
         import("html2canvas"),
         import("jspdf"),
+        import("jspdf-autotable"),
       ]);
-      const canvas = await html2canvas(node, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        logging: false,
-        windowWidth: node.scrollWidth,
-      });
+      const autoTable = (autoTableMod as { default: (doc: unknown, opts: unknown) => void }).default;
       const pdf = new JsPDF({ orientation: "p", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
-      // Margens em mm
       const marginX = 12;
       const marginTop = 10;
       const marginBottom = 12;
-      const headerHeight = 22; // altura reservada ao cabeçalho
+      const headerHeight = 22;
       const gapAfterHeader = 4;
-
       const contentWidth = pageWidth - marginX * 2;
       const contentTop = marginTop + headerHeight + gapAfterHeader;
-      const contentHeight = pageHeight - contentTop - marginBottom;
 
-      // Cabeçalho vetorial repetido em cada página
-      const drawHeader = (pageNum: number, totalPages: number) => {
+      const drawHeader = () => {
         pdf.setDrawColor(226, 232, 240);
         pdf.setFillColor(248, 250, 252);
         pdf.roundedRect(marginX, marginTop, contentWidth, headerHeight, 2, 2, "FD");
@@ -242,39 +231,184 @@ function ReportsPage() {
         });
         pdf.text(`Plataforma: ${platformLabel}`, rightX, marginTop + 12, { align: "right" });
         pdf.text(`Restaurante: ${restaurantLabel}`, rightX, marginTop + 17, { align: "right" });
-        // Rodapé com paginação
+      };
+
+      const didDrawPage = () => drawHeader();
+
+      let cursorY = contentTop;
+      const ensureSpace = (h: number) => {
+        if (cursorY + h > pageHeight - marginBottom) {
+          pdf.addPage();
+          drawHeader();
+          cursorY = contentTop;
+        }
+      };
+      const sectionTitle = (text: string) => {
+        ensureSpace(10);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.setTextColor(15, 23, 42);
+        pdf.text(text, marginX, cursorY);
+        cursorY += 5;
+      };
+
+      drawHeader();
+
+      // Resumo (texto selecionável)
+      const resumoData = data?.resumo;
+      sectionTitle("Resumo");
+      autoTable(pdf, {
+        startY: cursorY,
+        margin: { left: marginX, right: marginX, top: contentTop, bottom: marginBottom },
+        head: [["Métrica", "Valor"]],
+        body: [
+          ["Total de Pedidos", String(resumoData?.total_pedidos ?? 0)],
+          ["Faturamento Total", formatBRL(resumoData?.faturamento_total ?? 0)],
+          ["Ticket Médio", formatBRL(resumoData?.ticket_medio ?? 0)],
+          ["Taxa de Aceite", `${(resumoData?.taxa_aceite ?? 0).toFixed(1)}%`],
+          ["Aceitos", String(resumoData?.aceitos ?? 0)],
+          ["Cancelados", String(resumoData?.cancelados ?? 0)],
+          ["Taxa de Cancelamento", `${(resumoData?.taxa_cancelamento ?? 0).toFixed(1)}%`],
+        ],
+        theme: "striped",
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        didDrawPage,
+      });
+      cursorY = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+
+      // Gráficos como imagem (mantidos como raster; não são textuais)
+      const captureChart = async (id: string) => {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const c = await html2canvas(el, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          logging: false,
+        });
+        return { data: c.toDataURL("image/jpeg", 0.9), w: c.width, h: c.height };
+      };
+      const chartIds = ["pdf-chart-faturamento", "pdf-chart-hora", "pdf-chart-status"];
+      for (const id of chartIds) {
+        const img = await captureChart(id);
+        if (!img) continue;
+        const drawW = contentWidth;
+        const drawH = (img.h * drawW) / img.w;
+        ensureSpace(drawH + 4);
+        pdf.addImage(img.data, "JPEG", marginX, cursorY, drawW, drawH);
+        cursorY += drawH + 4;
+      }
+
+      // Desempenho por Plataforma
+      const porPlataformaData = [...(data?.por_plataforma ?? [])].sort(
+        (a, b) => b.pedidos - a.pedidos,
+      );
+      sectionTitle("Desempenho por Plataforma");
+      autoTable(pdf, {
+        startY: cursorY,
+        margin: { left: marginX, right: marginX, top: contentTop, bottom: marginBottom },
+        head: [["Plataforma", "Pedidos", "Faturamento", "Ticket Médio"]],
+        body:
+          porPlataformaData.length === 0
+            ? [["Sem dados no período", "—", "—", "—"]]
+            : porPlataformaData.map((p) => [
+                PLATFORM_LABEL[p.platform] ?? p.platform,
+                String(p.pedidos),
+                formatBRL(p.faturamento),
+                formatBRL(p.ticket_medio),
+              ]),
+        columnStyles: {
+          1: { halign: "right" },
+          2: { halign: "right" },
+          3: { halign: "right" },
+        },
+        theme: "striped",
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        didDrawPage,
+      });
+      cursorY = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+
+      // Top 10 Itens
+      const topItens = (data?.top_itens ?? []).slice(0, 10);
+      sectionTitle("Top 10 Itens Mais Pedidos");
+      autoTable(pdf, {
+        startY: cursorY,
+        margin: { left: marginX, right: marginX, top: contentTop, bottom: marginBottom },
+        head: [["#", "Item", "Qtd", "Valor Total"]],
+        body:
+          topItens.length === 0
+            ? [["—", "Sem dados no período", "—", "—"]]
+            : topItens.map((item, i) => [
+                String(i + 1),
+                item.nome,
+                String(item.quantidade),
+                formatBRL(item.valor_total),
+              ]),
+        columnStyles: {
+          0: { cellWidth: 10, halign: "right" },
+          2: { halign: "right" },
+          3: { halign: "right" },
+        },
+        theme: "striped",
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        didDrawPage,
+      });
+      cursorY = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+
+      // Desempenho por Restaurante
+      const porRest = data?.por_restaurante ?? [];
+      sectionTitle("Desempenho por Restaurante");
+      const restHead = isAdmin
+        ? [["Restaurante", "Plataforma", "Usuário", "Pedidos", "Faturamento"]]
+        : [["Restaurante", "Plataforma", "Pedidos", "Faturamento"]];
+      const restBody =
+        porRest.length === 0
+          ? [isAdmin ? ["Sem dados no período", "—", "—", "—", "—"] : ["Sem dados no período", "—", "—", "—"]]
+          : porRest.map((r) =>
+              isAdmin
+                ? [
+                    restaurantName(r.restaurante),
+                    PLATFORM_LABEL[r.platform] ?? r.platform,
+                    r.usuario ?? "—",
+                    String(r.pedidos),
+                    formatBRL(r.faturamento),
+                  ]
+                : [
+                    restaurantName(r.restaurante),
+                    PLATFORM_LABEL[r.platform] ?? r.platform,
+                    String(r.pedidos),
+                    formatBRL(r.faturamento),
+                  ],
+            );
+      autoTable(pdf, {
+        startY: cursorY,
+        margin: { left: marginX, right: marginX, top: contentTop, bottom: marginBottom },
+        head: restHead,
+        body: restBody,
+        columnStyles: isAdmin
+          ? { 3: { halign: "right" }, 4: { halign: "right" } }
+          : { 2: { halign: "right" }, 3: { halign: "right" } },
+        theme: "striped",
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        didDrawPage,
+      });
+
+      // Paginação no rodapé (após todo o conteúdo)
+      const totalPages = pdf.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        pdf.setPage(p);
         pdf.setFontSize(8);
         pdf.setTextColor(148, 163, 184);
         pdf.text(
-          `Página ${pageNum} de ${totalPages}`,
+          `Página ${p} de ${totalPages}`,
           pageWidth - marginX,
           pageHeight - 5,
           { align: "right" },
         );
-      };
-
-      // Fatiar a captura em pedaços que cabem em cada página, evitando cortes no meio
-      const pxPerMm = canvas.width / contentWidth;
-      const sliceHeightPx = Math.floor(contentHeight * pxPerMm);
-      const totalPages = Math.max(1, Math.ceil(canvas.height / sliceHeightPx));
-
-      const sliceCanvas = document.createElement("canvas");
-      sliceCanvas.width = canvas.width;
-      const sliceCtx = sliceCanvas.getContext("2d");
-      if (!sliceCtx) throw new Error("canvas 2d context indisponível");
-
-      for (let page = 0; page < totalPages; page++) {
-        const sy = page * sliceHeightPx;
-        const sh = Math.min(sliceHeightPx, canvas.height - sy);
-        sliceCanvas.height = sh;
-        sliceCtx.fillStyle = "#ffffff";
-        sliceCtx.fillRect(0, 0, sliceCanvas.width, sh);
-        sliceCtx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
-        const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.92);
-        if (page > 0) pdf.addPage();
-        drawHeader(page + 1, totalPages);
-        const drawHeightMm = sh / pxPerMm;
-        pdf.addImage(sliceData, "JPEG", marginX, contentTop, contentWidth, drawHeightMm);
       }
 
       pdf.save(`relatorio_${startDate}_a_${endDate}.pdf`);
@@ -285,7 +419,7 @@ function ReportsPage() {
     } finally {
       setExporting(false);
     }
-  }, [startDate, endDate, platform, restaurantId, restaurants]);
+  }, [startDate, endDate, platform, restaurantId, restaurants, data, isAdmin]);
 
   const resumo = data?.resumo;
 
@@ -446,7 +580,7 @@ function ReportsPage() {
         </div>
 
         {/* Faturamento por dia */}
-        <Card className="p-5">
+        <Card id="pdf-chart-faturamento" className="p-5">
           <h3 className="text-sm font-semibold">Faturamento por Dia</h3>
           <p className="mb-4 text-xs text-muted-foreground">
             Receita e quantidade de pedidos no período
@@ -487,7 +621,7 @@ function ReportsPage() {
 
         {/* Pedidos por hora + Status */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="p-5">
+          <Card id="pdf-chart-hora" className="p-5">
             <h3 className="text-sm font-semibold">Pedidos por Hora</h3>
             <p className="mb-4 text-xs text-muted-foreground">Distribuição horária</p>
             <div className="h-72">
@@ -509,7 +643,7 @@ function ReportsPage() {
             </div>
           </Card>
 
-          <Card className="p-5">
+          <Card id="pdf-chart-status" className="p-5">
             <h3 className="text-sm font-semibold">Distribuição por Status</h3>
             <p className="mb-4 text-xs text-muted-foreground">Pedidos por estado final</p>
             <div className="h-72">
