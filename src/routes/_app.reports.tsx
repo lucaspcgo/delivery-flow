@@ -200,7 +200,13 @@ function ReportsPage() {
         title="Relatórios"
         description="Indicadores operacionais e financeiros."
         actions={
-          <Button variant="outline" onClick={() => toast.info("Em breve: exportação PDF")}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              toast.info("Abrindo diálogo de impressão. Escolha 'Salvar como PDF'.");
+              setTimeout(() => window.print(), 150);
+            }}
+          >
             <Download className="mr-2 h-4 w-4" />
             Exportar PDF
           </Button>
