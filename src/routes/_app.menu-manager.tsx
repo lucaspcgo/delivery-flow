@@ -16,6 +16,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { http, getMeCached, hasAdminAccess, hasStoredAdminAccess } from "@/lib/api";
+import { KEETA_ENABLED } from "@/lib/feature-flags";
 
 export const Route = createFileRoute("/_app/menu-manager")({
   ssr: false,
@@ -25,11 +26,13 @@ export const Route = createFileRoute("/_app/menu-manager")({
 
 type Platform = "ifood" | "99food" | "keeta";
 
-const PLATFORMS: { value: Platform; label: string }[] = [
-  { value: "99food", label: "99Food" },
-  { value: "ifood", label: "iFood" },
-  { value: "keeta", label: "Keeta" },
-];
+const PLATFORMS: { value: Platform; label: string }[] = (
+  [
+    { value: "99food", label: "99Food" },
+    { value: "ifood", label: "iFood" },
+    { value: "keeta", label: "Keeta" },
+  ] as { value: Platform; label: string }[]
+).filter((p) => KEETA_ENABLED || p.value !== "keeta");
 
 interface Restaurant {
   id: string;

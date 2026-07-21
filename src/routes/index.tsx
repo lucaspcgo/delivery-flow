@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Automatize pedidos do iFood, 99Food e Keeta em um só lugar. Aumente vendas, reduza erros e gerencie tudo com Zero Tempo.",
+          "Automatize pedidos do iFood e 99Food em um só lugar. Aumente vendas, reduza erros e gerencie tudo com Zero Tempo.",
       },
     ],
   }),
@@ -61,7 +61,7 @@ function useYouTubeAspect(videoId: string): string {
 }
 
 const features = [
-  { icon: Layers, title: "Multi-Plataforma", desc: "iFood, 99Food e Keeta em um único painel unificado." },
+  { icon: Layers, title: "Multi-Plataforma", desc: "iFood e 99Food em um único painel unificado." },
   { icon: Zap, title: "Auto-Accept", desc: "Aceite pedidos automaticamente em segundos, sem esforço." },
   { icon: Kanban, title: "Kanban Visual", desc: "Organize pedidos por status com drag-and-drop intuitivo." },
   { icon: BarChart3, title: "Relatórios", desc: "Métricas de vendas, performance e insights em tempo real." },
@@ -83,7 +83,7 @@ const testimonials = [
 ];
 
 const faqs = [
-  { q: "Quais plataformas são suportadas?", a: "Atualmente integramos com iFood, 99Food e Keeta. Novas plataformas chegam todo trimestre." },
+  { q: "Quais plataformas são suportadas?", a: "Atualmente integramos com iFood e 99Food. Novas plataformas chegam todo trimestre." },
   { q: "É realmente grátis por 7 dias?", a: "Sim! 7 dias de teste completo, sem cartão de crédito e sem compromisso." },
   { q: "Posso cancelar a qualquer momento?", a: "Claro. Cancelamento em 1 clique, sem multas ou penalidades." },
   { q: "Como funciona o suporte?", a: "Oferecemos chat 24/7, email e telefone. Contas PRO têm prioridade." },
@@ -172,14 +172,14 @@ function LandingPage() {
             className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
             style={{ borderColor: "rgba(248,218,85,0.3)", color: BRAND, background: "rgba(248,218,85,0.08)" }}
           >
-            <Star className="h-3 w-3" /> Novo: integração com Keeta disponível
+            <Star className="h-3 w-3" /> Novo: integração com 99Food disponível
           </span>
           <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl">
             Gestão de Pedidos <span style={{ color: BRAND }}>Inteligente</span><br className="hidden sm:block" />
             para seu Restaurante
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-white/70">
-            Automatize pedidos do iFood, 99Food e Keeta em um só lugar. Aumente vendas, reduza erros e ganhe tempo.
+            Automatize pedidos do iFood e 99Food em um só lugar. Aumente vendas, reduza erros e ganhe tempo.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
