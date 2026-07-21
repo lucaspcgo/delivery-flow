@@ -183,10 +183,6 @@ function ReportsPage() {
     if (!node) return;
     setExporting(true);
     const toastId = toast.loading("Gerando PDF...");
-    // Insere um cabeçalho temporário com o intervalo de datas e filtros aplicados,
-    // para que apareça no PDF exportado. Removido após a captura.
-    const header = document.createElement("div");
-    header.setAttribute("data-pdf-header", "true");
     const fmt = (iso: string) => {
       const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
       return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
@@ -198,21 +194,6 @@ function ReportsPage() {
         ? "Todos"
         : restaurants.find((r) => r.id === restaurantId)?.name ?? restaurantId;
     const generatedAt = new Date().toLocaleString("pt-BR");
-    header.style.cssText =
-      "margin-bottom:16px;padding:16px 20px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;font-family:ui-sans-serif,system-ui,sans-serif;color:#0f172a;";
-    header.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
-        <div>
-          <div style="font-size:18px;font-weight:700;">Relatório</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px;">Gerado em ${generatedAt}</div>
-        </div>
-        <div style="font-size:12px;color:#0f172a;text-align:right;line-height:1.6;">
-          <div><strong>Período:</strong> ${fmt(startDate)} — ${fmt(endDate)}</div>
-          <div><strong>Plataforma:</strong> ${platformLabel}</div>
-          <div><strong>Restaurante:</strong> ${restaurantLabel}</div>
-        </div>
-      </div>`;
-    node.insertBefore(header, node.firstChild);
     try {
       const [{ default: html2canvas }, { default: JsPDF }] = await Promise.all([
         import("html2canvas"),
@@ -225,30 +206,83 @@ function ReportsPage() {
         logging: false,
         windowWidth: node.scrollWidth,
       });
-      const imgData = canvas.toDataURL("image/jpeg", 0.92);
       const pdf = new JsPDF({ orientation: "p", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 8;
-      const imgWidth = pageWidth - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = margin;
-      pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - margin * 2;
-      while (heightLeft > 0) {
-        pdf.addPage();
-        position = margin - (imgHeight - heightLeft);
-        pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - margin * 2;
+
+      // Margens em mm
+      const marginX = 12;
+      const marginTop = 10;
+      const marginBottom = 12;
+      const headerHeight = 22; // altura reservada ao cabeçalho
+      const gapAfterHeader = 4;
+
+      const contentWidth = pageWidth - marginX * 2;
+      const contentTop = marginTop + headerHeight + gapAfterHeader;
+      const contentHeight = pageHeight - contentTop - marginBottom;
+
+      // Cabeçalho vetorial repetido em cada página
+      const drawHeader = (pageNum: number, totalPages: number) => {
+        pdf.setDrawColor(226, 232, 240);
+        pdf.setFillColor(248, 250, 252);
+        pdf.roundedRect(marginX, marginTop, contentWidth, headerHeight, 2, 2, "FD");
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(13);
+        pdf.text("Relatório", marginX + 5, marginTop + 7);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(`Gerado em ${generatedAt}`, marginX + 5, marginTop + 12);
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFontSize(9);
+        const rightX = marginX + contentWidth - 5;
+        pdf.text(`Período: ${fmt(startDate)} — ${fmt(endDate)}`, rightX, marginTop + 7, {
+          align: "right",
+        });
+        pdf.text(`Plataforma: ${platformLabel}`, rightX, marginTop + 12, { align: "right" });
+        pdf.text(`Restaurante: ${restaurantLabel}`, rightX, marginTop + 17, { align: "right" });
+        // Rodapé com paginação
+        pdf.setFontSize(8);
+        pdf.setTextColor(148, 163, 184);
+        pdf.text(
+          `Página ${pageNum} de ${totalPages}`,
+          pageWidth - marginX,
+          pageHeight - 5,
+          { align: "right" },
+        );
+      };
+
+      // Fatiar a captura em pedaços que cabem em cada página, evitando cortes no meio
+      const pxPerMm = canvas.width / contentWidth;
+      const sliceHeightPx = Math.floor(contentHeight * pxPerMm);
+      const totalPages = Math.max(1, Math.ceil(canvas.height / sliceHeightPx));
+
+      const sliceCanvas = document.createElement("canvas");
+      sliceCanvas.width = canvas.width;
+      const sliceCtx = sliceCanvas.getContext("2d");
+      if (!sliceCtx) throw new Error("canvas 2d context indisponível");
+
+      for (let page = 0; page < totalPages; page++) {
+        const sy = page * sliceHeightPx;
+        const sh = Math.min(sliceHeightPx, canvas.height - sy);
+        sliceCanvas.height = sh;
+        sliceCtx.fillStyle = "#ffffff";
+        sliceCtx.fillRect(0, 0, sliceCanvas.width, sh);
+        sliceCtx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+        const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.92);
+        if (page > 0) pdf.addPage();
+        drawHeader(page + 1, totalPages);
+        const drawHeightMm = sh / pxPerMm;
+        pdf.addImage(sliceData, "JPEG", marginX, contentTop, contentWidth, drawHeightMm);
       }
+
       pdf.save(`relatorio_${startDate}_a_${endDate}.pdf`);
       toast.success("PDF baixado com sucesso!", { id: toastId });
     } catch (err) {
       console.error("[reports] export pdf failed", err);
       toast.error("Não foi possível gerar o PDF.", { id: toastId });
     } finally {
-      header.remove();
       setExporting(false);
     }
   }, [startDate, endDate, platform, restaurantId, restaurants]);
