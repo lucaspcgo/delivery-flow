@@ -58,7 +58,7 @@ const PLATFORMS = [
   { value: "ifood", label: "iFood" },
   { value: "99food", label: "99Food" },
   { value: "keeta", label: "Keeta" },
-];
+].filter((p) => KEETA_ENABLED || p.value !== "keeta");
 
 const PLATFORM_BADGE: Record<string, string> = {
   ifood: "bg-red-100 text-red-700 border-red-200",
