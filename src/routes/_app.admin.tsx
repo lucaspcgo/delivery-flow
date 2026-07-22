@@ -1409,6 +1409,7 @@ function AuditTab() {
                   Lojas{sortIcon("stores_connected")}
                 </TableHead>
                 <TableHead>Último pedido</TableHead>
+                <TableHead>Válido até</TableHead>
                 <TableHead
                   className="cursor-pointer select-none text-right"
                   onClick={() => toggleSort("orders_total")}
@@ -1420,13 +1421,13 @@ function AuditTab() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : sorted.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     Nenhum usuário encontrado.
                   </TableCell>
                 </TableRow>
@@ -1459,6 +1460,7 @@ function AuditTab() {
                       </div>
                     </TableCell>
                     <TableCell>{fmtDateTime(u.last_order_at)}</TableCell>
+                    <TableCell>{fmtDate(u.plan_expires_at)}</TableCell>
                     <TableCell className="text-right font-medium">{u.orders_total}</TableCell>
                   </TableRow>
                 ))
