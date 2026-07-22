@@ -34,6 +34,10 @@ interface DebugOrder {
   kds_stage?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  automation_accepted_at?: string | null;
+  automation_ready_at?: string | null;
+  automation_dispatched_at?: string | null;
+  automation_did_it?: boolean | null;
   mapped?: Record<string, unknown> | null;
   raw?: unknown;
   raw_keys?: string[] | null;
