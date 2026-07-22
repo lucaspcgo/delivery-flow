@@ -1162,6 +1162,7 @@ export const getPaymentStatus = (invoiceId: string) =>
 // ---------- Planos (DB) ----------
 
 export type PlanPeriod =
+  | "weekly"
   | "monthly"
   | "yearly"
   | "annual"
@@ -1169,6 +1170,7 @@ export type PlanPeriod =
   | "free";
 
 export const PLAN_PERIOD_LABEL: Record<string, string> = {
+  weekly: "Semanal",
   monthly: "Mensal",
   yearly: "Anual",
   annual: "Anual",
@@ -1177,6 +1179,7 @@ export const PLAN_PERIOD_LABEL: Record<string, string> = {
 };
 
 const PLAN_PERIOD_SUFFIX: Record<string, string> = {
+  weekly: "/semana",
   monthly: "/mês",
   yearly: "/ano",
   annual: "/ano",
