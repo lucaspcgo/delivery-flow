@@ -340,7 +340,7 @@ function UsersTab() {
 
   const save = async (
     userId: string,
-    data: { plan?: string; active?: boolean; payment_status?: string },
+    data: { plan?: string; active?: boolean; payment_status?: string; phone?: string },
   ) => {
     setSaving(true);
     try {
