@@ -125,14 +125,16 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
       (payload && typeof payload === "object" && "message" in payload
         ? String((payload as { message: unknown }).message)
         : null) ?? `Erro ${res.status} ao chamar ${path}`;
-    // Bloqueio por trial expirado: aplica-se a qualquer chamada autenticada
+    // Bloqueio de acesso: aplica-se a qualquer chamada autenticada
     const p = (payload ?? {}) as Record<string, unknown>;
+    const accessBlocked = res.status === 403 && p.access_blocked === true;
     const trialExpired =
       res.status === 403 && (p.trial_expired === true || p.code === "trial_expired");
     const paymentSuspended =
       res.status === 403 &&
       (p.payment_suspended === true || p.code === "payment_suspended");
-    if (!silent && !trialExpired && !paymentSuspended) {
+    const anyBlocked = accessBlocked || trialExpired || paymentSuspended;
+    if (!silent && !anyBlocked) {
       toast.error("Erro na requisição", { description: message });
     }
     // Plan gating: emit event for centralized modal
@@ -144,20 +146,36 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
         "account_inactive",
         "trial_expired",
       ]);
-      if (errCode && known.has(errCode)) {
+      if (!anyBlocked && errCode && known.has(errCode)) {
         window.dispatchEvent(
           new CustomEvent("plan-gate", { detail: { ...p, error: errCode } }),
         );
       }
     }
-    if (trialExpired || paymentSuspended) {
+    if (anyBlocked) {
       authToken.clear();
-      if (
-        typeof window !== "undefined" &&
-        window.location.pathname !== "/login"
-      ) {
-        const flag = trialExpired ? "trial_expired" : "payment_suspended";
-        window.location.href = `/login?${flag}=1`;
+      if (typeof window !== "undefined" && window.location.pathname !== "/blocked") {
+        const errMsg =
+          (typeof p.error === "string" && p.error) ||
+          (typeof p.message === "string" && p.message) ||
+          (trialExpired
+            ? "Seu período gratuito expirou."
+            : paymentSuspended
+              ? "Acesso suspenso. Regularize seu pagamento."
+              : "Acesso bloqueado.");
+        const redirectTo =
+          (typeof p.redirect === "string" && p.redirect) || "/checkout";
+        const reason = accessBlocked
+          ? "access_blocked"
+          : trialExpired
+            ? "trial_expired"
+            : "payment_suspended";
+        const qs = new URLSearchParams({
+          message: errMsg,
+          redirect: redirectTo,
+          reason,
+        });
+        window.location.href = `/blocked?${qs.toString()}`;
       }
     } else if (res.status === 401) {
       authToken.clear();
