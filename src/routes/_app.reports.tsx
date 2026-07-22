@@ -535,6 +535,25 @@ function ReportsPage() {
               </Select>
             </div>
             <Button onClick={load} disabled={loading} className="col-span-2 w-full sm:col-span-1 sm:w-auto">
+            {isAdmin && (
+              <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
+                <label className="text-xs font-medium text-muted-foreground">Usuário</label>
+                <Select value={userId} onValueChange={setUserId}>
+                  <SelectTrigger className="w-full sm:w-[240px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os usuários</SelectItem>
+                    {users.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} — {u.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button onClick={load} disabled={loading} className="col-span-2 w-full sm:col-span-1 sm:w-auto">
               {loading ? "Carregando..." : "Gerar Relatório"}
             </Button>
           </div>
