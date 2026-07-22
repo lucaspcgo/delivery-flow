@@ -475,6 +475,21 @@ function DebugPedidosPage() {
               ))}
             </div>
           </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="debug-automation" className="text-xs font-medium text-muted-foreground">
+              Automação
+            </label>
+            <select
+              id="debug-automation"
+              value={automationFilter}
+              onChange={(e) => setAutomationFilter(e.target.value as AutomationFilter)}
+              className="h-9 rounded-md border bg-background px-2 text-sm"
+            >
+              <option value="todos">Todos</option>
+              <option value="automation">Só automação</option>
+              <option value="manual">Só manual</option>
+            </select>
+          </div>
           {isAdmin && (
             <div className="flex flex-col gap-1">
               <label htmlFor="debug-user" className="text-xs font-medium text-muted-foreground">
