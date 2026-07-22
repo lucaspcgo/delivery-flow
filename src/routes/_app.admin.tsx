@@ -1234,6 +1234,7 @@ interface AuditUser {
   food99_stores: number;
   last_order_at: string | null;
   orders_total: number;
+  plan_expires_at?: string | null;
 }
 
 interface AuditResponse {
