@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { http } from "@/lib/api";
 import { getUser } from "@/lib/auth";
+import { getAdminUsers, type AdminUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -28,8 +29,11 @@ interface FieldCheck {
 
 interface DebugOrder {
   platform_order_id?: string | null;
+  app_shop_id?: string | null;
   status?: string | null;
+  kds_stage?: string | null;
   created_at?: string | null;
+  updated_at?: string | null;
   mapped?: Record<string, unknown> | null;
   raw?: unknown;
   raw_keys?: string[] | null;
@@ -229,8 +233,22 @@ function DebugCard({ order }: { order: DebugOrder }) {
           <Badge variant="secondary" className="uppercase">
             {order.status ?? "—"}
           </Badge>
-          <div className="text-sm text-muted-foreground">
-            {formatDateTime(order.created_at)}
+          {order.kds_stage && (
+            <Badge variant="outline" className="uppercase">
+              KDS: {order.kds_stage}
+            </Badge>
+          )}
+          {order.app_shop_id && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Loja
+              </div>
+              <div className="font-mono text-xs font-semibold">{order.app_shop_id}</div>
+            </div>
+          )}
+          <div className="text-xs text-muted-foreground">
+            <div>Recebido em: {formatDateTime(order.created_at)}</div>
+            <div>Atualizado em: {formatDateTime(order.updated_at)}</div>
           </div>
         </div>
         <Button size="sm" variant="outline" onClick={copy}>
@@ -293,6 +311,9 @@ function DebugPedidosPage() {
   }, [isAdmin, navigate]);
   const [platform, setPlatform] = useState<Platform>("99food");
   const [limit, setLimit] = useState<number>(10);
+  const [userId, setUserId] = useState<string>("");
+  const [store, setStore] = useState<string>("");
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [orders, setOrders] = useState<DebugOrder[]>([]);
   const [meta, setMeta] = useState<{
     platform: string;
@@ -311,8 +332,11 @@ function DebugPedidosPage() {
       else setIsLoading(true);
       setError(null);
       try {
-        const data = await http.get<DebugResponse>(`/orders/${pf}/debug`, {
-          query: { limit: lm, offset },
+        const query: Record<string, string | number> = { limit: lm, offset };
+        if (userId) query.user_id = userId;
+        if (store.trim()) query.store = store.trim();
+        const data = await http.get<DebugResponse>(`/webhooks/${pf}/debug`, {
+          query,
           silent: true,
         });
         const next = data.orders ?? [];
@@ -330,12 +354,17 @@ function DebugPedidosPage() {
         setIsFetchingMore(false);
       }
     },
-    [meta?.total],
+    [meta?.total, userId, store],
   );
 
   useEffect(() => {
     if (isAdmin) {
       fetchPage({ platform: "99food", limit: 10, offset: 0, append: false });
+      getAdminUsers()
+        .then((u) => setAdminUsers(u))
+        .catch(() => {
+          /* silencioso */
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
@@ -389,6 +418,49 @@ function DebugPedidosPage() {
               ))}
             </div>
           </div>
+          {isAdmin && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="debug-user" className="text-xs font-medium text-muted-foreground">
+                Usuário
+              </label>
+              <select
+                id="debug-user"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                className="h-9 rounded-md border bg-background px-2 text-sm"
+              >
+                <option value="">Todos os usuários</option>
+                {adminUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {isAdmin && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="debug-store" className="text-xs font-medium text-muted-foreground">
+                Loja (app_shop_id)
+              </label>
+              <Input
+                id="debug-store"
+                type="text"
+                value={store}
+                onChange={(e) => setStore(e.target.value)}
+                placeholder="Todas"
+                className="w-48"
+                list="debug-store-options"
+              />
+              <datalist id="debug-store-options">
+                {Array.from(
+                  new Set(orders.map((o) => o.app_shop_id).filter(Boolean) as string[]),
+                ).map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <label htmlFor="debug-limit" className="text-xs font-medium text-muted-foreground">
               Quantidade (máx. 50)
