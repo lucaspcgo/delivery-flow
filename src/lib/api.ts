@@ -1037,6 +1037,7 @@ export interface AdminUser {
   active: boolean;
   created_at?: string;
   phone?: string;
+  plan_expires_at?: string | null;
 }
 
 export interface AdminInvoice {
