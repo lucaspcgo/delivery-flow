@@ -662,8 +662,22 @@ function ResetPasswordDialog({
           <div className="space-y-3">
             <Label>Senha temporária</Label>
             <div className="flex items-center gap-2">
-              <Input readOnly value={tempPassword} className="font-mono" />
-              <Button type="button" variant="outline" onClick={copy}>
+              <Input
+                readOnly
+                value={tempPassword}
+                type={showTemp ? "text" : "password"}
+                className="font-mono"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowTemp((v) => !v)}
+                aria-label={showTemp ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showTemp ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button type="button" variant="outline" size="icon" onClick={copy}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
