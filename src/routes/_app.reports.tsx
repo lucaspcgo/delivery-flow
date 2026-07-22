@@ -203,6 +203,11 @@ function ReportsPage() {
       restaurantId === "all"
         ? "Todos"
         : restaurants.find((r) => r.id === restaurantId)?.name ?? restaurantId;
+    const userLabel = isAdmin
+      ? userId === "all"
+        ? "Todos"
+        : users.find((u) => u.id === userId)?.name ?? userId
+      : null;
     const generatedAt = new Date().toLocaleString("pt-BR");
     try {
       const [{ default: html2canvas }, { default: JsPDF }, autoTableMod] = await Promise.all([
