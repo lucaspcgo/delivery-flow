@@ -452,6 +452,12 @@ function UsersTab() {
             onDeactivateAsk={(u) => setConfirmDeactivate(u)}
             onSave={(data) => save(editing.id, data)}
             onResetPassword={(u) => setResetting(u)}
+            onRenewed={(planExpiresAt) => {
+              setEditing((prev) =>
+                prev ? { ...prev, plan_expires_at: planExpiresAt } : prev,
+              );
+              load();
+            }}
           />
         )}
       </DialogContent>
