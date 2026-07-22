@@ -1241,6 +1241,7 @@ export async function getReports(params: {
   end_date: string;
   platform?: string;
   restaurant_id?: string;
+  user_id?: string;
 }): Promise<ReportsSummary> {
   const query: Record<string, string> = {
     start_date: params.start_date,
@@ -1250,6 +1251,8 @@ export async function getReports(params: {
     query.platform = params.platform;
   if (params.restaurant_id && params.restaurant_id !== "all")
     query.restaurant_id = params.restaurant_id;
+  if (params.user_id && params.user_id !== "all")
+    query.user_id = params.user_id;
   const data = await http.get<Partial<ReportsSummary>>("/reports/summary", {
     silent: true,
     query,
