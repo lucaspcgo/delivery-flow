@@ -17,6 +17,8 @@ export const Route = createFileRoute("/_app/debug-pedidos")({
 
 type Platform = "99food" | "ifood";
 
+type AutomationFilter = "todos" | "automation" | "manual";
+
 type CheckStatus = "ok" | "divergente" | "vazio" | "sem_origem";
 
 interface FieldCheck {
@@ -34,6 +36,10 @@ interface DebugOrder {
   kds_stage?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  automation_accepted_at?: string | null;
+  automation_ready_at?: string | null;
+  automation_dispatched_at?: string | null;
+  automation_did_it?: boolean | null;
   mapped?: Record<string, unknown> | null;
   raw?: unknown;
   raw_keys?: string[] | null;
@@ -57,6 +63,14 @@ function formatDateTime(iso?: string | null): string {
   if (Number.isNaN(d.getTime())) return String(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatDateTimeLong(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function isEmpty(v: unknown): boolean {
@@ -200,6 +214,41 @@ function FieldChecksTable({ checks }: { checks: FieldCheck[] }) {
   );
 }
 
+function AutomationBadge({ order }: { order: DebugOrder }) {
+  const didAutomate = order.automation_did_it === true;
+  const times: { label: string; value?: string | null }[] = [
+    { label: "Aceito pela automação", value: order.automation_accepted_at },
+    { label: "Pronto pela automação", value: order.automation_ready_at },
+    { label: "Despachado pela automação", value: order.automation_dispatched_at },
+  ].filter((t) => !!t.value);
+
+  return (
+    <div className="group relative inline-flex">
+      <span
+        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
+          didAutomate
+            ? "border-green-300 bg-green-100 text-green-800"
+            : "border-gray-300 bg-gray-100 text-gray-700"
+        }`}
+      >
+        {didAutomate ? "✓ Automação" : "Manual / gestor"}
+      </span>
+      {didAutomate && times.length > 0 && (
+        <div className="pointer-events-none absolute left-0 top-full z-10 mt-1 hidden w-64 rounded border bg-background p-2 text-xs shadow-md group-hover:block">
+          <div className="space-y-1 text-muted-foreground">
+            {times.map((t) => (
+              <div key={t.label}>
+                <span className="font-medium text-foreground">{t.label}:</span>{" "}
+                {formatDateTimeLong(t.value)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DebugCard({ order }: { order: DebugOrder }) {
   const rawJson = (() => {
     try {
@@ -238,6 +287,7 @@ function DebugCard({ order }: { order: DebugOrder }) {
               KDS: {order.kds_stage}
             </Badge>
           )}
+          <AutomationBadge order={order} />
           {order.app_shop_id && (
             <div>
               <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -313,6 +363,7 @@ function DebugPedidosPage() {
   const [limit, setLimit] = useState<number>(10);
   const [userId, setUserId] = useState<string>("");
   const [store, setStore] = useState<string>("");
+  const [automationFilter, setAutomationFilter] = useState<AutomationFilter>("todos");
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [orders, setOrders] = useState<DebugOrder[]>([]);
   const [meta, setMeta] = useState<{
@@ -377,6 +428,12 @@ function DebugPedidosPage() {
 
   const clampedLimit = () => Math.max(1, Math.min(50, Math.floor(limit || 1)));
 
+  const filteredOrders = orders.filter((o) => {
+    if (automationFilter === "todos") return true;
+    if (automationFilter === "automation") return o.automation_did_it === true;
+    return o.automation_did_it !== true;
+  });
+
   const apply = () => {
     const lm = clampedLimit();
     setLimit(lm);
@@ -417,6 +474,21 @@ function DebugPedidosPage() {
                 </button>
               ))}
             </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="debug-automation" className="text-xs font-medium text-muted-foreground">
+              Automação
+            </label>
+            <select
+              id="debug-automation"
+              value={automationFilter}
+              onChange={(e) => setAutomationFilter(e.target.value as AutomationFilter)}
+              className="h-9 rounded-md border bg-background px-2 text-sm"
+            >
+              <option value="todos">Todos</option>
+              <option value="automation">Só automação</option>
+              <option value="manual">Só manual</option>
+            </select>
           </div>
           {isAdmin && (
             <div className="flex flex-col gap-1">
@@ -508,7 +580,7 @@ function DebugPedidosPage() {
         </Card>
       )}
 
-      {!isLoading && !error && orders.length === 0 && (
+      {!isLoading && !error && filteredOrders.length === 0 && (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
             Nenhum pedido retornado para os filtros atuais.
@@ -517,7 +589,7 @@ function DebugPedidosPage() {
       )}
 
       <div className="space-y-4">
-        {orders.map((o: DebugOrder, idx: number) => (
+        {filteredOrders.map((o: DebugOrder, idx: number) => (
           <DebugCard key={o.platform_order_id ?? idx} order={o} />
         ))}
       </div>
