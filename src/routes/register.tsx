@@ -142,9 +142,7 @@ function RegisterPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="phone">
-              Telefone <span className="text-xs text-muted-foreground">(opcional)</span>
-            </Label>
+            <Label htmlFor="phone">Telefone</Label>
             <Input
               id="phone"
               type="tel"
