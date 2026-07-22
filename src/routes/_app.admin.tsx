@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Star } from "lucide-react";
+import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   ssr: false,
@@ -310,6 +310,7 @@ function UsersTab() {
   const [plans, setPlans] = useState<DBPlan[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState<AdminUser | null>(null);
+  const [resetting, setResetting] = useState<AdminUser | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -392,9 +393,14 @@ function UsersTab() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
-                        <Pencil className="h-3 w-3 mr-1" /> Editar
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
+                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
+                          <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -427,10 +433,16 @@ function UsersTab() {
             onCancel={() => setEditing(null)}
             onDeactivateAsk={(u) => setConfirmDeactivate(u)}
             onSave={(data) => save(editing.id, data)}
+            onResetPassword={(u) => setResetting(u)}
           />
         )}
       </DialogContent>
     </Dialog>
+
+    <ResetPasswordDialog
+      user={resetting}
+      onOpenChange={(o) => !o && setResetting(null)}
+    />
 
     <AlertDialog open={!!confirmDeactivate} onOpenChange={(o) => !o && setConfirmDeactivate(null)}>
       <AlertDialogContent>
@@ -470,6 +482,7 @@ function UserEditForm({
   onCancel: () => void;
   onSave: (data: { plan?: string; active?: boolean; payment_status?: string }) => void;
   onDeactivateAsk: (u: AdminUser) => void;
+  onResetPassword: (u: AdminUser) => void;
 }) {
   const [plan, setPlan] = useState<string>(user.plan ?? "");
   const [active, setActive] = useState<boolean>(user.active ?? true);
@@ -546,13 +559,161 @@ function UserEditForm({
         <Switch checked={active} onCheckedChange={setActive} />
       </div>
 
-      <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-        <Button onClick={submit} disabled={saving}>
-          {saving ? "Salvando..." : "Salvar"}
+      <DialogFooter className="gap-2 sm:justify-between">
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => onResetPassword(user)}
+        >
+          <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
         </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onCancel}>Cancelar</Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar"}
+          </Button>
+        </div>
       </DialogFooter>
     </div>
+  );
+}
+
+function ResetPasswordDialog({
+  user,
+  onOpenChange,
+}: {
+  user: AdminUser | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [mode, setMode] = useState<"choose" | "manual">("choose");
+  const [newPassword, setNewPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setMode("choose");
+      setNewPassword("");
+      setTempPassword(null);
+      setCopied(false);
+      setSubmitting(false);
+    }
+  }, [user]);
+
+  if (!user) return null;
+
+  const call = async (body: Record<string, unknown>) => {
+    setSubmitting(true);
+    try {
+      const res = await http.post<{ temporary_password?: string }>(
+        `/admin/users/${user.id}/reset-password`,
+        body,
+        { silent: true },
+      );
+      if (res?.temporary_password) {
+        setTempPassword(res.temporary_password);
+      }
+      toast.success(`Senha redefinida para ${user.email}`);
+      if (!res?.temporary_password) onOpenChange(false);
+    } catch (e: unknown) {
+      const err = e as { payload?: { error?: string }; message?: string };
+      toast.error(err?.payload?.error || err?.message || "Erro ao redefinir senha");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitManual = () => {
+    if (newPassword.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+    call({ new_password: newPassword });
+  };
+
+  const copy = async () => {
+    if (!tempPassword) return;
+    try {
+      await navigator.clipboard.writeText(tempPassword);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  };
+
+  return (
+    <Dialog open={!!user} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Redefinir senha</DialogTitle>
+          <DialogDescription>
+            Usuário: <span className="font-medium">{user.email}</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        {tempPassword ? (
+          <div className="space-y-3">
+            <Label>Senha temporária</Label>
+            <div className="flex items-center gap-2">
+              <Input readOnly value={tempPassword} className="font-mono" />
+              <Button type="button" variant="outline" onClick={copy}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Repasse esta senha ao usuário. Peça para ele trocá-la depois em Configurações.
+            </p>
+            <DialogFooter>
+              <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+            </DialogFooter>
+          </div>
+        ) : mode === "choose" ? (
+          <div className="space-y-3">
+            <Button
+              className="w-full justify-start"
+              variant="outline"
+              onClick={() => setMode("manual")}
+            >
+              <Pencil className="h-4 w-4 mr-2" /> Digitar nova senha
+            </Button>
+            <Button
+              className="w-full justify-start"
+              variant="outline"
+              disabled={submitting}
+              onClick={() => call({})}
+            >
+              <KeyRound className="h-4 w-4 mr-2" />
+              {submitting ? "Gerando..." : "Gerar senha temporária"}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nova senha</Label>
+              <Input
+                id="new-password"
+                type="password"
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setMode("choose")}>
+                Voltar
+              </Button>
+              <Button onClick={submitManual} disabled={submitting || newPassword.length < 6}>
+                {submitting ? "Salvando..." : "Confirmar"}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
