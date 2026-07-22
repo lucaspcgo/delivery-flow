@@ -1090,10 +1090,20 @@ function PlanForm({
   onCancel: () => void;
   onSave: (data: DBPlanInput) => void;
 }) {
+  const normalizePeriod = (v?: string) => {
+    const raw = (v ?? "").toLowerCase().trim();
+    if (raw === "weekly" || raw === "semanal") return "weekly";
+    if (raw === "monthly" || raw === "mensal") return "monthly";
+    if (raw === "yearly" || raw === "annual" || raw === "anual") return "yearly";
+    if (raw === "one_time" || raw === "único" || raw === "unico") return "one_time";
+    if (raw === "free" || raw === "gratuito" || raw === "grátis") return "free";
+    return "monthly";
+  };
+
   const [name, setName] = useState(plan?.name ?? "");
   const [slug, setSlug] = useState(plan?.slug ?? "");
   const [price, setPrice] = useState<string>(String(plan?.price ?? 0));
-  const [period, setPeriod] = useState<string>(plan?.billing_period ?? plan?.period ?? "monthly");
+  const [period, setPeriod] = useState<string>(normalizePeriod(plan?.billing_period ?? plan?.period ?? "monthly"));
   const [active, setActive] = useState(plan?.active ?? true);
   const [popular, setPopular] = useState(plan?.popular ?? false);
   const [isFree, setIsFree] = useState(plan?.is_free ?? false);
