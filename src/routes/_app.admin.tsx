@@ -1157,6 +1157,7 @@ function PlanForm({
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="weekly">Semanal</SelectItem>
               <SelectItem value="monthly">Mensal</SelectItem>
               <SelectItem value="yearly">Anual</SelectItem>
               <SelectItem value="one_time">Único</SelectItem>
