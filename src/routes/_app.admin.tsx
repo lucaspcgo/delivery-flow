@@ -372,6 +372,7 @@ function UsersTab() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Telefone</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status Pgto</TableHead>
                   <TableHead>Admin</TableHead>
@@ -383,6 +384,9 @@ function UsersTab() {
                   <TableRow key={u.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
                     <TableCell className="font-medium">{u.name}</TableCell>
                     <TableCell>{u.email}</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm">
+                      {u.phone ? u.phone : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
                     <TableCell>
                       <PlanBadge plan={u.plan} />
                     </TableCell>
@@ -410,7 +414,7 @@ function UsersTab() {
                 ))}
                 {users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                       Nenhum usuário.
                     </TableCell>
                   </TableRow>
