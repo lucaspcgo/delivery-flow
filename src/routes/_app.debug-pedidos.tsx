@@ -214,6 +214,41 @@ function FieldChecksTable({ checks }: { checks: FieldCheck[] }) {
   );
 }
 
+function AutomationBadge({ order }: { order: DebugOrder }) {
+  const didAutomate = order.automation_did_it === true;
+  const times: { label: string; value?: string | null }[] = [
+    { label: "Aceito pela automação", value: order.automation_accepted_at },
+    { label: "Pronto pela automação", value: order.automation_ready_at },
+    { label: "Despachado pela automação", value: order.automation_dispatched_at },
+  ].filter((t) => !!t.value);
+
+  return (
+    <div className="group relative inline-flex">
+      <span
+        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
+          didAutomate
+            ? "border-green-300 bg-green-100 text-green-800"
+            : "border-gray-300 bg-gray-100 text-gray-700"
+        }`}
+      >
+        {didAutomate ? "✓ Automação" : "Manual / gestor"}
+      </span>
+      {didAutomate && times.length > 0 && (
+        <div className="pointer-events-none absolute left-0 top-full z-10 mt-1 hidden w-64 rounded border bg-background p-2 text-xs shadow-md group-hover:block">
+          <div className="space-y-1 text-muted-foreground">
+            {times.map((t) => (
+              <div key={t.label}>
+                <span className="font-medium text-foreground">{t.label}:</span>{" "}
+                {formatDateTimeLong(t.value)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DebugCard({ order }: { order: DebugOrder }) {
   const rawJson = (() => {
     try {
