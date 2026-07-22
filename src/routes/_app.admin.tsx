@@ -601,6 +601,8 @@ function ResetPasswordDialog({
       setTempPassword(null);
       setCopied(false);
       setSubmitting(false);
+      setShowPassword(false);
+      setShowTemp(false);
     }
   }, [user]);
 
