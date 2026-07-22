@@ -79,6 +79,7 @@ interface AdminUser {
   is_admin: boolean;
   active?: boolean;
   created_at?: string;
+  phone?: string;
 }
 
 interface AdminInvoice {
