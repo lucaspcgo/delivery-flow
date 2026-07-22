@@ -27,6 +27,7 @@ import {
   deletePlan,
   getPlansPublic,
   updateAdminUser,
+  PLAN_PERIOD_LABEL,
   type MeResponse,
   type DBPlan,
   type DBPlanInput,
@@ -1000,7 +1001,7 @@ function PlansTab() {
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.slug}</TableCell>
                       <TableCell>{BRL(p.price ?? 0)}</TableCell>
-                      <TableCell className="text-xs">{p.billing_period ?? p.period}</TableCell>
+                      <TableCell className="text-xs">{PLAN_PERIOD_LABEL[p.billing_period ?? p.period ?? ""] ?? (p.billing_period ?? p.period ?? "—")}</TableCell>
                       <TableCell>
                         {p.popular ? <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> : <span className="text-xs text-muted-foreground">—</span>}
                       </TableCell>
@@ -1089,10 +1090,20 @@ function PlanForm({
   onCancel: () => void;
   onSave: (data: DBPlanInput) => void;
 }) {
+  const normalizePeriod = (v?: string) => {
+    const raw = (v ?? "").toLowerCase().trim();
+    if (raw === "weekly" || raw === "semanal") return "weekly";
+    if (raw === "monthly" || raw === "mensal") return "monthly";
+    if (raw === "yearly" || raw === "annual" || raw === "anual") return "yearly";
+    if (raw === "one_time" || raw === "único" || raw === "unico") return "one_time";
+    if (raw === "free" || raw === "gratuito" || raw === "grátis") return "free";
+    return "monthly";
+  };
+
   const [name, setName] = useState(plan?.name ?? "");
   const [slug, setSlug] = useState(plan?.slug ?? "");
   const [price, setPrice] = useState<string>(String(plan?.price ?? 0));
-  const [period, setPeriod] = useState<string>(plan?.billing_period ?? plan?.period ?? "monthly");
+  const [period, setPeriod] = useState<string>(normalizePeriod(plan?.billing_period ?? plan?.period ?? "monthly"));
   const [active, setActive] = useState(plan?.active ?? true);
   const [popular, setPopular] = useState(plan?.popular ?? false);
   const [isFree, setIsFree] = useState(plan?.is_free ?? false);
@@ -1146,6 +1157,7 @@ function PlanForm({
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="weekly">Semanal</SelectItem>
               <SelectItem value="monthly">Mensal</SelectItem>
               <SelectItem value="yearly">Anual</SelectItem>
               <SelectItem value="one_time">Único</SelectItem>
