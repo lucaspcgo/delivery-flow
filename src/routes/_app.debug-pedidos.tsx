@@ -363,6 +363,7 @@ function DebugPedidosPage() {
   const [limit, setLimit] = useState<number>(10);
   const [userId, setUserId] = useState<string>("");
   const [store, setStore] = useState<string>("");
+  const [automationFilter, setAutomationFilter] = useState<AutomationFilter>("todos");
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [orders, setOrders] = useState<DebugOrder[]>([]);
   const [meta, setMeta] = useState<{
