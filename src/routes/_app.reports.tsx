@@ -223,7 +223,7 @@ function ReportsPage() {
       const marginX = 12;
       const marginTop = 10;
       const marginBottom = 12;
-      const headerHeight = 22;
+      const headerHeight = 26;
       const gapAfterHeader = 4;
       const contentWidth = pageWidth - marginX * 2;
       const contentTop = marginTop + headerHeight + gapAfterHeader;
@@ -243,11 +243,18 @@ function ReportsPage() {
         pdf.setTextColor(15, 23, 42);
         pdf.setFontSize(9);
         const rightX = marginX + contentWidth - 5;
-        pdf.text(`Período: ${fmt(startDate)} — ${fmt(endDate)}`, rightX, marginTop + 7, {
+        let filterY = marginTop + 7;
+        pdf.text(`Período: ${fmt(startDate)} — ${fmt(endDate)}`, rightX, filterY, {
           align: "right",
         });
-        pdf.text(`Plataforma: ${platformLabel}`, rightX, marginTop + 12, { align: "right" });
-        pdf.text(`Restaurante: ${restaurantLabel}`, rightX, marginTop + 17, { align: "right" });
+        filterY += 5;
+        if (userLabel !== null) {
+          pdf.text(`Cliente: ${userLabel}`, rightX, filterY, { align: "right" });
+          filterY += 5;
+        }
+        pdf.text(`Plataforma: ${platformLabel}`, rightX, filterY, { align: "right" });
+        filterY += 5;
+        pdf.text(`Restaurante: ${restaurantLabel}`, rightX, filterY, { align: "right" });
       };
 
       const didDrawPage = () => drawHeader();
