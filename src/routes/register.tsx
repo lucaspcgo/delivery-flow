@@ -19,6 +19,7 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
@@ -43,7 +44,13 @@ function RegisterPage() {
     }
     setLoading(true);
     try {
-      const res = await createCheckout({ plan: "free", name, email, password });
+      const res = await createCheckout({
+        plan: "free",
+        name,
+        email,
+        password,
+        phone: phone.trim() ? phone : undefined,
+      });
       if (res.type === "free_trial" && res.token && res.user) {
         const okA = safeLocalStorageSet("auth_token", res.token);
         const okB = safeLocalStorageSet("auth_user", JSON.stringify(res.user));
@@ -123,6 +130,21 @@ function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               required
               autoComplete="name"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="phone">
+              Telefone <span className="text-xs text-muted-foreground">(opcional)</span>
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              placeholder="(00) 00000-0000"
+              value={phone}
+              onChange={(e) => setPhone(maskBrPhone(e.target.value))}
+              autoComplete="tel"
+              maxLength={16}
             />
           </div>
           <div className="space-y-1.5">
