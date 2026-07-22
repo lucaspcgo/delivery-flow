@@ -53,22 +53,23 @@ function LoginPage() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         const p = (err.payload ?? {}) as Record<string, unknown>;
+        const msg =
+          (typeof p.error === "string" && p.error) ||
+          (typeof p.message === "string" && p.message) ||
+          "";
+        if (p.access_blocked === true) {
+          setBlockType("payment_suspended");
+          setBlockMessage(msg || "Acesso bloqueado.");
+          return;
+        }
         if (p.trial_expired === true || p.code === "trial_expired") {
           setBlockType("trial_expired");
-          setBlockMessage(
-            typeof p.message === "string"
-              ? p.message
-              : "Seu período gratuito de 7 dias expirou",
-          );
+          setBlockMessage(msg || "Seu período gratuito expirou.");
           return;
         }
         if (p.payment_suspended === true || p.code === "payment_suspended") {
           setBlockType("payment_suspended");
-          setBlockMessage(
-            typeof p.message === "string"
-              ? p.message
-              : "Acesso suspenso. Regularize seu pagamento.",
-          );
+          setBlockMessage(msg || "Acesso suspenso. Regularize seu pagamento.");
           return;
         }
       }
