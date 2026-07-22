@@ -203,10 +203,13 @@ function ReportsPage() {
       restaurantId === "all"
         ? "Todos"
         : restaurants.find((r) => r.id === restaurantId)?.name ?? restaurantId;
+    const selectedUser = isAdmin ? users.find((u) => u.id === userId) : undefined;
     const userLabel = isAdmin
       ? userId === "all"
         ? "Todos"
-        : users.find((u) => u.id === userId)?.name ?? userId
+        : selectedUser
+          ? `${selectedUser.name} (${selectedUser.email})`
+          : userId
       : null;
     const generatedAt = new Date().toLocaleString("pt-BR");
     try {
