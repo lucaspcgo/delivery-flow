@@ -534,7 +534,6 @@ function ReportsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={load} disabled={loading} className="col-span-2 w-full sm:col-span-1 sm:w-auto">
             {isAdmin && (
               <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
                 <label className="text-xs font-medium text-muted-foreground">Usuário</label>
