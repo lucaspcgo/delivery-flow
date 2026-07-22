@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff } from "lucide-react";
+import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   ssr: false,
@@ -233,6 +233,7 @@ function AdminPage() {
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="invoices">Faturas</TabsTrigger>
             <TabsTrigger value="plans">Planos</TabsTrigger>
+            <TabsTrigger value="audit">Auditoria</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
 
@@ -247,6 +248,9 @@ function AdminPage() {
           </TabsContent>
           <TabsContent value="plans">
             <PlansTab />
+          </TabsContent>
+          <TabsContent value="audit">
+            <AuditTab />
           </TabsContent>
           <TabsContent value="settings">
             <SettingsTab />
