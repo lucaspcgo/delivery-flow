@@ -1221,6 +1221,7 @@ function AuditTab() {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<AuditSortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [planFilter, setPlanFilter] = useState<string>("all");
 
   useEffect(() => {
     let alive = true;
@@ -1258,13 +1259,16 @@ function AuditTab() {
   }
 
   const users = data?.users ?? [];
+  const planOptions = Array.from(
+    new Set(users.map((u) => (u.plan ?? "").trim()).filter(Boolean)),
+  ).sort();
   const q = query.trim().toLowerCase();
-  const filtered = q
-    ? users.filter(
-        (u) =>
-          u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q),
-      )
-    : users;
+  const filtered = users.filter((u) => {
+    if (planFilter !== "all" && u.plan !== planFilter) return false;
+    if (q && !(u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)))
+      return false;
+    return true;
+  });
   const sorted = sortKey
     ? [...filtered].sort((a, b) => {
         let av: number = 0;
@@ -1281,12 +1285,20 @@ function AuditTab() {
     : filtered;
 
   const summary = data?.summary;
+  const isFiltered = planFilter !== "all";
+  const filteredSummary = {
+    users: filtered.length,
+    active_users: filtered.filter((u) => u.active).length,
+    stores_connected: filtered.reduce((s, u) => s + (u.stores_connected ?? 0), 0),
+    ifood_stores: filtered.reduce((s, u) => s + (u.ifood_stores ?? 0), 0),
+    food99_stores: filtered.reduce((s, u) => s + (u.food99_stores ?? 0), 0),
+  };
   const cards: { label: string; value: number | string }[] = [
-    { label: "Cadastros", value: summary?.users ?? 0 },
-    { label: "Ativos", value: summary?.active_users ?? 0 },
-    { label: "Lojas conectadas", value: summary?.stores_connected ?? 0 },
-    { label: "Lojas iFood", value: summary?.ifood_stores ?? 0 },
-    { label: "Lojas 99food", value: summary?.food99_stores ?? 0 },
+    { label: "Cadastros", value: isFiltered ? filteredSummary.users : summary?.users ?? 0 },
+    { label: "Ativos", value: isFiltered ? filteredSummary.active_users : summary?.active_users ?? 0 },
+    { label: "Lojas conectadas", value: isFiltered ? filteredSummary.stores_connected : summary?.stores_connected ?? 0 },
+    { label: "Lojas iFood", value: isFiltered ? filteredSummary.ifood_stores : summary?.ifood_stores ?? 0 },
+    { label: "Lojas 99food", value: isFiltered ? filteredSummary.food99_stores : summary?.food99_stores ?? 0 },
   ];
 
   function fmtDate(iso?: string | null) {
@@ -1323,14 +1335,29 @@ function AuditTab() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle>Usuários</CardTitle>
-          <div className="relative w-full max-w-xs">
-            <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nome ou email"
-              className="pl-8"
-            />
+          <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+            <Select value={planFilter} onValueChange={setPlanFilter}>
+              <SelectTrigger className="w-full max-w-[200px]">
+                <SelectValue placeholder="Todos os planos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os planos</SelectItem>
+                {planOptions.map((p) => (
+                  <SelectItem key={p} value={p} className="capitalize">
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative w-full max-w-xs">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por nome ou email"
+                className="pl-8"
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
