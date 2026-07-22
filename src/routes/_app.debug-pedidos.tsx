@@ -428,6 +428,12 @@ function DebugPedidosPage() {
 
   const clampedLimit = () => Math.max(1, Math.min(50, Math.floor(limit || 1)));
 
+  const filteredOrders = orders.filter((o) => {
+    if (automationFilter === "todos") return true;
+    if (automationFilter === "automation") return o.automation_did_it === true;
+    return o.automation_did_it !== true;
+  });
+
   const apply = () => {
     const lm = clampedLimit();
     setLimit(lm);
