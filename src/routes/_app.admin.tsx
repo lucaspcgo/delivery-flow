@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check } from "lucide-react";
+import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   ssr: false,
