@@ -591,6 +591,8 @@ function ResetPasswordDialog({
   const [submitting, setSubmitting] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showTemp, setShowTemp] = useState(false);
 
   useEffect(() => {
     if (user) {
