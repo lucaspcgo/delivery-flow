@@ -43,8 +43,10 @@ import {
 import {
   getReports,
   getRestaurants,
+  getAdminUsers,
   type ReportsSummary,
   type ApiRestaurant,
+  type AdminUser,
 } from "@/lib/api";
 import { hasStoredAdminAccess } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -123,6 +125,8 @@ function ReportsPage() {
   const [platform, setPlatform] = useState("all");
   const [restaurantId, setRestaurantId] = useState("all");
   const [restaurants, setRestaurants] = useState<ApiRestaurant[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [userId, setUserId] = useState("all");
   const [data, setData] = useState<ReportsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -135,6 +139,13 @@ function ReportsPage() {
       .catch(() => setRestaurants([]));
   }, []);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+    getAdminUsers()
+      .then(setUsers)
+      .catch(() => setUsers([]));
+  }, [isAdmin]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -143,6 +154,7 @@ function ReportsPage() {
         end_date: endDate,
         platform,
         restaurant_id: restaurantId,
+        user_id: isAdmin ? userId : undefined,
       });
       setData(r);
     } catch {
@@ -150,7 +162,7 @@ function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, platform, restaurantId]);
+  }, [startDate, endDate, platform, restaurantId, userId, isAdmin]);
 
   // Carrega apenas no primeiro render — filtros são aplicados via botão
   // "Gerar Relatório" para evitar múltiplas chamadas enquanto o usuário ajusta.
