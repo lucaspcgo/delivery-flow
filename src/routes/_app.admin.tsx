@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check } from "lucide-react";
+import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   ssr: false,
@@ -591,6 +591,8 @@ function ResetPasswordDialog({
   const [submitting, setSubmitting] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showTemp, setShowTemp] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -599,6 +601,8 @@ function ResetPasswordDialog({
       setTempPassword(null);
       setCopied(false);
       setSubmitting(false);
+      setShowPassword(false);
+      setShowTemp(false);
     }
   }, [user]);
 
@@ -658,8 +662,22 @@ function ResetPasswordDialog({
           <div className="space-y-3">
             <Label>Senha temporária</Label>
             <div className="flex items-center gap-2">
-              <Input readOnly value={tempPassword} className="font-mono" />
-              <Button type="button" variant="outline" onClick={copy}>
+              <Input
+                readOnly
+                value={tempPassword}
+                type={showTemp ? "text" : "password"}
+                className="font-mono"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowTemp((v) => !v)}
+                aria-label={showTemp ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showTemp ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button type="button" variant="outline" size="icon" onClick={copy}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
@@ -693,15 +711,26 @@ function ResetPasswordDialog({
           <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="new-password">Nova senha</Label>
-              <Input
-                id="new-password"
-                type="password"
-                minLength={6}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                autoFocus
-              />
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? "text" : "password"}
+                  minLength={6}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  autoFocus
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setMode("choose")}>
