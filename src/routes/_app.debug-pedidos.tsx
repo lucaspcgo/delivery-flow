@@ -287,6 +287,7 @@ function DebugCard({ order }: { order: DebugOrder }) {
               KDS: {order.kds_stage}
             </Badge>
           )}
+          <AutomationBadge order={order} />
           {order.app_shop_id && (
             <div>
               <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
