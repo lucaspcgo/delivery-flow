@@ -475,6 +475,7 @@ function UserEditForm({
   onCancel,
   onSave,
   onDeactivateAsk,
+  onResetPassword,
 }: {
   user: AdminUser;
   plans: DBPlan[];
