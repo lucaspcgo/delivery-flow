@@ -80,6 +80,7 @@ interface AdminUser {
   active?: boolean;
   created_at?: string;
   phone?: string;
+  plan_expires_at?: string | null;
 }
 
 interface AdminInvoice {
@@ -452,6 +453,12 @@ function UsersTab() {
             onDeactivateAsk={(u) => setConfirmDeactivate(u)}
             onSave={(data) => save(editing.id, data)}
             onResetPassword={(u) => setResetting(u)}
+            onRenewed={(planExpiresAt) => {
+              setEditing((prev) =>
+                prev ? { ...prev, plan_expires_at: planExpiresAt } : prev,
+              );
+              load();
+            }}
           />
         )}
       </DialogContent>
@@ -494,6 +501,7 @@ function UserEditForm({
   onSave,
   onDeactivateAsk,
   onResetPassword,
+  onRenewed,
 }: {
   user: AdminUser;
   plans: DBPlan[];
@@ -502,11 +510,44 @@ function UserEditForm({
   onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => void;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
+  onRenewed: (planExpiresAt: string | null) => void;
 }) {
   const [plan, setPlan] = useState<string>(user.plan ?? "");
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
   const [phone, setPhone] = useState<string>(user.phone ?? "");
+  const [renewing, setRenewing] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<string | null>(user.plan_expires_at ?? null);
+
+  const fmtBrDate = (iso?: string | null) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("pt-BR");
+  };
+
+  const renew = async () => {
+    setRenewing(true);
+    try {
+      const res = await http.post<{ days?: number; plan_expires_at?: string | null }>(
+        `/admin/users/${user.id}/renew`,
+        {},
+        { silent: true },
+      );
+      const newExpiry = res?.plan_expires_at ?? null;
+      setExpiresAt(newExpiry);
+      onRenewed(newExpiry);
+      const days = res?.days ?? 0;
+      toast.success(
+        `Acesso renovado por ${days} dias — vence em ${fmtBrDate(newExpiry)}`,
+      );
+    } catch (e: unknown) {
+      const err = e as { payload?: { error?: string }; message?: string };
+      toast.error(err?.payload?.error || err?.message || "Erro ao renovar acesso");
+    } finally {
+      setRenewing(false);
+    }
+  };
 
   const submit = () => {
     if (user.active && !active) {
@@ -535,6 +576,22 @@ function UserEditForm({
           <Label className="text-xs text-muted-foreground">Email</Label>
           <p className="truncate">{user.email}</p>
         </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Válido até</Label>
+          <p>{fmtBrDate(expiresAt)}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
+        <div>
+          <p className="text-sm font-medium">Renovar acesso</p>
+          <p className="text-xs text-muted-foreground">
+            Adiciona +1 ciclo ao plano do usuário.
+          </p>
+        </div>
+        <Button size="sm" onClick={renew} disabled={renewing}>
+          {renewing ? "Renovando..." : "Renovar acesso (+1 ciclo)"}
+        </Button>
       </div>
 
       <div className="space-y-2">
@@ -1234,6 +1291,7 @@ interface AuditUser {
   food99_stores: number;
   last_order_at: string | null;
   orders_total: number;
+  plan_expires_at?: string | null;
 }
 
 interface AuditResponse {
@@ -1408,6 +1466,7 @@ function AuditTab() {
                   Lojas{sortIcon("stores_connected")}
                 </TableHead>
                 <TableHead>Último pedido</TableHead>
+                <TableHead>Válido até</TableHead>
                 <TableHead
                   className="cursor-pointer select-none text-right"
                   onClick={() => toggleSort("orders_total")}
@@ -1419,13 +1478,13 @@ function AuditTab() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : sorted.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     Nenhum usuário encontrado.
                   </TableCell>
                 </TableRow>
@@ -1458,6 +1517,7 @@ function AuditTab() {
                       </div>
                     </TableCell>
                     <TableCell>{fmtDateTime(u.last_order_at)}</TableCell>
+                    <TableCell>{fmtDate(u.plan_expires_at)}</TableCell>
                     <TableCell className="text-right font-medium">{u.orders_total}</TableCell>
                   </TableRow>
                 ))
