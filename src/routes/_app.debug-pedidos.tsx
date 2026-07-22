@@ -580,7 +580,7 @@ function DebugPedidosPage() {
         </Card>
       )}
 
-      {!isLoading && !error && orders.length === 0 && (
+      {!isLoading && !error && filteredOrders.length === 0 && (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
             Nenhum pedido retornado para os filtros atuais.
@@ -589,7 +589,7 @@ function DebugPedidosPage() {
       )}
 
       <div className="space-y-4">
-        {orders.map((o: DebugOrder, idx: number) => (
+        {filteredOrders.map((o: DebugOrder, idx: number) => (
           <DebugCard key={o.platform_order_id ?? idx} order={o} />
         ))}
       </div>
