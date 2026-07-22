@@ -490,20 +490,21 @@ function UserEditForm({
   plans: DBPlan[];
   saving: boolean;
   onCancel: () => void;
-  onSave: (data: { plan?: string; active?: boolean; payment_status?: string }) => void;
+  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => void;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
 }) {
   const [plan, setPlan] = useState<string>(user.plan ?? "");
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
+  const [phone, setPhone] = useState<string>(user.phone ?? "");
 
   const submit = () => {
     if (user.active && !active) {
       onDeactivateAsk(user);
       return;
     }
-    onSave({ plan, active, payment_status: paymentStatus });
+    onSave({ plan, active, payment_status: paymentStatus, phone: phone.trim() ? phone : "" });
   };
 
   return (
@@ -525,6 +526,19 @@ function UserEditForm({
           <Label className="text-xs text-muted-foreground">Email</Label>
           <p className="truncate">{user.email}</p>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-phone">Telefone</Label>
+        <Input
+          id="edit-phone"
+          type="tel"
+          inputMode="tel"
+          placeholder="(00) 00000-0000"
+          value={phone}
+          onChange={(e) => setPhone(maskBrPhoneAdmin(e.target.value))}
+          maxLength={16}
+        />
       </div>
 
       <div className="space-y-2">
