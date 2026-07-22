@@ -17,6 +17,8 @@ export const Route = createFileRoute("/_app/debug-pedidos")({
 
 type Platform = "99food" | "ifood";
 
+type AutomationFilter = "todos" | "automation" | "manual";
+
 type CheckStatus = "ok" | "divergente" | "vazio" | "sem_origem";
 
 interface FieldCheck {
