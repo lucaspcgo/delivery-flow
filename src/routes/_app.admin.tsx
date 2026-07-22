@@ -1001,7 +1001,7 @@ function PlansTab() {
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.slug}</TableCell>
                       <TableCell>{BRL(p.price ?? 0)}</TableCell>
-                      <TableCell className="text-xs">{p.billing_period ?? p.period}</TableCell>
+                      <TableCell className="text-xs">{PLAN_PERIOD_LABEL[p.billing_period ?? p.period ?? ""] ?? (p.billing_period ?? p.period ?? "—")}</TableCell>
                       <TableCell>
                         {p.popular ? <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> : <span className="text-xs text-muted-foreground">—</span>}
                       </TableCell>
