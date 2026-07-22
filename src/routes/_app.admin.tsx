@@ -1184,3 +1184,233 @@ function SettingsTab() {
     </Card>
   );
 }
+
+interface AuditSummary {
+  users: number;
+  active_users: number;
+  stores_connected: number;
+  ifood_stores: number;
+  food99_stores: number;
+}
+
+interface AuditUser {
+  id: string;
+  name: string;
+  email: string;
+  plan: string;
+  active: boolean;
+  payment_status: string;
+  created_at: string;
+  stores_connected: number;
+  ifood_stores: number;
+  food99_stores: number;
+  last_order_at: string | null;
+  orders_total: number;
+}
+
+interface AuditResponse {
+  summary: AuditSummary;
+  users: AuditUser[];
+}
+
+type AuditSortKey = "created_at" | "stores_connected" | "orders_total";
+
+function AuditTab() {
+  const [data, setData] = useState<AuditResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<AuditSortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    http
+      .get<AuditResponse>("/admin/audit")
+      .then((res) => {
+        if (alive) setData(res);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  function toggleSort(key: AuditSortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  function sortIcon(key: AuditSortKey) {
+    if (sortKey !== key) return <ArrowUpDown className="ml-1 inline h-3 w-3 opacity-50" />;
+    return sortDir === "asc" ? (
+      <ArrowUp className="ml-1 inline h-3 w-3" />
+    ) : (
+      <ArrowDown className="ml-1 inline h-3 w-3" />
+    );
+  }
+
+  const users = data?.users ?? [];
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? users.filter(
+        (u) =>
+          u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q),
+      )
+    : users;
+  const sorted = sortKey
+    ? [...filtered].sort((a, b) => {
+        let av: number = 0;
+        let bv: number = 0;
+        if (sortKey === "created_at") {
+          av = new Date(a.created_at).getTime() || 0;
+          bv = new Date(b.created_at).getTime() || 0;
+        } else {
+          av = a[sortKey] ?? 0;
+          bv = b[sortKey] ?? 0;
+        }
+        return sortDir === "asc" ? av - bv : bv - av;
+      })
+    : filtered;
+
+  const summary = data?.summary;
+  const cards: { label: string; value: number | string }[] = [
+    { label: "Cadastros", value: summary?.users ?? 0 },
+    { label: "Ativos", value: summary?.active_users ?? 0 },
+    { label: "Lojas conectadas", value: summary?.stores_connected ?? 0 },
+    { label: "Lojas iFood", value: summary?.ifood_stores ?? 0 },
+    { label: "Lojas 99food", value: summary?.food99_stores ?? 0 },
+  ];
+
+  function fmtDate(iso?: string | null) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("pt-BR");
+  }
+
+  function fmtDateTime(iso?: string | null) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        {cards.map((c) => (
+          <Card key={c.label}>
+            <CardContent className="p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </p>
+              <p className="mt-1 text-2xl font-bold tracking-tight">
+                {loading ? "—" : c.value}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+          <CardTitle>Usuários</CardTitle>
+          <div className="relative w-full max-w-xs">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nome ou email"
+              className="pl-8"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cadastro</TableHead>
+                <TableHead>Plano</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleSort("created_at")}
+                >
+                  Criado em{sortIcon("created_at")}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleSort("stores_connected")}
+                >
+                  Lojas{sortIcon("stores_connected")}
+                </TableHead>
+                <TableHead>Último pedido</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none text-right"
+                  onClick={() => toggleSort("orders_total")}
+                >
+                  Total de pedidos{sortIcon("orders_total")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    Carregando...
+                  </TableCell>
+                </TableRow>
+              ) : sorted.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    Nenhum usuário encontrado.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sorted.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell>
+                      <div className="font-medium">{u.name}</div>
+                      <div className="text-xs text-muted-foreground">{u.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="capitalize">
+                        {u.plan}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {u.active ? (
+                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                          Ativo
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Inativo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{fmtDate(u.created_at)}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{u.stores_connected}</div>
+                      <div className="text-xs text-muted-foreground">
+                        iFood: {u.ifood_stores} · 99food: {u.food99_stores}
+                      </div>
+                    </TableCell>
+                    <TableCell>{fmtDateTime(u.last_order_at)}</TableCell>
+                    <TableCell className="text-right font-medium">{u.orders_total}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
