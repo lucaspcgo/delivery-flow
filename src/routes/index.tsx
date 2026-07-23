@@ -392,7 +392,7 @@ function LandingPage() {
           >
             Comece seu Teste Grátis Agora
           </Link>
-          <p className="mt-4 text-sm text-white/50">7 dias grátis • Sem cartão • Cancele quando quiser</p>
+          <p className="mt-4 text-sm text-white/50">3 dias grátis • Sem cartão • Cancele quando quiser</p>
         </div>
       </section>
 
