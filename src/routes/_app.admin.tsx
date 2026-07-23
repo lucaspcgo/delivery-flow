@@ -408,7 +408,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                   <TableHead>Telefone</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status Pgto</TableHead>
-                  <TableHead>Admin</TableHead>
+                  <TableHead>Perfil</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -426,13 +426,9 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                     <TableCell>
                       <PayStatusBadge status={u.payment_status} />
                     </TableCell>
-                    <TableCell>
-                      {u.is_admin ? (
-                        <Badge>Sim</Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Não</span>
-                      )}
-                    </TableCell>
+                     <TableCell>
+                       <RoleBadge role={u.role} isAdmin={u.is_admin} />
+                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
