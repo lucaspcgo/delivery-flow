@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as BlockedRouteImport } from './routes/blocked'
@@ -27,9 +29,19 @@ import { Route as AppBuscarLojaRouteImport } from './routes/_app.buscar-loja'
 import { Route as AppAutomationsRouteImport } from './routes/_app.automations'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 
+const TermosDeUsoRoute = TermosDeUsoRouteImport.update({
+  id: '/termos-de-uso',
+  path: '/termos-de-uso',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -117,7 +129,9 @@ export interface FileRoutesByFullPath {
   '/blocked': typeof BlockedRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/register': typeof RegisterRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/buscar-loja': typeof AppBuscarLojaRoute
@@ -135,7 +149,9 @@ export interface FileRoutesByTo {
   '/blocked': typeof BlockedRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/register': typeof RegisterRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
   '/admin': typeof AppAdminRoute
   '/automations': typeof AppAutomationsRoute
   '/buscar-loja': typeof AppBuscarLojaRoute
@@ -155,7 +171,9 @@ export interface FileRoutesById {
   '/blocked': typeof BlockedRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/register': typeof RegisterRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
   '/_app/admin': typeof AppAdminRoute
   '/_app/automations': typeof AppAutomationsRoute
   '/_app/buscar-loja': typeof AppBuscarLojaRoute
@@ -175,7 +193,9 @@ export interface FileRouteTypes {
     | '/blocked'
     | '/checkout'
     | '/login'
+    | '/politica-de-privacidade'
     | '/register'
+    | '/termos-de-uso'
     | '/admin'
     | '/automations'
     | '/buscar-loja'
@@ -193,7 +213,9 @@ export interface FileRouteTypes {
     | '/blocked'
     | '/checkout'
     | '/login'
+    | '/politica-de-privacidade'
     | '/register'
+    | '/termos-de-uso'
     | '/admin'
     | '/automations'
     | '/buscar-loja'
@@ -212,7 +234,9 @@ export interface FileRouteTypes {
     | '/blocked'
     | '/checkout'
     | '/login'
+    | '/politica-de-privacidade'
     | '/register'
+    | '/termos-de-uso'
     | '/_app/admin'
     | '/_app/automations'
     | '/_app/buscar-loja'
@@ -232,16 +256,32 @@ export interface RootRouteChildren {
   BlockedRoute: typeof BlockedRoute
   CheckoutRoute: typeof CheckoutRoute
   LoginRoute: typeof LoginRoute
+  PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   RegisterRoute: typeof RegisterRoute
+  TermosDeUsoRoute: typeof TermosDeUsoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termos-de-uso': {
+      id: '/termos-de-uso'
+      path: '/termos-de-uso'
+      fullPath: '/termos-de-uso'
+      preLoaderRoute: typeof TermosDeUsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -395,8 +435,20 @@ const rootRouteChildren: RootRouteChildren = {
   BlockedRoute: BlockedRoute,
   CheckoutRoute: CheckoutRoute,
   LoginRoute: LoginRoute,
+  PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   RegisterRoute: RegisterRoute,
+  TermosDeUsoRoute: TermosDeUsoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
