@@ -183,8 +183,10 @@ function CheckoutPage() {
     if (!match) return;
     setSelectedPlan(getPlanKey(match));
     setAutoStarted(true);
-    if (isLogged && !match.is_free && match.price > 0) {
-      void startCheckout(getPlanKey(match));
+    // Sempre passamos pela etapa 2 (o CPF/CNPJ é obrigatório inclusive
+    // para quem já está logado).
+    if (!match.is_free && match.price >= 0) {
+      setStep(2);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plans, planFromSearch, autoStarted]);
@@ -220,30 +222,25 @@ function CheckoutPage() {
       return;
     }
     setSelectedPlan(planKey);
-    if (isLogged) {
-      void startCheckout(planKey);
-    } else {
-      setStep(2);
-    }
+    setStep(2);
   }
 
-  async function startCheckout(plan: string, userData?: {
-    name: string;
-    email: string;
-    password: string;
-  }) {
+  async function startCheckout(
+    plan: string,
+    document: string,
+    userData?: { name: string; email: string; password: string },
+  ) {
     setSubmitting(true);
     try {
-      const body = userData
+      const body: Parameters<typeof createCheckout>[0] = userData
         ? {
             plan,
             name: userData.name,
             email: userData.email,
             password: userData.password,
+            document,
           }
-        : {
-            plan,
-          };
+        : { plan, document };
       const res = await createCheckout(body);
       // Plano gratuito: API retorna type="free_trial" com token+user → auto-login
       if (res.type === "free_trial" && res.token && res.user) {
