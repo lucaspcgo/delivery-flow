@@ -644,6 +644,8 @@ function UserEditForm({
   const [roleHistory, setRoleHistory] = useState<RoleAuditEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [roleChangeConfirmOpen, setRoleChangeConfirmOpen] = useState(false);
+
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
