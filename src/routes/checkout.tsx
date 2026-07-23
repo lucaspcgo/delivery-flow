@@ -297,7 +297,7 @@ function CheckoutPage() {
           return;
         }
         toast.success("Conta criada!", {
-          description: "Seu teste grátis de 7 dias começou.",
+          description: "`Seu teste grátis de ${TRIAL_DURATION_LABEL} começou.`",
         });
         navigate({ to: "/dashboard" });
         return;
