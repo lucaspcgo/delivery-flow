@@ -352,20 +352,30 @@ function UsersTab() {
   const save = async (
     userId: string,
     data: { plan?: string; active?: boolean; payment_status?: string; phone?: string },
-  ) => {
+  ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
     try {
-      await updateAdminUser(userId, data as Partial<import("@/lib/api").AdminUser>);
-      toast.success("Usuário atualizado");
-      setEditing(null);
+      const updated = await updateAdminUser(userId, data as Partial<import("@/lib/api").AdminUser>);
+      const newExpiry = updated?.plan_expires_at ?? null;
+      if (data.plan && newExpiry) {
+        const d = new Date(newExpiry);
+        const dateStr = !isNaN(d.getTime())
+          ? `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+          : newExpiry;
+        toast.success(`Usuário atualizado — válido até ${dateStr}`);
+      } else {
+        toast.success("Usuário atualizado");
+      }
       setConfirmDeactivate(null);
       load();
+      return updated;
     } catch (e: unknown) {
       const err = e as { status?: number; payload?: { error?: string }; message?: string };
       const msg =
         err?.payload?.error ||
         (err?.status === 400 ? "Plano inválido" : "Erro ao atualizar usuário");
       toast.error(msg);
+      return null;
     } finally {
       setSaving(false);
     }
@@ -452,7 +462,15 @@ function UsersTab() {
             saving={saving}
             onCancel={() => setEditing(null)}
             onDeactivateAsk={(u) => setConfirmDeactivate(u)}
-            onSave={(data) => save(editing.id, data)}
+            onSave={async (data) => {
+              const updated = await save(editing.id, data);
+              if (updated) {
+                setEditing((prev) =>
+                  prev ? { ...prev, ...updated } : prev,
+                );
+              }
+              return updated;
+            }}
             onResetPassword={(u) => setResetting(u)}
             onRenewed={(planExpiresAt) => {
               setEditing((prev) =>
@@ -508,7 +526,7 @@ function UserEditForm({
   plans: DBPlan[];
   saving: boolean;
   onCancel: () => void;
-  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => void;
+  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
@@ -524,7 +542,7 @@ function UserEditForm({
     if (!iso) return "—";
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
-    return d.toLocaleDateString("pt-BR");
+    return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
   };
 
   const renew = async () => {
@@ -550,12 +568,15 @@ function UserEditForm({
     }
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (user.active && !active) {
       onDeactivateAsk(user);
       return;
     }
-    onSave({ plan, active, payment_status: paymentStatus, phone: phone.trim() ? phone : "" });
+    const updated = await onSave({ plan, active, payment_status: paymentStatus, phone: phone.trim() ? phone : "" });
+    if (updated && updated.plan_expires_at !== undefined) {
+      setExpiresAt(updated.plan_expires_at ?? null);
+    }
   };
 
   return (
@@ -567,7 +588,7 @@ function UserEditForm({
         </div>
         <div>
           <Label className="text-xs text-muted-foreground">Criado em</Label>
-          <p>{user.created_at ? new Date(user.created_at).toLocaleDateString("pt-BR") : "—"}</p>
+          <p>{fmtBrDate(user.created_at)}</p>
         </div>
         <div>
           <Label className="text-xs text-muted-foreground">Nome</Label>
@@ -1295,6 +1316,7 @@ interface AuditUser {
   name: string;
   email: string;
   plan: string;
+  billing_period?: string | null;
   active: boolean;
   payment_status: string;
   created_at: string;
@@ -1399,13 +1421,6 @@ function AuditTab() {
     { label: "Lojas 99food", value: isFiltered ? filteredSummary.food99_stores : summary?.food99_stores ?? 0 },
   ];
 
-  function fmtDate(iso?: string | null) {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return "—";
-    return d.toLocaleDateString("pt-BR");
-  }
-
   function fmtDateTime(iso?: string | null) {
     if (!iso) return "—";
     const d = new Date(iso);
@@ -1508,9 +1523,16 @@ function AuditTab() {
                       <div className="text-xs text-muted-foreground">{u.email}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="capitalize">
-                        {u.plan}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="secondary" className="capitalize w-fit">
+                          {u.plan}
+                        </Badge>
+                        {u.billing_period ? (
+                          <span className="text-xs text-muted-foreground">
+                            {PLAN_PERIOD_LABEL[u.billing_period] ?? u.billing_period}
+                          </span>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {u.active ? (
@@ -1521,15 +1543,15 @@ function AuditTab() {
                         <Badge variant="secondary">Inativo</Badge>
                       )}
                     </TableCell>
-                    <TableCell>{fmtDate(u.created_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{fmtDateTime(u.created_at)}</TableCell>
                     <TableCell>
                       <div className="font-medium">{u.stores_connected}</div>
                       <div className="text-xs text-muted-foreground">
                         iFood: {u.ifood_stores} · 99food: {u.food99_stores}
                       </div>
                     </TableCell>
-                    <TableCell>{fmtDateTime(u.last_order_at)}</TableCell>
-                    <TableCell>{fmtDate(u.plan_expires_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{fmtDateTime(u.last_order_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{fmtDateTime(u.plan_expires_at)}</TableCell>
                     <TableCell className="text-right font-medium">{u.orders_total}</TableCell>
                   </TableRow>
                 ))
