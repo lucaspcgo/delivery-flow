@@ -700,7 +700,7 @@ function UserEditForm({
     }
   };
 
-  const submit = async () => {
+  const saveChanges = async () => {
     if (user.active && !active) {
       onDeactivateAsk(user);
       return;
@@ -733,6 +733,20 @@ function UserEditForm({
       void loadHistory();
     }
   };
+
+  const submit = () => {
+    if (isSuperAdmin && role !== initialRole) {
+      setRoleChangeConfirmOpen(true);
+      return;
+    }
+    void saveChanges();
+  };
+
+  const confirmRoleChange = () => {
+    setRoleChangeConfirmOpen(false);
+    void saveChanges();
+  };
+
 
   return (
     <div className="space-y-4">
