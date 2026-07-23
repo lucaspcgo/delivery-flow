@@ -31,6 +31,7 @@ import {
   updateAdminUser,
   getAdminInvoices,
   updateAdminInvoice,
+  getUserRoleHistory,
   PLAN_PERIOD_LABEL,
   type MeResponse,
   type DBPlan,
@@ -38,6 +39,7 @@ import {
   type AppRole,
   type AdminInvoice as ApiAdminInvoice,
   type AdminInvoicesSummary,
+  type RoleAuditEntry,
 } from "@/lib/api";
 import {
   Dialog,
