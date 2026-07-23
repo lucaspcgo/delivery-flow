@@ -187,7 +187,7 @@ function LandingPage() {
               className="rounded-xl px-7 py-3.5 text-base font-bold text-black shadow-lg transition hover:scale-[1.02] hover:brightness-110"
               style={{ background: BRAND, boxShadow: `0 10px 30px -10px ${BRAND}` }}
             >
-              7 dias Grátis
+              3 dias Grátis
             </Link>
           </div>
           <p className="mt-4 text-sm text-white/50">Sem cartão de crédito necessário</p>
