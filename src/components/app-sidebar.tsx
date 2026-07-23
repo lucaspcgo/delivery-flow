@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, ShoppingBag, Store, Zap, Plug, BarChart3, Settings, LogOut, Shield, BookOpen, Bug, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUser, logout, type AuthUser } from "@/lib/auth";
+import { getStoredUserRole, type AppRole } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo.webp.asset.json";
 import {
@@ -31,8 +32,12 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [user, setUser] = useState<AuthUser | null>(() => getUser());
   const [authLoaded, setAuthLoaded] = useState(false);
+  const [role, setRole] = useState<AppRole | null>(null);
   useEffect(() => {
-    const sync = () => setUser(getUser());
+    const sync = () => {
+      setUser(getUser());
+      setRole(getStoredUserRole());
+    };
     sync();
     setAuthLoaded(true);
     window.addEventListener("auth-user-updated", sync);
@@ -86,7 +91,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {authLoaded && (user as { is_admin?: boolean } | null)?.is_admin === true && (
+        {authLoaded && (role === "admin" || role === "gerente") && (
           <SidebarGroup>
             <SidebarGroupLabel>Admin</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -103,6 +108,7 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                {role === "admin" && (<>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
@@ -139,6 +145,7 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                </>)}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
