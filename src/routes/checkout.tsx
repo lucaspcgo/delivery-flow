@@ -641,13 +641,27 @@ function CheckoutPage() {
                   id="document"
                   inputMode="numeric"
                   value={docValue}
-                  onChange={(e) => setDocValue(maskCpfCnpj(e.target.value))}
+                  onChange={(e) => {
+                    setDocValue(maskCpfCnpj(e.target.value));
+                    if (docError) setDocError(null);
+                  }}
+                  onBlur={() => {
+                    if (docValue) setDocError(validateDocument(docValue));
+                  }}
                   placeholder="000.000.000-00"
+                  aria-invalid={docError ? true : undefined}
+                  aria-describedby="document-help"
                   required
                 />
-                <p className="text-xs text-muted-foreground">
-                  Usado na emissão da cobrança (Pix / Boleto).
-                </p>
+                {docError ? (
+                  <p id="document-help" className="text-xs text-destructive">
+                    {docError}
+                  </p>
+                ) : (
+                  <p id="document-help" className="text-xs text-muted-foreground">
+                    Usado na emissão da cobrança (Pix / Boleto).
+                  </p>
+                )}
               </div>
               <label className="flex items-start gap-2 text-sm">
                 <Checkbox
