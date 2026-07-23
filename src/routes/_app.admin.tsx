@@ -296,7 +296,7 @@ function AdminPage() {
         description="Gerencie usuários, faturas, planos e configurações."
       />
       <div className="p-4 sm:p-8">
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6 flex flex-wrap">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
@@ -307,7 +307,7 @@ function AdminPage() {
           </TabsList>
 
           <TabsContent value="overview">
-            <OverviewTab />
+            <OverviewTab onNavigate={setActiveTab} />
           </TabsContent>
           <TabsContent value="users">
             <UsersTab isSuperAdmin={isSuperAdmin} />
