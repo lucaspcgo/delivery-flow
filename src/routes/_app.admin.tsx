@@ -392,7 +392,14 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 
   const save = async (
     userId: string,
-    data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string },
+    data: {
+      plan?: string;
+      active?: boolean;
+      payment_status?: string;
+      phone?: string;
+      role?: string;
+      previous_role?: string;
+    },
   ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
     try {
@@ -602,7 +609,14 @@ function UserEditForm({
   saving: boolean;
   isSuperAdmin: boolean;
   onCancel: () => void;
-  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string }) => Promise<import("@/lib/api").AdminUser | null>;
+  onSave: (data: {
+    plan?: string;
+    active?: boolean;
+    payment_status?: string;
+    phone?: string;
+    role?: string;
+    previous_role?: string;
+  }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
