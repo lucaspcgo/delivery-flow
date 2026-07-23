@@ -68,7 +68,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, Search, TrendingUp, TrendingDown, Users, AlertTriangle, Clock, DollarSign, ShoppingBag, Store, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   ssr: false,
@@ -103,6 +104,27 @@ interface AdminStats {
   invoices?: { receita?: number; pendentes?: number };
   restaurants?: number;
   orders?: { total?: number; gmv?: number };
+  clientes?: {
+    novos_mes?: number;
+    novos_mes_anterior?: number;
+    vencendo_7d?: number;
+    vencidos?: number;
+  };
+  financeiro?: {
+    mrr_estimado?: number;
+    assinantes_pagantes?: number;
+    receita_mes?: number;
+    crescimento_receita_pct?: number;
+    em_atraso?: number;
+    em_atraso_valor?: number;
+  };
+  operacao?: {
+    pedidos_mes?: number;
+    pedidos_hoje?: number;
+    taxa_automacao_mes_pct?: number;
+    lojas_ifood?: number;
+    lojas_99food?: number;
+  };
 }
 
 const BRL = (v: number | undefined) =>
@@ -215,6 +237,7 @@ function AdminPage() {
     storedAdmin ? "ok" : "checking",
   );
   const [role, setRole] = useState<AppRole | null>(() => getStoredUserRole());
+  const [activeTab, setActiveTab] = useState<string>("overview");
   const isSuperAdmin = role === "admin";
 
   useEffect(() => {
@@ -274,7 +297,7 @@ function AdminPage() {
         description="Gerencie usuários, faturas, planos e configurações."
       />
       <div className="p-4 sm:p-8">
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6 flex flex-wrap">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
@@ -285,7 +308,7 @@ function AdminPage() {
           </TabsList>
 
           <TabsContent value="overview">
-            <OverviewTab />
+            <OverviewTab onNavigate={setActiveTab} />
           </TabsContent>
           <TabsContent value="users">
             <UsersTab isSuperAdmin={isSuperAdmin} />
@@ -312,7 +335,7 @@ function AdminPage() {
   );
 }
 
-function OverviewTab() {
+function OverviewTab({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -326,35 +349,194 @@ function OverviewTab() {
 
   if (loading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
-  const cards = [
-    {
-      title: "Total de Usuários",
-      value: String(stats?.users?.total ?? 0),
-      sub: `${stats?.users?.ativos ?? 0} ativos`,
-    },
-    { title: "Receita Total", value: BRL(stats?.invoices?.receita) },
-    { title: "Faturas Pendentes", value: String(stats?.invoices?.pendentes ?? 0) },
-    { title: "Restaurantes", value: String(stats?.restaurants ?? 0) },
-    { title: "Total de Pedidos", value: String(stats?.orders?.total ?? 0) },
-    { title: "GMV", value: BRL(stats?.orders?.gmv) },
-  ];
+  const clientes = stats?.clientes ?? {};
+  const financeiro = stats?.financeiro ?? {};
+  const operacao = stats?.operacao ?? {};
+
+  const novos = clientes.novos_mes ?? 0;
+  const novosAnt = clientes.novos_mes_anterior ?? 0;
+  const novosDiff = novos - novosAnt;
+  const novosPct = novosAnt > 0 ? (novosDiff / novosAnt) * 100 : (novos > 0 ? 100 : 0);
+  const novosUp = novosDiff >= 0;
+
+  const crescReceita = financeiro.crescimento_receita_pct ?? 0;
+  const crescUp = crescReceita >= 0;
+
+  const taxaAuto = Math.max(0, Math.min(100, financeiro && (operacao.taxa_automacao_mes_pct ?? 0)));
+
+  const goInvoices = () => onNavigate?.("invoices");
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((c) => (
-        <Card key={c.title} className="rounded-xl shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {c.title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{c.value}</p>
-            {c.sub && <p className="mt-1 text-xs text-muted-foreground">{c.sub}</p>}
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-8">
+      {/* Cards atuais (mantidos) */}
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Resumo geral</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MetricCard title="Total de Usuários" value={String(stats?.users?.total ?? 0)} sub={`${stats?.users?.ativos ?? 0} ativos`} />
+          <MetricCard title="Receita Total" value={BRL(stats?.invoices?.receita)} />
+          <MetricCard title="Faturas Pendentes" value={String(stats?.invoices?.pendentes ?? 0)} />
+          <MetricCard title="Restaurantes" value={String(stats?.restaurants ?? 0)} />
+          <MetricCard title="Total de Pedidos" value={String(stats?.orders?.total ?? 0)} />
+          <MetricCard title="GMV" value={BRL(stats?.orders?.gmv)} />
+        </div>
+      </section>
+
+      {/* CLIENTES */}
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Clientes</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MetricCard
+            title="Novos no mês"
+            icon={<Users className="h-4 w-4" />}
+            value={String(novos)}
+            sub={
+              <span className={`inline-flex items-center gap-1 ${novosUp ? "text-emerald-600" : "text-red-600"}`}>
+                {novosUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                {novosUp ? "+" : ""}{novosDiff} ({novosPct.toFixed(1)}%) vs mês anterior
+              </span>
+            }
+          />
+          <MetricCard
+            title="Vencendo em 7 dias"
+            icon={<Clock className="h-4 w-4 text-amber-600" />}
+            value={String(clientes.vencendo_7d ?? 0)}
+            tone="warning"
+            onClick={goInvoices}
+          />
+          <MetricCard
+            title="Vencidos"
+            icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
+            value={String(clientes.vencidos ?? 0)}
+            tone="danger"
+            onClick={goInvoices}
+          />
+        </div>
+      </section>
+
+      {/* FINANCEIRO */}
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Financeiro</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MetricCard
+            title="MRR estimado"
+            icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
+            value={`${BRL(financeiro.mrr_estimado)}/mês`}
+            sub={`${financeiro.assinantes_pagantes ?? 0} assinantes`}
+          />
+          <MetricCard
+            title="Receita do mês"
+            icon={<DollarSign className="h-4 w-4" />}
+            value={BRL(financeiro.receita_mes)}
+            sub={
+              <span className={`inline-flex items-center gap-1 ${crescUp ? "text-emerald-600" : "text-red-600"}`}>
+                {crescUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                {crescUp ? "+" : ""}{crescReceita.toFixed(1)}%
+              </span>
+            }
+          />
+          <MetricCard
+            title="Em atraso"
+            icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
+            value={`${financeiro.em_atraso ?? 0} faturas`}
+            sub={<span className="text-red-600">{BRL(financeiro.em_atraso_valor)}</span>}
+            tone="danger"
+            onClick={goInvoices}
+          />
+        </div>
+      </section>
+
+      {/* OPERAÇÃO */}
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Operação</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            title="Pedidos no mês"
+            icon={<ShoppingBag className="h-4 w-4" />}
+            value={String(operacao.pedidos_mes ?? 0)}
+          />
+          <MetricCard
+            title="Pedidos hoje"
+            icon={<ShoppingBag className="h-4 w-4" />}
+            value={String(operacao.pedidos_hoje ?? 0)}
+          />
+          <Card className="rounded-xl shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Zap className="h-4 w-4 text-emerald-600" />
+                Taxa de automação
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-semibold">{taxaAuto.toFixed(1)}%</p>
+              <Progress value={taxaAuto} className="mt-2 h-2" />
+            </CardContent>
+          </Card>
+          <Card className="rounded-xl shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Store className="h-4 w-4" />
+                Lojas conectadas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-4">
+                <div>
+                  <p className="text-2xl font-semibold">{operacao.lojas_ifood ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">iFood</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold">{operacao.lojas_99food ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">99Food</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
     </div>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  sub,
+  icon,
+  tone,
+  onClick,
+}: {
+  title: string;
+  value: string;
+  sub?: React.ReactNode;
+  icon?: React.ReactNode;
+  tone?: "warning" | "danger" | "success";
+  onClick?: () => void;
+}) {
+  const toneCls =
+    tone === "warning"
+      ? "border-amber-300 bg-amber-50"
+      : tone === "danger"
+        ? "border-red-300 bg-red-50"
+        : tone === "success"
+          ? "border-emerald-300 bg-emerald-50"
+          : "";
+  const clickable = onClick ? "cursor-pointer hover:shadow-md transition-shadow" : "";
+  return (
+    <Card
+      onClick={onClick}
+      className={`rounded-xl shadow-sm ${toneCls} ${clickable}`}
+    >
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          {icon}
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-semibold">{value}</p>
+        {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+      </CardContent>
+    </Card>
   );
 }
 
