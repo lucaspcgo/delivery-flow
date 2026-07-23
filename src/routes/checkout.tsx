@@ -583,8 +583,8 @@ function CheckoutPage() {
             </p>
             {selectedPlanDetails?.is_free && (
               <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
-                Teste grátis por 7 dias. Após o período, será necessário
-                assinar um plano pago.
+                Teste grátis por {TRIAL_DURATION_LABEL}. Após o período, será
+                necessário assinar um plano pago.
               </div>
             )}
             <form onSubmit={handleSubmitData} className="mt-6 space-y-4">
