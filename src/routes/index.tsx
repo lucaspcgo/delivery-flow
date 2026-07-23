@@ -130,7 +130,7 @@ function LandingPage() {
             Zero Tempo
           </a>
           <div className="hidden items-center gap-8 md:flex">
-            <a href="#features" className="text-sm text-white/70 hover:text-white">Features</a>
+            <a href="#features" className="text-sm text-white/70 hover:text-white">Características</a>
             <a href="#pricing" className="text-sm text-white/70 hover:text-white">Preços</a>
             <a href="#faq" className="text-sm text-white/70 hover:text-white">FAQ</a>
             <Link
@@ -148,7 +148,7 @@ function LandingPage() {
         {menuOpen && (
           <div className="border-t px-6 py-4 md:hidden" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
             <div className="flex flex-col gap-3">
-              <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm text-white/80">Features</a>
+              <a href="#features" onClick={() => setMenuOpen(false)} className="text-sm text-white/80">Características</a>
               <a href="#pricing" onClick={() => setMenuOpen(false)} className="text-sm text-white/80">Preços</a>
               <a href="#faq" onClick={() => setMenuOpen(false)} className="text-sm text-white/80">FAQ</a>
               <Link to="/register" className="rounded-lg px-4 py-2 text-center text-sm font-semibold text-black" style={{ background: BRAND }}>
@@ -406,7 +406,7 @@ function LandingPage() {
           <div>
             <h4 className="text-sm font-bold">Produto</h4>
             <ul className="mt-3 space-y-2 text-sm text-white/60">
-              <li><a href="#features" className="hover:text-white">Features</a></li>
+              <li><a href="#features" className="hover:text-white">Características</a></li>
               <li><a href="#pricing" className="hover:text-white">Preços</a></li>
               <li><a href="#faq" className="hover:text-white">FAQ</a></li>
             </ul>
