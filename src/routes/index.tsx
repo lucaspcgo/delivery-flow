@@ -414,9 +414,8 @@ function LandingPage() {
           <div>
             <h4 className="text-sm font-bold">Legal</h4>
             <ul className="mt-3 space-y-2 text-sm text-white/60">
-              <li><a href="#" className="hover:text-white">Privacidade</a></li>
-              <li><a href="#" className="hover:text-white">Termos</a></li>
-              <li><a href="#" className="hover:text-white">LGPD</a></li>
+              <li><Link to="/politica-de-privacidade" className="hover:text-white">Política de Privacidade</Link></li>
+              <li><Link to="/termos-de-uso" className="hover:text-white">Termos de Uso</Link></li>
             </ul>
           </div>
           <div>
