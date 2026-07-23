@@ -158,6 +158,31 @@ function PayStatusBadge({ status }: { status: PaymentStatus }) {
   );
 }
 
+function RoleBadge({ role, isAdmin }: { role?: string; isAdmin?: boolean }) {
+  const normalized = (role ?? "").toLowerCase();
+  const key: "admin" | "gerente" | "user" =
+    normalized === "admin" || (isAdmin && !normalized)
+      ? "admin"
+      : normalized === "gerente" || normalized === "manager"
+        ? "gerente"
+        : "user";
+  const cls: Record<typeof key, string> = {
+    admin: "bg-green-100 text-green-700",
+    gerente: "bg-yellow-100 text-yellow-800",
+    user: "bg-gray-200 text-gray-700",
+  };
+  const label: Record<typeof key, string> = {
+    admin: "Admin",
+    gerente: "Gerente",
+    user: "Cliente",
+  };
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls[key]}`}>
+      {label[key]}
+    </span>
+  );
+}
+
 function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   const map: Record<InvoiceStatus, string> = {
     pending: "bg-yellow-100 text-yellow-800",
