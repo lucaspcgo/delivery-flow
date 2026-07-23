@@ -71,7 +71,7 @@ function RegisterPage() {
           return;
         }
         toast.success("Conta criada!", {
-          description: "Seu teste grátis de 3 dias começou.",
+          description: `Seu teste grátis de ${TRIAL_DURATION_LABEL} começou.`,
         });
         navigate({ to: "/dashboard" });
         return;
@@ -127,7 +127,7 @@ function RegisterPage() {
           <div className="text-center">
             <h1 className="text-xl font-semibold">Crie sua conta grátis</h1>
             <p className="text-sm text-muted-foreground">
-              Teste grátis por 3 dias. Sem cartão de crédito.
+              Teste grátis por {TRIAL_DURATION_LABEL}. Sem cartão de crédito.
             </p>
           </div>
         </div>
