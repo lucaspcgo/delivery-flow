@@ -68,7 +68,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Pencil, Trash2, Plus, Star, KeyRound, Copy, Check, Eye, EyeOff, ArrowUpDown, ArrowUp, ArrowDown, Search, TrendingUp, TrendingDown, Users, AlertTriangle, Clock, DollarSign, ShoppingBag, Store, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   ssr: false,
@@ -103,6 +104,27 @@ interface AdminStats {
   invoices?: { receita?: number; pendentes?: number };
   restaurants?: number;
   orders?: { total?: number; gmv?: number };
+  clientes?: {
+    novos_mes?: number;
+    novos_mes_anterior?: number;
+    vencendo_7d?: number;
+    vencidos?: number;
+  };
+  financeiro?: {
+    mrr_estimado?: number;
+    assinantes_pagantes?: number;
+    receita_mes?: number;
+    crescimento_receita_pct?: number;
+    em_atraso?: number;
+    em_atraso_valor?: number;
+  };
+  operacao?: {
+    pedidos_mes?: number;
+    pedidos_hoje?: number;
+    taxa_automacao_mes_pct?: number;
+    lojas_ifood?: number;
+    lojas_99food?: number;
+  };
 }
 
 const BRL = (v: number | undefined) =>
