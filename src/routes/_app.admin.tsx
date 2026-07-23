@@ -656,16 +656,32 @@ function UserEditForm({
       onDeactivateAsk(user);
       return;
     }
-    const payload: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string } = {
+    const payload: {
+      plan?: string;
+      active?: boolean;
+      payment_status?: string;
+      phone?: string;
+      role?: string;
+      previous_role?: string;
+    } = {
       plan,
       active,
       payment_status: paymentStatus,
       phone: phone.trim() ? phone : "",
     };
-    if (isSuperAdmin) payload.role = role;
+    if (isSuperAdmin) {
+      payload.role = role;
+      if (role !== initialRole) {
+        payload.previous_role = initialRole;
+      }
+    }
     const updated = await onSave(payload);
     if (updated && updated.plan_expires_at !== undefined) {
       setExpiresAt(updated.plan_expires_at ?? null);
+    }
+    if (isSuperAdmin && role !== initialRole) {
+      // Refresh audit trail after a role change
+      void loadHistory();
     }
   };
 
