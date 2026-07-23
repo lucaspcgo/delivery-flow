@@ -21,16 +21,23 @@ import {
   auth,
   hasAdminAccess,
   hasStoredAdminAccess,
+  hasStoredManagerAccess,
+  getStoredUserRole,
   getPlansAdmin,
   createPlan,
   updatePlanDB,
   deletePlan,
   getPlansPublic,
   updateAdminUser,
+  getAdminInvoices,
+  updateAdminInvoice,
   PLAN_PERIOD_LABEL,
   type MeResponse,
   type DBPlan,
   type DBPlanInput,
+  type AppRole,
+  type AdminInvoice as ApiAdminInvoice,
+  type AdminInvoicesSummary,
 } from "@/lib/api";
 import {
   Dialog,
@@ -69,7 +76,7 @@ export const Route = createFileRoute("/_app/admin")({
 
 type Plan = "starter" | "pro" | "enterprise";
 type PaymentStatus = "active" | "pending" | "suspended" | "cancelled";
-type InvoiceStatus = "pending" | "paid" | "failed" | "cancelled";
+type InvoiceStatus = "pending" | "paid" | "failed" | "cancelled" | "overdue";
 
 interface AdminUser {
   id: string;
@@ -82,17 +89,10 @@ interface AdminUser {
   created_at?: string;
   phone?: string;
   plan_expires_at?: string | null;
+  role?: AppRole | string;
 }
 
-interface AdminInvoice {
-  id: string;
-  user_name?: string;
-  user_email?: string;
-  plan: Plan;
-  amount: number;
-  status: InvoiceStatus;
-  due_date: string;
-}
+type AdminInvoice = ApiAdminInvoice;
 
 type AdminPlanRow = DBPlan;
 
@@ -164,31 +164,36 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
     paid: "bg-green-100 text-green-700",
     failed: "bg-red-100 text-red-700",
     cancelled: "bg-gray-200 text-gray-700",
+    overdue: "bg-red-100 text-red-700",
   };
   const label: Record<InvoiceStatus, string> = {
     pending: "Pendente",
     paid: "Paga",
     failed: "Falhou",
     cancelled: "Cancelada",
+    overdue: "Em atraso",
   };
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status]}`}>
-      {label[status]}
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status] ?? "bg-muted text-muted-foreground"}`}>
+      {label[status] ?? status}
     </span>
   );
 }
 
 function AdminPage() {
   const navigate = useNavigate();
-  const storedAdmin = hasStoredAdminAccess();
+  const storedAdmin = hasStoredManagerAccess();
   const [status, setStatus] = useState<"checking" | "ok" | "denied">(
     storedAdmin ? "ok" : "checking",
   );
+  const [role, setRole] = useState<AppRole | null>(() => getStoredUserRole());
+  const isSuperAdmin = role === "admin";
 
   useEffect(() => {
     let alive = true;
-    if (hasStoredAdminAccess()) {
+    if (hasStoredManagerAccess()) {
       setStatus("ok");
+      setRole(getStoredUserRole());
       return () => {
         alive = false;
       };
@@ -198,10 +203,12 @@ function AdminPage() {
       .me()
       .then((me: MeResponse) => {
         if (!alive) return;
-        if (hasAdminAccess(me)) {
+        if (hasAdminAccess(me) || (me as { role?: string }).role === "gerente") {
           setStatus("ok");
-        } else if (hasStoredAdminAccess()) {
+          setRole(getStoredUserRole());
+        } else if (hasStoredManagerAccess()) {
           setStatus("ok");
+          setRole(getStoredUserRole());
         } else {
           setStatus("denied");
           toast.error("Acesso negado", {
@@ -212,7 +219,7 @@ function AdminPage() {
       })
       .catch(() => {
         if (!alive) return;
-        if (hasStoredAdminAccess()) {
+        if (hasStoredManagerAccess()) {
           setStatus("ok");
           return;
         }
@@ -244,29 +251,33 @@ function AdminPage() {
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="invoices">Faturas</TabsTrigger>
-            <TabsTrigger value="plans">Planos</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="plans">Planos</TabsTrigger>}
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
-            <TabsTrigger value="settings">Configurações</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="settings">Configurações</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview">
             <OverviewTab />
           </TabsContent>
           <TabsContent value="users">
-            <UsersTab />
+            <UsersTab isSuperAdmin={isSuperAdmin} />
           </TabsContent>
           <TabsContent value="invoices">
             <InvoicesTab />
           </TabsContent>
-          <TabsContent value="plans">
-            <PlansTab />
-          </TabsContent>
+          {isSuperAdmin && (
+            <TabsContent value="plans">
+              <PlansTab />
+            </TabsContent>
+          )}
           <TabsContent value="audit">
             <AuditTab />
           </TabsContent>
-          <TabsContent value="settings">
-            <SettingsTab />
-          </TabsContent>
+          {isSuperAdmin && (
+            <TabsContent value="settings">
+              <SettingsTab />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
@@ -319,7 +330,7 @@ function OverviewTab() {
   );
 }
 
-function UsersTab() {
+function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<AdminUser | null>(null);
@@ -351,7 +362,7 @@ function UsersTab() {
 
   const save = async (
     userId: string,
-    data: { plan?: string; active?: boolean; payment_status?: string; phone?: string },
+    data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string },
   ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
     try {
@@ -427,9 +438,11 @@ function UsersTab() {
                         <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
                           <Pencil className="h-3 w-3 mr-1" /> Editar
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
-                          <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
-                        </Button>
+                        {isSuperAdmin && (
+                          <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
+                            <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -460,6 +473,7 @@ function UsersTab() {
             user={editing}
             plans={plans}
             saving={saving}
+            isSuperAdmin={isSuperAdmin}
             onCancel={() => setEditing(null)}
             onDeactivateAsk={(u) => setConfirmDeactivate(u)}
             onSave={async (data) => {
@@ -516,6 +530,7 @@ function UserEditForm({
   user,
   plans,
   saving,
+  isSuperAdmin,
   onCancel,
   onSave,
   onDeactivateAsk,
@@ -525,8 +540,9 @@ function UserEditForm({
   user: AdminUser;
   plans: DBPlan[];
   saving: boolean;
+  isSuperAdmin: boolean;
   onCancel: () => void;
-  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => Promise<import("@/lib/api").AdminUser | null>;
+  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
@@ -535,6 +551,13 @@ function UserEditForm({
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
   const [phone, setPhone] = useState<string>(user.phone ?? "");
+  const initialRole: string =
+    typeof user.role === "string" && user.role
+      ? user.role
+      : user.is_admin
+        ? "admin"
+        : "user";
+  const [role, setRole] = useState<string>(initialRole);
   const [renewing, setRenewing] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(user.plan_expires_at ?? null);
 
@@ -573,7 +596,14 @@ function UserEditForm({
       onDeactivateAsk(user);
       return;
     }
-    const updated = await onSave({ plan, active, payment_status: paymentStatus, phone: phone.trim() ? phone : "" });
+    const payload: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string } = {
+      plan,
+      active,
+      payment_status: paymentStatus,
+      phone: phone.trim() ? phone : "",
+    };
+    if (isSuperAdmin) payload.role = role;
+    const updated = await onSave(payload);
     if (updated && updated.plan_expires_at !== undefined) {
       setExpiresAt(updated.plan_expires_at ?? null);
     }
@@ -661,6 +691,23 @@ function UserEditForm({
         </Select>
       </div>
 
+      {isSuperAdmin && (
+        <div className="space-y-2">
+          <Label>Perfil</Label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Cliente</SelectItem>
+              <SelectItem value="gerente">Gerente</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Define os acessos do usuário no painel.
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between rounded-lg border p-3">
         <div>
           <p className="text-sm font-medium">Conta ativa</p>
@@ -672,13 +719,15 @@ function UserEditForm({
       </div>
 
       <DialogFooter className="gap-2 sm:justify-between">
-        <Button
-          variant="outline"
-          type="button"
-          onClick={() => onResetPassword(user)}
-        >
-          <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
-        </Button>
+        {isSuperAdmin ? (
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => onResetPassword(user)}
+          >
+            <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
+          </Button>
+        ) : <span />}
         <div className="flex gap-2">
           <Button variant="outline" onClick={onCancel}>Cancelar</Button>
           <Button onClick={submit} disabled={saving}>
@@ -860,67 +909,215 @@ function ResetPasswordDialog({
 
 function InvoicesTab() {
   const [invoices, setInvoices] = useState<AdminInvoice[]>([]);
+  const [summary, setSummary] = useState<AdminInvoicesSummary>({});
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [customer, setCustomer] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [onlyOverdue, setOnlyOverdue] = useState(false);
+  const [acting, setActing] = useState<string | null>(null);
 
-  useEffect(() => {
-    http
-      .get<AdminInvoice[]>("/admin/invoices", { silent: true })
-      .then((d) => setInvoices(Array.isArray(d) ? d : []))
+  const load = useCallback(() => {
+    setLoading(true);
+    const params: Parameters<typeof getAdminInvoices>[0] = {};
+    if (statusFilter !== "all") params.status = statusFilter;
+    if (customer.trim()) params.email = customer.trim();
+    if (from) params.from = from;
+    if (to) params.to = to;
+    if (onlyOverdue) params.overdue = 1;
+    getAdminInvoices(params)
+      .then((d) => {
+        if (Array.isArray(d)) {
+          setInvoices(d);
+          setSummary({});
+        } else {
+          setInvoices(Array.isArray(d?.invoices) ? d.invoices : []);
+          setSummary(d?.summary ?? {});
+        }
+      })
       .catch(() => toast.error("Erro ao carregar faturas"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [statusFilter, customer, from, to, onlyOverdue]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const setStatus = async (inv: AdminInvoice, status: "paid" | "cancelled") => {
+    setActing(inv.id);
+    try {
+      await updateAdminInvoice(inv.id, { status });
+      toast.success(status === "paid" ? "Fatura marcada como paga" : "Fatura cancelada");
+      load();
+    } catch (e: unknown) {
+      const err = e as { payload?: { error?: string }; message?: string };
+      toast.error(err?.payload?.error || err?.message || "Erro ao atualizar fatura");
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const fmtDate = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
+
+  const summaryCards = [
+    { label: "Pendente", value: BRL(summary.total_pending) },
+    { label: "Pago", value: BRL(summary.total_paid) },
+    { label: "Em atraso", value: BRL(summary.total_overdue) },
+    { label: "Nº em atraso", value: String(summary.overdue_count ?? 0) },
+  ];
 
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardContent className="p-0">
-        {loading ? (
-          <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.map((inv, i) => (
-                  <TableRow key={inv.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
-                    <TableCell>
-                      <div className="font-medium">{inv.user_name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{inv.user_email}</div>
-                    </TableCell>
-                    <TableCell>
-                      <PlanBadge plan={inv.plan} />
-                    </TableCell>
-                    <TableCell>{BRL(inv.amount)}</TableCell>
-                    <TableCell>
-                      <InvoiceStatusBadge status={inv.status} />
-                    </TableCell>
-                    <TableCell>
-                      {inv.due_date
-                        ? new Date(inv.due_date).toLocaleDateString("pt-BR")
-                        : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {invoices.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                      Nenhuma fatura.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {summaryCards.map((c) => (
+          <Card key={c.label}>
+            <CardContent className="p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </p>
+              <p className="mt-1 text-xl font-bold tracking-tight">
+                {loading ? "—" : c.value}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="rounded-xl shadow-sm">
+        <CardHeader className="gap-3 space-y-0">
+          <CardTitle className="text-base">Faturas</CardTitle>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="paid">Paga</SelectItem>
+                <SelectItem value="overdue">Em atraso</SelectItem>
+                <SelectItem value="failed">Falhou</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+              placeholder="Cliente (nome ou email)"
+            />
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              aria-label="De"
+            />
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              aria-label="Até"
+            />
+            <label className="flex items-center gap-2 rounded-md border px-3 text-sm">
+              <Switch checked={onlyOverdue} onCheckedChange={setOnlyOverdue} />
+              Só em atraso
+            </label>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Pago em</TableHead>
+                    <TableHead>Atraso</TableHead>
+                    <TableHead>Gateway</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoices.map((inv, i) => (
+                    <TableRow key={inv.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                      <TableCell>
+                        <div className="font-medium">{inv.user_name ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground">{inv.user_email}</div>
+                        {inv.user_phone && (
+                          <div className="text-xs text-muted-foreground">{inv.user_phone}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">
+                          {inv.plan_name ?? inv.plan ?? "—"}
+                        </div>
+                        {inv.billing_period && (
+                          <div className="text-xs text-muted-foreground">
+                            {PLAN_PERIOD_LABEL[inv.billing_period as keyof typeof PLAN_PERIOD_LABEL] ?? inv.billing_period}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{BRL(inv.amount)}</TableCell>
+                      <TableCell>
+                        <InvoiceStatusBadge status={inv.status as InvoiceStatus} />
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{fmtDate(inv.due_date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{fmtDate(inv.paid_at)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {inv.days_overdue && inv.days_overdue > 0 ? (
+                          <span className="text-red-600 font-medium">
+                            {inv.days_overdue}d
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs">{inv.payment_gateway ?? "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {inv.status !== "paid" && inv.status !== "cancelled" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={acting === inv.id}
+                              onClick={() => setStatus(inv, "paid")}
+                            >
+                              Marcar paga
+                            </Button>
+                          )}
+                          {inv.status !== "cancelled" && inv.status !== "paid" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={acting === inv.id}
+                              onClick={() => setStatus(inv, "cancelled")}
+                            >
+                              Cancelar
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {invoices.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
+                        Nenhuma fatura.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
