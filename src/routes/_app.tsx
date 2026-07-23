@@ -1,9 +1,10 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { isAuthenticated } from "@/lib/auth";
+import { hasAdminAccess, getStoredUser } from "@/lib/api";
+import { AdminNotificationsBell } from "@/components/admin-notifications-bell";
+import { useEffect, useState } from "react";
 import { TrialBanner } from "@/components/trial-banner";
 import { UsageProvider } from "@/lib/usage-context";
 import { PlanLimitModal } from "@/components/plan-limit-modal";
@@ -19,6 +20,10 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppLayout() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    setIsAdmin(hasAdminAccess(getStoredUser()));
+  }, []);
   return (
     <UsageProvider>
     <SidebarProvider>
@@ -30,10 +35,7 @@ function AppLayout() {
               <SidebarTrigger />
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
-              </Button>
+              {isAdmin && <AdminNotificationsBell />}
             </div>
           </header>
           <TrialBanner />
