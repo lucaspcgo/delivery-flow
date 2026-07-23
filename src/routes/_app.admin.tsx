@@ -691,6 +691,23 @@ function UserEditForm({
         </Select>
       </div>
 
+      {isSuperAdmin && (
+        <div className="space-y-2">
+          <Label>Perfil</Label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Cliente</SelectItem>
+              <SelectItem value="gerente">Gerente</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Define os acessos do usuário no painel.
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between rounded-lg border p-3">
         <div>
           <p className="text-sm font-medium">Conta ativa</p>
@@ -702,13 +719,15 @@ function UserEditForm({
       </div>
 
       <DialogFooter className="gap-2 sm:justify-between">
-        <Button
-          variant="outline"
-          type="button"
-          onClick={() => onResetPassword(user)}
-        >
-          <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
-        </Button>
+        {isSuperAdmin ? (
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => onResetPassword(user)}
+          >
+            <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
+          </Button>
+        ) : <span />}
         <div className="flex gap-2">
           <Button variant="outline" onClick={onCancel}>Cancelar</Button>
           <Button onClick={submit} disabled={saving}>
