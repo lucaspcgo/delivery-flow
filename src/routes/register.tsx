@@ -52,6 +52,11 @@ function RegisterPage() {
       toast.error("Você precisa aceitar os termos de uso");
       return;
     }
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      toast.error("Informe um telefone válido com DDD");
+      return;
+    }
     setLoading(true);
     try {
       const res = await createCheckout({
@@ -59,7 +64,7 @@ function RegisterPage() {
         name,
         email,
         password,
-        phone: phone.trim() ? phone : undefined,
+        phone,
       });
       if (res.type === "free_trial" && res.token && res.user) {
         const okA = safeLocalStorageSet("auth_token", res.token);
@@ -153,6 +158,7 @@ function RegisterPage() {
               onChange={(e) => setPhone(maskBrPhone(e.target.value))}
               autoComplete="tel"
               maxLength={16}
+              required
             />
           </div>
           <div className="space-y-1.5">
