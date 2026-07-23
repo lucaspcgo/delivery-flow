@@ -74,6 +74,48 @@ function isValidDocLength(raw: string): boolean {
   return n === 11 || n === 14;
 }
 
+function isValidCPF(raw: string): boolean {
+  const c = raw.replace(/\D/g, "");
+  if (c.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(c)) return false;
+  const calc = (base: string, factor: number) => {
+    let sum = 0;
+    for (let i = 0; i < base.length; i++) sum += parseInt(base[i], 10) * (factor - i);
+    const rest = (sum * 10) % 11;
+    return rest === 10 ? 0 : rest;
+  };
+  const d1 = calc(c.slice(0, 9), 10);
+  const d2 = calc(c.slice(0, 10), 11);
+  return d1 === parseInt(c[9], 10) && d2 === parseInt(c[10], 10);
+}
+
+function isValidCNPJ(raw: string): boolean {
+  const c = raw.replace(/\D/g, "");
+  if (c.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(c)) return false;
+  const calc = (base: string, weights: number[]) => {
+    let sum = 0;
+    for (let i = 0; i < base.length; i++) sum += parseInt(base[i], 10) * weights[i];
+    const rest = sum % 11;
+    return rest < 2 ? 0 : 11 - rest;
+  };
+  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const d1 = calc(c.slice(0, 12), w1);
+  const d2 = calc(c.slice(0, 13), w2);
+  return d1 === parseInt(c[12], 10) && d2 === parseInt(c[13], 10);
+}
+
+function validateDocument(raw: string): string | null {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 0) return "Informe seu CPF ou CNPJ";
+  if (digits.length !== 11 && digits.length !== 14)
+    return "CPF deve ter 11 dígitos ou CNPJ deve ter 14 dígitos";
+  if (digits.length === 11 && !isValidCPF(digits)) return "CPF inválido";
+  if (digits.length === 14 && !isValidCNPJ(digits)) return "CNPJ inválido";
+  return null;
+}
+
 async function copyToClipboard(text: string, label = "Código") {
   try {
     await navigator.clipboard.writeText(text);
