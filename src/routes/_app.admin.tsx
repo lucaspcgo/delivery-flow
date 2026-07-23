@@ -158,6 +158,31 @@ function PayStatusBadge({ status }: { status: PaymentStatus }) {
   );
 }
 
+function RoleBadge({ role, isAdmin }: { role?: string; isAdmin?: boolean }) {
+  const normalized = (role ?? "").toLowerCase();
+  const key: "admin" | "gerente" | "user" =
+    normalized === "admin" || (isAdmin && !normalized)
+      ? "admin"
+      : normalized === "gerente" || normalized === "manager"
+        ? "gerente"
+        : "user";
+  const cls: Record<typeof key, string> = {
+    admin: "bg-green-100 text-green-700",
+    gerente: "bg-yellow-100 text-yellow-800",
+    user: "bg-gray-200 text-gray-700",
+  };
+  const label: Record<typeof key, string> = {
+    admin: "Admin",
+    gerente: "Gerente",
+    user: "Cliente",
+  };
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls[key]}`}>
+      {label[key]}
+    </span>
+  );
+}
+
 function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   const map: Record<InvoiceStatus, string> = {
     pending: "bg-yellow-100 text-yellow-800",
@@ -408,7 +433,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                   <TableHead>Telefone</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status Pgto</TableHead>
-                  <TableHead>Admin</TableHead>
+                  <TableHead>Perfil</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -426,13 +451,9 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                     <TableCell>
                       <PayStatusBadge status={u.payment_status} />
                     </TableCell>
-                    <TableCell>
-                      {u.is_admin ? (
-                        <Badge>Sim</Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Não</span>
-                      )}
-                    </TableCell>
+                     <TableCell>
+                       <RoleBadge role={u.role} isAdmin={u.is_admin} />
+                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
