@@ -363,6 +363,9 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   const [saving, setSaving] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState<AdminUser | null>(null);
   const [resetting, setResetting] = useState<AdminUser | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [query, setQuery] = useState("");
+
 
   const load = () => {
     setLoading(true);
