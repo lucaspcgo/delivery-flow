@@ -1179,10 +1179,10 @@ export const PLAN_PERIOD_LABEL: Record<string, string> = {
 };
 
 const PLAN_PERIOD_SUFFIX: Record<string, string> = {
-  weekly: "/semana",
-  monthly: "/mês",
-  yearly: "/ano",
-  annual: "/ano",
+  weekly: "\u00a0 por semana",
+  monthly: " por mês",
+  yearly: " por ano",
+  annual: " por ano",
   one_time: " (único)",
   free: "",
 };
@@ -1194,7 +1194,7 @@ export function formatPlanPrice(plan: {
   billing_period?: string;
 }): string {
   const period = (plan.billing_period ?? plan.period ?? "") as string;
-  if (plan.is_free || period === "free") return "Grátis";
+  if (plan.is_free || period === "free") return "Grátis Para teste";
   if (!plan.price || plan.price <= 0) return "Sob consulta";
   const value = `R$ ${Number(plan.price).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
