@@ -31,6 +31,7 @@ import {
   updateAdminUser,
   getAdminInvoices,
   updateAdminInvoice,
+  getUserRoleHistory,
   PLAN_PERIOD_LABEL,
   type MeResponse,
   type DBPlan,
@@ -38,6 +39,7 @@ import {
   type AppRole,
   type AdminInvoice as ApiAdminInvoice,
   type AdminInvoicesSummary,
+  type RoleAuditEntry,
 } from "@/lib/api";
 import {
   Dialog,
@@ -390,7 +392,14 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 
   const save = async (
     userId: string,
-    data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string },
+    data: {
+      plan?: string;
+      active?: boolean;
+      payment_status?: string;
+      phone?: string;
+      role?: string;
+      previous_role?: string;
+    },
   ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
     try {
@@ -600,7 +609,14 @@ function UserEditForm({
   saving: boolean;
   isSuperAdmin: boolean;
   onCancel: () => void;
-  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string }) => Promise<import("@/lib/api").AdminUser | null>;
+  onSave: (data: {
+    plan?: string;
+    active?: boolean;
+    payment_status?: string;
+    phone?: string;
+    role?: string;
+    previous_role?: string;
+  }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
@@ -618,6 +634,32 @@ function UserEditForm({
   const [role, setRole] = useState<string>(initialRole);
   const [renewing, setRenewing] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(user.plan_expires_at ?? null);
+  const [roleHistory, setRoleHistory] = useState<RoleAuditEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const res = await getUserRoleHistory(user.id);
+      const list = Array.isArray(res) ? res : res?.history ?? [];
+      setRoleHistory(list);
+    } catch (e: unknown) {
+      const err = e as { status?: number; payload?: { error?: string } };
+      if (err?.status === 404) {
+        setRoleHistory([]);
+      } else {
+        setHistoryError(err?.payload?.error || "Não foi possível carregar o histórico");
+      }
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [user.id]);
+
+  useEffect(() => {
+    if (isSuperAdmin) void loadHistory();
+  }, [isSuperAdmin, loadHistory]);
 
   const fmtBrDate = (iso?: string | null) => {
     if (!iso) return "—";
@@ -654,16 +696,32 @@ function UserEditForm({
       onDeactivateAsk(user);
       return;
     }
-    const payload: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string } = {
+    const payload: {
+      plan?: string;
+      active?: boolean;
+      payment_status?: string;
+      phone?: string;
+      role?: string;
+      previous_role?: string;
+    } = {
       plan,
       active,
       payment_status: paymentStatus,
       phone: phone.trim() ? phone : "",
     };
-    if (isSuperAdmin) payload.role = role;
+    if (isSuperAdmin) {
+      payload.role = role;
+      if (role !== initialRole) {
+        payload.previous_role = initialRole;
+      }
+    }
     const updated = await onSave(payload);
     if (updated && updated.plan_expires_at !== undefined) {
       setExpiresAt(updated.plan_expires_at ?? null);
+    }
+    if (isSuperAdmin && role !== initialRole) {
+      // Refresh audit trail after a role change
+      void loadHistory();
     }
   };
 
@@ -763,6 +821,68 @@ function UserEditForm({
           <p className="text-xs text-muted-foreground">
             Define os acessos do usuário no painel.
           </p>
+        </div>
+      )}
+
+      {isSuperAdmin && (
+        <div className="space-y-2 rounded-lg border p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Histórico de perfil</p>
+              <p className="text-xs text-muted-foreground">
+                Alterações de perfil registradas (quem alterou e quando).
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void loadHistory()}
+              disabled={historyLoading}
+            >
+              {historyLoading ? "Atualizando..." : "Atualizar"}
+            </Button>
+          </div>
+          {historyError ? (
+            <p className="text-xs text-destructive">{historyError}</p>
+          ) : historyLoading && roleHistory.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Carregando...</p>
+          ) : roleHistory.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhuma alteração registrada.</p>
+          ) : (
+            <ul className="max-h-48 space-y-2 overflow-y-auto text-xs">
+              {roleHistory.map((h, idx) => {
+                const when = h.changed_at
+                  ? (() => {
+                      const d = new Date(h.changed_at);
+                      return isNaN(d.getTime())
+                        ? h.changed_at
+                        : `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                    })()
+                  : "—";
+                const who =
+                  h.changed_by_name || h.changed_by_email || h.changed_by || "—";
+                return (
+                  <li
+                    key={h.id ?? `${when}-${idx}`}
+                    className="rounded border bg-muted/30 p-2"
+                  >
+                    <div className="flex flex-wrap items-center gap-1">
+                      <RoleBadge role={h.previous_role ?? undefined} />
+                      <span className="text-muted-foreground">→</span>
+                      <RoleBadge role={h.new_role ?? undefined} />
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      por <span className="font-medium text-foreground">{who}</span> em {when}
+                    </p>
+                    {h.reason ? (
+                      <p className="text-muted-foreground">Motivo: {h.reason}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       )}
 
