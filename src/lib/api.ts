@@ -1153,7 +1153,7 @@ export interface CheckoutCreateInput {
 export interface CheckoutCreateResponse {
   invoice_id: string;
   pix_qr_code?: string;
-  pix_copy_paste?: string;
+  pix_copy_paste?: string | null;
   amount?: number;
   expires_at?: string;
   type?: "paid" | "free_trial" | "payment";
