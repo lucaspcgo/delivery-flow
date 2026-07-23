@@ -909,67 +909,215 @@ function ResetPasswordDialog({
 
 function InvoicesTab() {
   const [invoices, setInvoices] = useState<AdminInvoice[]>([]);
+  const [summary, setSummary] = useState<AdminInvoicesSummary>({});
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [customer, setCustomer] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [onlyOverdue, setOnlyOverdue] = useState(false);
+  const [acting, setActing] = useState<string | null>(null);
 
-  useEffect(() => {
-    http
-      .get<AdminInvoice[]>("/admin/invoices", { silent: true })
-      .then((d) => setInvoices(Array.isArray(d) ? d : []))
+  const load = useCallback(() => {
+    setLoading(true);
+    const params: Parameters<typeof getAdminInvoices>[0] = {};
+    if (statusFilter !== "all") params.status = statusFilter;
+    if (customer.trim()) params.email = customer.trim();
+    if (from) params.from = from;
+    if (to) params.to = to;
+    if (onlyOverdue) params.overdue = 1;
+    getAdminInvoices(params)
+      .then((d) => {
+        if (Array.isArray(d)) {
+          setInvoices(d);
+          setSummary({});
+        } else {
+          setInvoices(Array.isArray(d?.invoices) ? d.invoices : []);
+          setSummary(d?.summary ?? {});
+        }
+      })
       .catch(() => toast.error("Erro ao carregar faturas"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [statusFilter, customer, from, to, onlyOverdue]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const setStatus = async (inv: AdminInvoice, status: "paid" | "cancelled") => {
+    setActing(inv.id);
+    try {
+      await updateAdminInvoice(inv.id, { status });
+      toast.success(status === "paid" ? "Fatura marcada como paga" : "Fatura cancelada");
+      load();
+    } catch (e: unknown) {
+      const err = e as { payload?: { error?: string }; message?: string };
+      toast.error(err?.payload?.error || err?.message || "Erro ao atualizar fatura");
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const fmtDate = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
+
+  const summaryCards = [
+    { label: "Pendente", value: BRL(summary.total_pending) },
+    { label: "Pago", value: BRL(summary.total_paid) },
+    { label: "Em atraso", value: BRL(summary.total_overdue) },
+    { label: "Nº em atraso", value: String(summary.overdue_count ?? 0) },
+  ];
 
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardContent className="p-0">
-        {loading ? (
-          <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.map((inv, i) => (
-                  <TableRow key={inv.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
-                    <TableCell>
-                      <div className="font-medium">{inv.user_name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{inv.user_email}</div>
-                    </TableCell>
-                    <TableCell>
-                      <PlanBadge plan={inv.plan} />
-                    </TableCell>
-                    <TableCell>{BRL(inv.amount)}</TableCell>
-                    <TableCell>
-                      <InvoiceStatusBadge status={inv.status} />
-                    </TableCell>
-                    <TableCell>
-                      {inv.due_date
-                        ? new Date(inv.due_date).toLocaleDateString("pt-BR")
-                        : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {invoices.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                      Nenhuma fatura.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {summaryCards.map((c) => (
+          <Card key={c.label}>
+            <CardContent className="p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </p>
+              <p className="mt-1 text-xl font-bold tracking-tight">
+                {loading ? "—" : c.value}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="rounded-xl shadow-sm">
+        <CardHeader className="gap-3 space-y-0">
+          <CardTitle className="text-base">Faturas</CardTitle>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="paid">Paga</SelectItem>
+                <SelectItem value="overdue">Em atraso</SelectItem>
+                <SelectItem value="failed">Falhou</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+              placeholder="Cliente (nome ou email)"
+            />
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              aria-label="De"
+            />
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              aria-label="Até"
+            />
+            <label className="flex items-center gap-2 rounded-md border px-3 text-sm">
+              <Switch checked={onlyOverdue} onCheckedChange={setOnlyOverdue} />
+              Só em atraso
+            </label>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Pago em</TableHead>
+                    <TableHead>Atraso</TableHead>
+                    <TableHead>Gateway</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoices.map((inv, i) => (
+                    <TableRow key={inv.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                      <TableCell>
+                        <div className="font-medium">{inv.user_name ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground">{inv.user_email}</div>
+                        {inv.user_phone && (
+                          <div className="text-xs text-muted-foreground">{inv.user_phone}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">
+                          {inv.plan_name ?? inv.plan ?? "—"}
+                        </div>
+                        {inv.billing_period && (
+                          <div className="text-xs text-muted-foreground">
+                            {PLAN_PERIOD_LABEL[inv.billing_period as keyof typeof PLAN_PERIOD_LABEL] ?? inv.billing_period}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{BRL(inv.amount)}</TableCell>
+                      <TableCell>
+                        <InvoiceStatusBadge status={inv.status as InvoiceStatus} />
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{fmtDate(inv.due_date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{fmtDate(inv.paid_at)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {inv.days_overdue && inv.days_overdue > 0 ? (
+                          <span className="text-red-600 font-medium">
+                            {inv.days_overdue}d
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs">{inv.payment_gateway ?? "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {inv.status !== "paid" && inv.status !== "cancelled" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={acting === inv.id}
+                              onClick={() => setStatus(inv, "paid")}
+                            >
+                              Marcar paga
+                            </Button>
+                          )}
+                          {inv.status !== "cancelled" && inv.status !== "paid" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={acting === inv.id}
+                              onClick={() => setStatus(inv, "cancelled")}
+                            >
+                              Cancelar
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {invoices.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
+                        Nenhuma fatura.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
