@@ -1147,6 +1147,7 @@ export interface CheckoutCreateInput {
   email?: string;
   password?: string;
   phone?: string;
+  document?: string;
 }
 
 export interface CheckoutCreateResponse {
@@ -1155,13 +1156,21 @@ export interface CheckoutCreateResponse {
   pix_copy_paste?: string;
   amount?: number;
   expires_at?: string;
-  type?: "paid" | "free_trial";
+  type?: "paid" | "free_trial" | "payment";
+  gateway?: string;
+  pix_code?: string | null;
+  boleto_url?: string | null;
+  digitable?: string | null;
+  invoice?: { id: string; [k: string]: unknown };
   token?: string;
   user?: { id: string; name: string; email: string; is_admin?: boolean };
 }
 
 export interface CheckoutConfirmResponse {
   status: "paid" | "pending" | "failed";
+  pix_code?: string | null;
+  boleto_url?: string | null;
+  digitable?: string | null;
   token?: string;
   user?: { id: string; name: string; email: string; is_admin?: boolean };
 }
