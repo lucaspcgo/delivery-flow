@@ -530,6 +530,7 @@ function UserEditForm({
   user,
   plans,
   saving,
+  isSuperAdmin,
   onCancel,
   onSave,
   onDeactivateAsk,
@@ -539,8 +540,9 @@ function UserEditForm({
   user: AdminUser;
   plans: DBPlan[];
   saving: boolean;
+  isSuperAdmin: boolean;
   onCancel: () => void;
-  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => Promise<import("@/lib/api").AdminUser | null>;
+  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
@@ -549,6 +551,13 @@ function UserEditForm({
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
   const [phone, setPhone] = useState<string>(user.phone ?? "");
+  const initialRole: string =
+    typeof user.role === "string" && user.role
+      ? user.role
+      : user.is_admin
+        ? "admin"
+        : "user";
+  const [role, setRole] = useState<string>(initialRole);
   const [renewing, setRenewing] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(user.plan_expires_at ?? null);
 
@@ -587,7 +596,14 @@ function UserEditForm({
       onDeactivateAsk(user);
       return;
     }
-    const updated = await onSave({ plan, active, payment_status: paymentStatus, phone: phone.trim() ? phone : "" });
+    const payload: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string } = {
+      plan,
+      active,
+      payment_status: paymentStatus,
+      phone: phone.trim() ? phone : "",
+    };
+    if (isSuperAdmin) payload.role = role;
+    const updated = await onSave(payload);
     if (updated && updated.plan_expires_at !== undefined) {
       setExpiresAt(updated.plan_expires_at ?? null);
     }
