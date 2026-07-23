@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createCheckout, ApiError, safeLocalStorageSet } from "@/lib/api";
+import { TRIAL_DURATION_LABEL } from "@/lib/trial";
 import { isAuthenticated } from "@/lib/auth";
 import logoAsset from "@/assets/logo.webp.asset.json";
 
