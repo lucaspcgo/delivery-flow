@@ -1342,23 +1342,51 @@ function AuditTab() {
   const [sortKey, setSortKey] = useState<AuditSortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [planFilter, setPlanFilter] = useState<string>("all");
+  const [recalculating, setRecalculating] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
+  const loadAudit = React.useCallback((signal?: { alive: boolean }) => {
     setLoading(true);
-    http
+    return http
       .get<AuditResponse>("/admin/audit")
       .then((res) => {
-        if (alive) setData(res);
+        if (!signal || signal.alive) setData(res);
       })
       .catch(() => {})
       .finally(() => {
-        if (alive) setLoading(false);
+        if (!signal || signal.alive) setLoading(false);
       });
-    return () => {
-      alive = false;
-    };
   }, []);
+
+  useEffect(() => {
+    const signal = { alive: true };
+    loadAudit(signal);
+    return () => {
+      signal.alive = false;
+    };
+  }, [loadAudit]);
+
+  async function handleRecalculate() {
+    if (
+      !window.confirm(
+        "Recalcular a data de validade de todos os clientes com base na data de criação + ciclo do plano?",
+      )
+    )
+      return;
+    setRecalculating(true);
+    try {
+      const res = await http.post<{ success?: boolean; updated?: number }>(
+        "/admin/recalculate-expiry",
+        {},
+      );
+      const n = res?.updated ?? 0;
+      toast.success(`Validades recalculadas para ${n} cliente(s).`);
+      await loadAudit();
+    } catch (err: any) {
+      toast.error(err?.payload?.error || err?.message || "Erro ao recalcular validades");
+    } finally {
+      setRecalculating(false);
+    }
+  }
 
   function toggleSort(key: AuditSortKey) {
     if (sortKey === key) {
