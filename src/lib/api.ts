@@ -1128,6 +1128,24 @@ export const getAdminUser = (id: string) =>
 export const updateAdminUser = (id: string, data: Partial<AdminUser>) =>
   http.put<AdminUser>(`/admin/users/${id}`, data);
 
+export interface RoleAuditEntry {
+  id?: string;
+  user_id?: string;
+  previous_role?: string | null;
+  new_role?: string | null;
+  changed_by?: string | null;
+  changed_by_name?: string | null;
+  changed_by_email?: string | null;
+  changed_at?: string | null;
+  reason?: string | null;
+}
+
+export const getUserRoleHistory = (id: string) =>
+  http.get<{ history?: RoleAuditEntry[] } | RoleAuditEntry[]>(
+    `/admin/users/${id}/role-history`,
+    { silent: true },
+  );
+
 export const createAdminUser = (data: {
   name: string;
   email: string;
