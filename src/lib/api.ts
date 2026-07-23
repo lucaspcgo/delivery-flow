@@ -1194,7 +1194,7 @@ export function formatPlanPrice(plan: {
   billing_period?: string;
 }): string {
   const period = (plan.billing_period ?? plan.period ?? "") as string;
-  if (plan.is_free || period === "free") return "Grátis";
+  if (plan.is_free || period === "free") return "Grátis Para teste";
   if (!plan.price || plan.price <= 0) return "Sob consulta";
   const value = `R$ ${Number(plan.price).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
