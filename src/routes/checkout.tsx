@@ -20,7 +20,7 @@ import {
   formatPlanPrice,
 } from "@/lib/api";
 import { ApiError, safeLocalStorageSet } from "@/lib/api";
-import { TRIAL_DAYS, TRIAL_DURATION_LABEL } from "@/lib/trial";
+import { TRIAL_DURATION_LABEL } from "@/lib/trial";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
