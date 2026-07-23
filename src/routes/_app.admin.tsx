@@ -810,6 +810,68 @@ function UserEditForm({
         </div>
       )}
 
+      {isSuperAdmin && (
+        <div className="space-y-2 rounded-lg border p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Histórico de perfil</p>
+              <p className="text-xs text-muted-foreground">
+                Alterações de perfil registradas (quem alterou e quando).
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void loadHistory()}
+              disabled={historyLoading}
+            >
+              {historyLoading ? "Atualizando..." : "Atualizar"}
+            </Button>
+          </div>
+          {historyError ? (
+            <p className="text-xs text-destructive">{historyError}</p>
+          ) : historyLoading && roleHistory.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Carregando...</p>
+          ) : roleHistory.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhuma alteração registrada.</p>
+          ) : (
+            <ul className="max-h-48 space-y-2 overflow-y-auto text-xs">
+              {roleHistory.map((h, idx) => {
+                const when = h.changed_at
+                  ? (() => {
+                      const d = new Date(h.changed_at);
+                      return isNaN(d.getTime())
+                        ? h.changed_at
+                        : `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                    })()
+                  : "—";
+                const who =
+                  h.changed_by_name || h.changed_by_email || h.changed_by || "—";
+                return (
+                  <li
+                    key={h.id ?? `${when}-${idx}`}
+                    className="rounded border bg-muted/30 p-2"
+                  >
+                    <div className="flex flex-wrap items-center gap-1">
+                      <RoleBadge role={h.previous_role ?? undefined} />
+                      <span className="text-muted-foreground">→</span>
+                      <RoleBadge role={h.new_role ?? undefined} />
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      por <span className="font-medium text-foreground">{who}</span> em {when}
+                    </p>
+                    {h.reason ? (
+                      <p className="text-muted-foreground">Motivo: {h.reason}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between rounded-lg border p-3">
         <div>
           <p className="text-sm font-medium">Conta ativa</p>
