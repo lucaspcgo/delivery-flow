@@ -237,6 +237,7 @@ function AdminPage() {
     storedAdmin ? "ok" : "checking",
   );
   const [role, setRole] = useState<AppRole | null>(() => getStoredUserRole());
+  const [activeTab, setActiveTab] = useState<string>("overview");
   const isSuperAdmin = role === "admin";
 
   useEffect(() => {
