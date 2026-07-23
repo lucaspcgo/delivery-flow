@@ -330,7 +330,7 @@ function OverviewTab() {
   );
 }
 
-function UsersTab() {
+function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<AdminUser | null>(null);
@@ -362,7 +362,7 @@ function UsersTab() {
 
   const save = async (
     userId: string,
-    data: { plan?: string; active?: boolean; payment_status?: string; phone?: string },
+    data: { plan?: string; active?: boolean; payment_status?: string; phone?: string; role?: string },
   ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
     try {
@@ -438,9 +438,11 @@ function UsersTab() {
                         <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
                           <Pencil className="h-3 w-3 mr-1" /> Editar
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
-                          <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
-                        </Button>
+                        {isSuperAdmin && (
+                          <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
+                            <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -471,6 +473,7 @@ function UsersTab() {
             user={editing}
             plans={plans}
             saving={saving}
+            isSuperAdmin={isSuperAdmin}
             onCancel={() => setEditing(null)}
             onDeactivateAsk={(u) => setConfirmDeactivate(u)}
             onSave={async (data) => {
