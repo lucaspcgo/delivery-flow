@@ -342,7 +342,11 @@ function CheckoutPage() {
   async function handleSubmitData(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedPlan) return;
-    if (password !== confirmPwd) {
+    if (!isValidDocLength(docValue)) {
+      toast.error("Informe um CPF ou CNPJ válido");
+      return;
+    }
+    if (!isLogged && password !== confirmPwd) {
       toast.error("As senhas não coincidem");
       return;
     }
@@ -350,38 +354,55 @@ function CheckoutPage() {
       toast.error("Você precisa aceitar os termos de uso");
       return;
     }
-    await startCheckout(selectedPlan, { name, email, password });
-  }
-
-  async function handleConfirmPayment() {
-    if (!checkout) return;
-    setSubmitting(true);
-    try {
-      const res = await confirmPayment({ invoice_id: checkout.invoice_id });
-      if (res.status === "paid") {
-        if (res.token) {
-          safeLocalStorageSet("auth_token", res.token);
-        }
-        if (res.user) {
-          safeLocalStorageSet("auth_user", JSON.stringify(res.user));
-        }
-        // Recarrega o perfil real do backend para pegar o plano atualizado.
-        clearMeCache();
-        try {
-          await getMeCached(true);
-        } catch {
-          /* ignore — dashboard fará refetch */
-        }
-        setPaymentResult("success");
-      } else {
-        setPaymentResult("failed");
-      }
-    } catch {
-      setPaymentResult("failed");
-    } finally {
-      setSubmitting(false);
+    const doc = docValue.replace(/\D/g, "");
+    if (isLogged) {
+      await startCheckout(selectedPlan, doc);
+    } else {
+      await startCheckout(selectedPlan, doc, { name, email, password });
     }
   }
+
+  // Polling: aguarda pagamento (a cada 8s) e busca pix_code se ainda não veio
+  // (a cada 5s). Também roda no intervalo mais curto para pegar o Pix rápido.
+  useEffect(() => {
+    if (step !== 3 || paymentResult) return;
+    const invoiceId = checkout?.invoice?.id ?? checkout?.invoice_id;
+    if (!invoiceId) return;
+    const needsPix = !checkout?.pix_code && !checkout?.pix_copy_paste;
+    const interval = needsPix ? 5000 : 8000;
+    let cancelled = false;
+    const id = setInterval(async () => {
+      try {
+        const res = await getPaymentStatus(invoiceId);
+        if (cancelled) return;
+        // Atualiza campos que possam ter chegado depois (pix_code, etc.)
+        setCheckout((prev) =>
+          prev
+            ? {
+                ...prev,
+                pix_code: res.pix_code ?? prev.pix_code ?? prev.pix_copy_paste,
+                pix_copy_paste:
+                  res.pix_code ?? prev.pix_copy_paste ?? prev.pix_code,
+                boleto_url: res.boleto_url ?? prev.boleto_url,
+                digitable: res.digitable ?? prev.digitable,
+              }
+            : prev,
+        );
+        if (res.status === "paid") {
+          if (res.token) safeLocalStorageSet("auth_token", res.token);
+          if (res.user)
+            safeLocalStorageSet("auth_user", JSON.stringify(res.user));
+          setPaymentResult("success");
+        }
+      } catch {
+        /* silencia — próximo tick tenta de novo */
+      }
+    }, interval);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [step, paymentResult, checkout?.invoice_id, checkout?.pix_code, checkout?.pix_copy_paste]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-100 px-4 py-10">
