@@ -141,6 +141,7 @@ function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
+  const [docValue, setDocValue] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -148,6 +149,7 @@ function CheckoutPage() {
   const [paymentResult, setPaymentResult] = useState<"success" | "failed" | null>(
     null,
   );
+  const [payMethod, setPayMethod] = useState<"pix" | "boleto">("pix");
   const [secondsLeft, setSecondsLeft] = useState(30 * 60);
 
   const isLogged = typeof window !== "undefined" && !!authToken.get();
