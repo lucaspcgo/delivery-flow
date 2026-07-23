@@ -1344,7 +1344,7 @@ function AuditTab() {
   const [planFilter, setPlanFilter] = useState<string>("all");
   const [recalculating, setRecalculating] = useState(false);
 
-  const loadAudit = React.useCallback((signal?: { alive: boolean }) => {
+  const loadAudit = useCallback((signal?: { alive: boolean }) => {
     setLoading(true);
     return http
       .get<AuditResponse>("/admin/audit")
