@@ -1421,13 +1421,6 @@ function AuditTab() {
     { label: "Lojas 99food", value: isFiltered ? filteredSummary.food99_stores : summary?.food99_stores ?? 0 },
   ];
 
-  function fmtDate(iso?: string | null) {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return "—";
-    return d.toLocaleDateString("pt-BR");
-  }
-
   function fmtDateTime(iso?: string | null) {
     if (!iso) return "—";
     const d = new Date(iso);
