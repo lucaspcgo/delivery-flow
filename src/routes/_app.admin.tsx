@@ -182,15 +182,18 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
 
 function AdminPage() {
   const navigate = useNavigate();
-  const storedAdmin = hasStoredAdminAccess();
+  const storedAdmin = hasStoredManagerAccess();
   const [status, setStatus] = useState<"checking" | "ok" | "denied">(
     storedAdmin ? "ok" : "checking",
   );
+  const [role, setRole] = useState<AppRole | null>(() => getStoredUserRole());
+  const isSuperAdmin = role === "admin";
 
   useEffect(() => {
     let alive = true;
-    if (hasStoredAdminAccess()) {
+    if (hasStoredManagerAccess()) {
       setStatus("ok");
+      setRole(getStoredUserRole());
       return () => {
         alive = false;
       };
@@ -200,10 +203,12 @@ function AdminPage() {
       .me()
       .then((me: MeResponse) => {
         if (!alive) return;
-        if (hasAdminAccess(me)) {
+        if (hasAdminAccess(me) || (me as { role?: string }).role === "gerente") {
           setStatus("ok");
-        } else if (hasStoredAdminAccess()) {
+          setRole(getStoredUserRole());
+        } else if (hasStoredManagerAccess()) {
           setStatus("ok");
+          setRole(getStoredUserRole());
         } else {
           setStatus("denied");
           toast.error("Acesso negado", {
@@ -214,7 +219,7 @@ function AdminPage() {
       })
       .catch(() => {
         if (!alive) return;
-        if (hasStoredAdminAccess()) {
+        if (hasStoredManagerAccess()) {
           setStatus("ok");
           return;
         }
@@ -246,29 +251,33 @@ function AdminPage() {
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="invoices">Faturas</TabsTrigger>
-            <TabsTrigger value="plans">Planos</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="plans">Planos</TabsTrigger>}
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
-            <TabsTrigger value="settings">Configurações</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="settings">Configurações</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview">
             <OverviewTab />
           </TabsContent>
           <TabsContent value="users">
-            <UsersTab />
+            <UsersTab isSuperAdmin={isSuperAdmin} />
           </TabsContent>
           <TabsContent value="invoices">
             <InvoicesTab />
           </TabsContent>
-          <TabsContent value="plans">
-            <PlansTab />
-          </TabsContent>
+          {isSuperAdmin && (
+            <TabsContent value="plans">
+              <PlansTab />
+            </TabsContent>
+          )}
           <TabsContent value="audit">
             <AuditTab />
           </TabsContent>
-          <TabsContent value="settings">
-            <SettingsTab />
-          </TabsContent>
+          {isSuperAdmin && (
+            <TabsContent value="settings">
+              <SettingsTab />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
