@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Copy, Download, Loader2, X } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +13,13 @@ import { cn } from "@/lib/utils";
 import {
   getPlansPublic,
   createCheckout,
-  confirmPayment,
+  getPaymentStatus,
   authToken,
   type DBPlan,
   type CheckoutCreateResponse,
   formatPlanPrice,
 } from "@/lib/api";
-import { ApiError, safeLocalStorageSet, clearMeCache, getMeCached } from "@/lib/api";
+import { ApiError, safeLocalStorageSet } from "@/lib/api";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
