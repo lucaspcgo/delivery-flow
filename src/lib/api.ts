@@ -1107,6 +1107,27 @@ export const getAdminSettings = () =>
 export const updateAdminSetting = (key: string, value: string) =>
   http.put<AdminSetting>(`/admin/settings/${key}`, { value });
 
+// ---------- Admin notifications ----------
+
+export type AdminNotificationSeverity = "high" | "medium" | "info" | string;
+
+export interface AdminNotification {
+  id: string;
+  title: string;
+  message: string;
+  severity: AdminNotificationSeverity;
+  link?: string | null;
+  created_at?: string;
+}
+
+export interface AdminNotificationsResponse {
+  unread_count: number;
+  notifications: AdminNotification[];
+}
+
+export const getAdminNotifications = () =>
+  http.get<AdminNotificationsResponse>("/admin/notifications", { silent: true });
+
 // ---------- Checkout (público) ----------
 
 export interface CheckoutPlan {
