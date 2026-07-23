@@ -432,11 +432,17 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 
   const q = query.trim().toLowerCase();
   const normalizedRole = (r?: string) => (r ?? "").toLowerCase();
+  const effectiveRole = (u: AdminUser) => {
+    if (u.is_admin === true) return "admin";
+    if (normalizedRole(u.role) === "gerente" || normalizedRole(u.role) === "manager") return "gerente";
+    return "user";
+  };
   const filteredUsers = users.filter((u) => {
-    if (roleFilter !== "all" && normalizedRole(u.role) !== roleFilter) return false;
+    if (roleFilter !== "all" && effectiveRole(u) !== roleFilter) return false;
     if (q && !(u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q))) return false;
     return true;
   });
+
 
   return (
     <>
