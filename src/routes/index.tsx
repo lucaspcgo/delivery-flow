@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getPlansPublic, getPlansAdmin, formatPlanPrice, type DBPlan } from "@/lib/api";
+import { TRIAL_DAYS, TRIAL_DURATION_LABEL } from "@/lib/trial";
 import {
   Layers,
   Zap,
@@ -84,7 +85,10 @@ const testimonials = [
 
 const faqs = [
   { q: "Quais plataformas são suportadas?", a: "Atualmente integramos com iFood e 99Food. Novas plataformas chegam todo trimestre." },
-  { q: "É realmente grátis por 3 dias?", a: "Sim! 3 dias de teste completo, sem cartão de crédito e sem compromisso." },
+  {
+    q: `É realmente grátis por ${TRIAL_DURATION_LABEL}?`,
+    a: `Sim! ${TRIAL_DURATION_LABEL} de teste completo, sem cartão de crédito e sem compromisso.`,
+  },
   { q: "Posso cancelar a qualquer momento?", a: "Claro. Cancelamento em 1 clique, sem multas ou penalidades." },
   { q: "Como funciona o suporte?", a: "Oferecemos chat 24/7, email e telefone. Contas PRO têm prioridade." },
   { q: "Minhas informações são seguras?", a: "Criptografia SSL, backups automáticos e total conformidade com a LGPD." },
@@ -187,7 +191,7 @@ function LandingPage() {
               className="rounded-xl px-7 py-3.5 text-base font-bold text-black shadow-lg transition hover:scale-[1.02] hover:brightness-110"
               style={{ background: BRAND, boxShadow: `0 10px 30px -10px ${BRAND}` }}
             >
-              3 dias Grátis
+              {TRIAL_DAYS} dias Grátis
             </Link>
           </div>
           <p className="mt-4 text-sm text-white/50">Sem cartão de crédito necessário</p>
@@ -392,7 +396,7 @@ function LandingPage() {
           >
             Comece seu Teste Grátis Agora
           </Link>
-          <p className="mt-4 text-sm text-white/50">3 dias grátis • Sem cartão • Cancele quando quiser</p>
+          <p className="mt-4 text-sm text-white/50">{TRIAL_DURATION_LABEL} grátis • Sem cartão • Cancele quando quiser</p>
         </div>
       </section>
 
