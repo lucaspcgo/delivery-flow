@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { login, isAuthenticated } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { TRIAL_DURATION_LABEL } from "@/lib/trial";
 import logoAsset from "@/assets/logo.webp.asset.json";
 
 export const Route = createFileRoute("/login")({
@@ -35,7 +36,7 @@ function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("trial_expired") === "1") {
         setBlockType("trial_expired");
-        setBlockMessage("Seu período gratuito de 7 dias expirou");
+        setBlockMessage(`Seu período gratuito de ${TRIAL_DURATION_LABEL} expirou`);
       } else if (params.get("payment_suspended") === "1") {
         setBlockType("payment_suspended");
         setBlockMessage("Acesso suspenso. Regularize seu pagamento.");
