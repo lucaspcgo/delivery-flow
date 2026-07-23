@@ -620,6 +620,32 @@ function UserEditForm({
   const [role, setRole] = useState<string>(initialRole);
   const [renewing, setRenewing] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(user.plan_expires_at ?? null);
+  const [roleHistory, setRoleHistory] = useState<RoleAuditEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const res = await getUserRoleHistory(user.id);
+      const list = Array.isArray(res) ? res : res?.history ?? [];
+      setRoleHistory(list);
+    } catch (e: unknown) {
+      const err = e as { status?: number; payload?: { error?: string } };
+      if (err?.status === 404) {
+        setRoleHistory([]);
+      } else {
+        setHistoryError(err?.payload?.error || "Não foi possível carregar o histórico");
+      }
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [user.id]);
+
+  useEffect(() => {
+    if (isSuperAdmin) void loadHistory();
+  }, [isSuperAdmin, loadHistory]);
 
   const fmtBrDate = (iso?: string | null) => {
     if (!iso) return "—";
