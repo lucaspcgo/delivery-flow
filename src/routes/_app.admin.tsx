@@ -1316,6 +1316,7 @@ interface AuditUser {
   name: string;
   email: string;
   plan: string;
+  billing_period?: string | null;
   active: boolean;
   payment_status: string;
   created_at: string;
@@ -1529,9 +1530,16 @@ function AuditTab() {
                       <div className="text-xs text-muted-foreground">{u.email}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="capitalize">
-                        {u.plan}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="secondary" className="capitalize w-fit">
+                          {u.plan}
+                        </Badge>
+                        {u.billing_period ? (
+                          <span className="text-xs text-muted-foreground">
+                            {PLAN_PERIOD_LABEL[u.billing_period] ?? u.billing_period}
+                          </span>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {u.active ? (
@@ -1542,15 +1550,15 @@ function AuditTab() {
                         <Badge variant="secondary">Inativo</Badge>
                       )}
                     </TableCell>
-                    <TableCell>{fmtDate(u.created_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{fmtDateTime(u.created_at)}</TableCell>
                     <TableCell>
                       <div className="font-medium">{u.stores_connected}</div>
                       <div className="text-xs text-muted-foreground">
                         iFood: {u.ifood_stores} · 99food: {u.food99_stores}
                       </div>
                     </TableCell>
-                    <TableCell>{fmtDateTime(u.last_order_at)}</TableCell>
-                    <TableCell>{fmtDate(u.plan_expires_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{fmtDateTime(u.last_order_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{fmtDateTime(u.plan_expires_at)}</TableCell>
                     <TableCell className="text-right font-medium">{u.orders_total}</TableCell>
                   </TableRow>
                 ))
