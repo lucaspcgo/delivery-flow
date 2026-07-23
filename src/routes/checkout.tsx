@@ -184,6 +184,7 @@ function CheckoutPage() {
   const [password, setPassword] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [docValue, setDocValue] = useState("");
+  const [docError, setDocError] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
