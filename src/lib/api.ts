@@ -1179,10 +1179,10 @@ export const PLAN_PERIOD_LABEL: Record<string, string> = {
 };
 
 const PLAN_PERIOD_SUFFIX: Record<string, string> = {
-  weekly: "/semana",
-  monthly: "/mês",
-  yearly: "/ano",
-  annual: "/ano",
+  weekly: "\u00a0 por semana",
+  monthly: " por mês",
+  yearly: " por ano",
+  annual: " por ano",
   one_time: " (único)",
   free: "",
 };
