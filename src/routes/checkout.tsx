@@ -54,6 +54,35 @@ function planButtonLabel(plan: DBPlan) {
   return "Selecionar";
 }
 
+function maskCpfCnpj(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 11) {
+    return d
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+  return d
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+}
+
+function isValidDocLength(raw: string): boolean {
+  const n = raw.replace(/\D/g, "").length;
+  return n === 11 || n === 14;
+}
+
+async function copyToClipboard(text: string, label = "Código") {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
+  } catch {
+    toast.error("Falha ao copiar");
+  }
+}
+
 function Stepper({ step }: { step: Step }) {
   const items = [
     { n: 1, label: "Escolher Plano" },
