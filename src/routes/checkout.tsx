@@ -538,6 +538,7 @@ function CheckoutPage() {
               </div>
             )}
             <form onSubmit={handleSubmitData} className="mt-6 space-y-4">
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nome completo</Label>
                 <Input
@@ -547,6 +548,8 @@ function CheckoutPage() {
                   required
                 />
               </div>
+              )}
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -557,6 +560,8 @@ function CheckoutPage() {
                   required
                 />
               </div>
+              )}
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="password">Senha</Label>
                 <Input
@@ -568,6 +573,8 @@ function CheckoutPage() {
                   required
                 />
               </div>
+              )}
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="confirm">Confirmar senha</Label>
                 <Input
@@ -577,6 +584,21 @@ function CheckoutPage() {
                   onChange={(e) => setConfirmPwd(e.target.value)}
                   required
                 />
+              </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="document">CPF ou CNPJ</Label>
+                <Input
+                  id="document"
+                  inputMode="numeric"
+                  value={docValue}
+                  onChange={(e) => setDocValue(maskCpfCnpj(e.target.value))}
+                  placeholder="000.000.000-00"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Usado na emissão da cobrança (Pix / Boleto).
+                </p>
               </div>
               <label className="flex items-start gap-2 text-sm">
                 <Checkbox
