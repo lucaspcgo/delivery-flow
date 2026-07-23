@@ -372,6 +372,45 @@ export function hasStoredAdminAccess(): boolean {
   return hasAdminAccess(getStoredUser()) || hasAdminAccess(getStoredTokenClaims());
 }
 
+export type AppRole = "admin" | "gerente" | "user";
+
+export function getUserRole(me: unknown): AppRole | null {
+  if (!isRecord(me)) return null;
+  if (hasTruthyAdminFlag(me.is_admin) || hasTruthyAdminFlag(me.isAdmin) || hasTruthyAdminFlag(me.admin))
+    return "admin";
+  const norm = (v: unknown) =>
+    typeof v === "string" ? v.trim().toLowerCase() : "";
+  const r = norm(me.role);
+  if (r === "admin") return "admin";
+  if (r === "gerente" || r === "manager") return "gerente";
+  if (r === "user" || r === "cliente") return "user";
+  if (Array.isArray(me.roles)) {
+    const roles = me.roles.map(norm);
+    if (roles.includes("admin")) return "admin";
+    if (roles.includes("gerente") || roles.includes("manager")) return "gerente";
+  }
+  if (isRecord(me.user)) return getUserRole(me.user);
+  if (isRecord(me.data)) return getUserRole(me.data);
+  return null;
+}
+
+export function hasManagerAccess(me: unknown): boolean {
+  const r = getUserRole(me);
+  return r === "admin" || r === "gerente";
+}
+
+export function getStoredUserRole(): AppRole | null {
+  return (
+    getUserRole(getStoredUser()) ??
+    getUserRole(getStoredTokenClaims())
+  );
+}
+
+export function hasStoredManagerAccess(): boolean {
+  const r = getStoredUserRole();
+  return r === "admin" || r === "gerente";
+}
+
 // Cache em módulo para evitar refetch em todo lugar
 let _meCache: MeResponse | null = null;
 let _mePromise: Promise<MeResponse> | null = null;
