@@ -352,20 +352,21 @@ function UsersTab() {
   const save = async (
     userId: string,
     data: { plan?: string; active?: boolean; payment_status?: string; phone?: string },
-  ) => {
+  ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
     try {
-      await updateAdminUser(userId, data as Partial<import("@/lib/api").AdminUser>);
+      const updated = await updateAdminUser(userId, data as Partial<import("@/lib/api").AdminUser>);
       toast.success("Usuário atualizado");
-      setEditing(null);
       setConfirmDeactivate(null);
       load();
+      return updated;
     } catch (e: unknown) {
       const err = e as { status?: number; payload?: { error?: string }; message?: string };
       const msg =
         err?.payload?.error ||
         (err?.status === 400 ? "Plano inválido" : "Erro ao atualizar usuário");
       toast.error(msg);
+      return null;
     } finally {
       setSaving(false);
     }
