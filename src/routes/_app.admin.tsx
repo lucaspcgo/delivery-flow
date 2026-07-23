@@ -526,7 +526,7 @@ function UserEditForm({
   plans: DBPlan[];
   saving: boolean;
   onCancel: () => void;
-  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => void;
+  onSave: (data: { plan?: string; active?: boolean; payment_status?: string; phone?: string }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
@@ -542,7 +542,7 @@ function UserEditForm({
     if (!iso) return "—";
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
-    return d.toLocaleDateString("pt-BR");
+    return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
   };
 
   const renew = async () => {
@@ -568,12 +568,15 @@ function UserEditForm({
     }
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (user.active && !active) {
       onDeactivateAsk(user);
       return;
     }
-    onSave({ plan, active, payment_status: paymentStatus, phone: phone.trim() ? phone : "" });
+    const updated = await onSave({ plan, active, payment_status: paymentStatus, phone: phone.trim() ? phone : "" });
+    if (updated && updated.plan_expires_at !== undefined) {
+      setExpiresAt(updated.plan_expires_at ?? null);
+    }
   };
 
   return (
@@ -585,7 +588,7 @@ function UserEditForm({
         </div>
         <div>
           <Label className="text-xs text-muted-foreground">Criado em</Label>
-          <p>{user.created_at ? new Date(user.created_at).toLocaleDateString("pt-BR") : "—"}</p>
+          <p>{fmtBrDate(user.created_at)}</p>
         </div>
         <div>
           <Label className="text-xs text-muted-foreground">Nome</Label>
