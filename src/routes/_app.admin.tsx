@@ -462,7 +462,15 @@ function UsersTab() {
             saving={saving}
             onCancel={() => setEditing(null)}
             onDeactivateAsk={(u) => setConfirmDeactivate(u)}
-            onSave={(data) => save(editing.id, data)}
+            onSave={async (data) => {
+              const updated = await save(editing.id, data);
+              if (updated) {
+                setEditing((prev) =>
+                  prev ? { ...prev, ...updated } : prev,
+                );
+              }
+              return updated;
+            }}
             onResetPassword={(u) => setResetting(u)}
             onRenewed={(planExpiresAt) => {
               setEditing((prev) =>
