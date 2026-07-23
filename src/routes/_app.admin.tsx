@@ -163,7 +163,7 @@ function PayStatusBadge({ status }: { status: PaymentStatus }) {
 function RoleBadge({ role, isAdmin }: { role?: string; isAdmin?: boolean }) {
   const normalized = (role ?? "").toLowerCase();
   const key: "admin" | "gerente" | "user" =
-    normalized === "admin" || (isAdmin && !normalized)
+    isAdmin === true
       ? "admin"
       : normalized === "gerente" || normalized === "manager"
         ? "gerente"
@@ -184,6 +184,7 @@ function RoleBadge({ role, isAdmin }: { role?: string; isAdmin?: boolean }) {
     </span>
   );
 }
+
 
 function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   const map: Record<InvoiceStatus, string> = {
