@@ -1038,6 +1038,7 @@ export interface AdminUser {
   created_at?: string;
   phone?: string;
   plan_expires_at?: string | null;
+  role?: "user" | "gerente" | "admin" | string;
 }
 
 export interface AdminInvoice {
@@ -1045,11 +1046,28 @@ export interface AdminInvoice {
   user_id: string;
   user_name?: string;
   user_email?: string;
+  user_phone?: string;
+  plan_name?: string;
+  billing_period?: string;
+  payment_gateway?: string;
+  days_overdue?: number;
   plan: UserPlan;
   amount: number;
-  status: "pending" | "paid" | "failed";
+  status: "pending" | "paid" | "failed" | "cancelled" | "overdue";
   due_date: string;
   paid_at?: string | null;
+}
+
+export interface AdminInvoicesSummary {
+  total_pending?: number;
+  total_paid?: number;
+  total_overdue?: number;
+  overdue_count?: number;
+}
+
+export interface AdminInvoicesResponse {
+  invoices: AdminInvoice[];
+  summary: AdminInvoicesSummary;
 }
 
 export interface AdminSetting {
@@ -1085,8 +1103,12 @@ export const deleteAdminUser = (id: string) =>
 export const getAdminInvoices = (filters?: {
   status?: string;
   email?: string;
+  user_id?: string;
+  from?: string;
+  to?: string;
+  overdue?: 0 | 1;
 }) =>
-  http.get<AdminInvoice[]>("/admin/invoices", {
+  http.get<AdminInvoicesResponse | AdminInvoice[]>("/admin/invoices", {
     silent: true,
     query: filters,
   });
