@@ -356,7 +356,16 @@ function UsersTab() {
     setSaving(true);
     try {
       const updated = await updateAdminUser(userId, data as Partial<import("@/lib/api").AdminUser>);
-      toast.success("Usuário atualizado");
+      const newExpiry = updated?.plan_expires_at ?? null;
+      if (data.plan && newExpiry) {
+        const d = new Date(newExpiry);
+        const dateStr = !isNaN(d.getTime())
+          ? `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+          : newExpiry;
+        toast.success(`Usuário atualizado — válido até ${dateStr}`);
+      } else {
+        toast.success("Usuário atualizado");
+      }
       setConfirmDeactivate(null);
       load();
       return updated;
