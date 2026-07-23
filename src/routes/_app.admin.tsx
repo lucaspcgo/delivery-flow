@@ -1477,6 +1477,14 @@ function AuditTab() {
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle>Usuários</CardTitle>
           <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRecalculate}
+              disabled={recalculating}
+            >
+              {recalculating ? "Recalculando..." : "Recalcular validades"}
+            </Button>
             <Select value={planFilter} onValueChange={setPlanFilter}>
               <SelectTrigger className="w-full max-w-[200px]">
                 <SelectValue placeholder="Todos os planos" />
