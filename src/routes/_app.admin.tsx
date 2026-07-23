@@ -644,6 +644,8 @@ function UserEditForm({
   const [roleHistory, setRoleHistory] = useState<RoleAuditEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [roleChangeConfirmOpen, setRoleChangeConfirmOpen] = useState(false);
+
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -698,7 +700,7 @@ function UserEditForm({
     }
   };
 
-  const submit = async () => {
+  const saveChanges = async () => {
     if (user.active && !active) {
       onDeactivateAsk(user);
       return;
@@ -731,6 +733,20 @@ function UserEditForm({
       void loadHistory();
     }
   };
+
+  const submit = () => {
+    if (isSuperAdmin && role !== initialRole) {
+      setRoleChangeConfirmOpen(true);
+      return;
+    }
+    void saveChanges();
+  };
+
+  const confirmRoleChange = () => {
+    setRoleChangeConfirmOpen(false);
+    void saveChanges();
+  };
+
 
   return (
     <div className="space-y-4">
@@ -920,9 +936,28 @@ function UserEditForm({
           </Button>
         </div>
       </DialogFooter>
+
+      <AlertDialog open={roleChangeConfirmOpen} onOpenChange={(o) => !o && setRoleChangeConfirmOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar perfil do usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está alterando o perfil de <span className="font-medium">{user.name ?? user.email}</span> de{" "}
+              <RoleBadge role={initialRole} /> para <RoleBadge role={role} />.
+              Essa mudança afeta os acessos no painel administrativo. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRoleChangeConfirmOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRoleChange}>Confirmar alteração</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
+
 
 function ResetPasswordDialog({
   user,
