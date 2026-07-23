@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Copy, Download, Loader2, X } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +13,13 @@ import { cn } from "@/lib/utils";
 import {
   getPlansPublic,
   createCheckout,
-  confirmPayment,
+  getPaymentStatus,
   authToken,
   type DBPlan,
   type CheckoutCreateResponse,
   formatPlanPrice,
 } from "@/lib/api";
-import { ApiError, safeLocalStorageSet, clearMeCache, getMeCached } from "@/lib/api";
+import { ApiError, safeLocalStorageSet } from "@/lib/api";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
@@ -51,6 +52,35 @@ function planButtonLabel(plan: DBPlan) {
   if (plan.is_free) return "Começar grátis";
   if (plan.price === 0) return "Falar com vendas";
   return "Selecionar";
+}
+
+function maskCpfCnpj(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 11) {
+    return d
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+  return d
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+}
+
+function isValidDocLength(raw: string): boolean {
+  const n = raw.replace(/\D/g, "").length;
+  return n === 11 || n === 14;
+}
+
+async function copyToClipboard(text: string, label = "Código") {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
+  } catch {
+    toast.error("Falha ao copiar");
+  }
 }
 
 function Stepper({ step }: { step: Step }) {
@@ -111,6 +141,7 @@ function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
+  const [docValue, setDocValue] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -118,6 +149,7 @@ function CheckoutPage() {
   const [paymentResult, setPaymentResult] = useState<"success" | "failed" | null>(
     null,
   );
+  const [payMethod, setPayMethod] = useState<"pix" | "boleto">("pix");
   const [secondsLeft, setSecondsLeft] = useState(30 * 60);
 
   const isLogged = typeof window !== "undefined" && !!authToken.get();
@@ -151,8 +183,10 @@ function CheckoutPage() {
     if (!match) return;
     setSelectedPlan(getPlanKey(match));
     setAutoStarted(true);
-    if (isLogged && !match.is_free && match.price > 0) {
-      void startCheckout(getPlanKey(match));
+    // Sempre passamos pela etapa 2 (o CPF/CNPJ é obrigatório inclusive
+    // para quem já está logado).
+    if (!match.is_free && match.price >= 0) {
+      setStep(2);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plans, planFromSearch, autoStarted]);
@@ -188,30 +222,25 @@ function CheckoutPage() {
       return;
     }
     setSelectedPlan(planKey);
-    if (isLogged) {
-      void startCheckout(planKey);
-    } else {
-      setStep(2);
-    }
+    setStep(2);
   }
 
-  async function startCheckout(plan: string, userData?: {
-    name: string;
-    email: string;
-    password: string;
-  }) {
+  async function startCheckout(
+    plan: string,
+    document: string,
+    userData?: { name: string; email: string; password: string },
+  ) {
     setSubmitting(true);
     try {
-      const body = userData
+      const body: Parameters<typeof createCheckout>[0] = userData
         ? {
             plan,
             name: userData.name,
             email: userData.email,
             password: userData.password,
+            document,
           }
-        : {
-            plan,
-          };
+        : { plan, document };
       const res = await createCheckout(body);
       // Plano gratuito: API retorna type="free_trial" com token+user → auto-login
       if (res.type === "free_trial" && res.token && res.user) {
@@ -313,7 +342,11 @@ function CheckoutPage() {
   async function handleSubmitData(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedPlan) return;
-    if (password !== confirmPwd) {
+    if (!isValidDocLength(docValue)) {
+      toast.error("Informe um CPF ou CNPJ válido");
+      return;
+    }
+    if (!isLogged && password !== confirmPwd) {
       toast.error("As senhas não coincidem");
       return;
     }
@@ -321,38 +354,55 @@ function CheckoutPage() {
       toast.error("Você precisa aceitar os termos de uso");
       return;
     }
-    await startCheckout(selectedPlan, { name, email, password });
-  }
-
-  async function handleConfirmPayment() {
-    if (!checkout) return;
-    setSubmitting(true);
-    try {
-      const res = await confirmPayment({ invoice_id: checkout.invoice_id });
-      if (res.status === "paid") {
-        if (res.token) {
-          safeLocalStorageSet("auth_token", res.token);
-        }
-        if (res.user) {
-          safeLocalStorageSet("auth_user", JSON.stringify(res.user));
-        }
-        // Recarrega o perfil real do backend para pegar o plano atualizado.
-        clearMeCache();
-        try {
-          await getMeCached(true);
-        } catch {
-          /* ignore — dashboard fará refetch */
-        }
-        setPaymentResult("success");
-      } else {
-        setPaymentResult("failed");
-      }
-    } catch {
-      setPaymentResult("failed");
-    } finally {
-      setSubmitting(false);
+    const doc = docValue.replace(/\D/g, "");
+    if (isLogged) {
+      await startCheckout(selectedPlan, doc);
+    } else {
+      await startCheckout(selectedPlan, doc, { name, email, password });
     }
   }
+
+  // Polling: aguarda pagamento (a cada 8s) e busca pix_code se ainda não veio
+  // (a cada 5s). Também roda no intervalo mais curto para pegar o Pix rápido.
+  useEffect(() => {
+    if (step !== 3 || paymentResult) return;
+    const invoiceId = checkout?.invoice?.id ?? checkout?.invoice_id;
+    if (!invoiceId) return;
+    const needsPix = !checkout?.pix_code && !checkout?.pix_copy_paste;
+    const interval = needsPix ? 5000 : 8000;
+    let cancelled = false;
+    const id = setInterval(async () => {
+      try {
+        const res = await getPaymentStatus(invoiceId);
+        if (cancelled) return;
+        // Atualiza campos que possam ter chegado depois (pix_code, etc.)
+        setCheckout((prev) =>
+          prev
+            ? {
+                ...prev,
+                pix_code: res.pix_code ?? prev.pix_code ?? prev.pix_copy_paste,
+                pix_copy_paste:
+                  res.pix_code ?? prev.pix_copy_paste ?? prev.pix_code,
+                boleto_url: res.boleto_url ?? prev.boleto_url,
+                digitable: res.digitable ?? prev.digitable,
+              }
+            : prev,
+        );
+        if (res.status === "paid") {
+          if (res.token) safeLocalStorageSet("auth_token", res.token);
+          if (res.user)
+            safeLocalStorageSet("auth_user", JSON.stringify(res.user));
+          setPaymentResult("success");
+        }
+      } catch {
+        /* silencia — próximo tick tenta de novo */
+      }
+    }, interval);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [step, paymentResult, checkout?.invoice_id, checkout?.pix_code, checkout?.pix_copy_paste]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-100 px-4 py-10">
@@ -383,15 +433,18 @@ function CheckoutPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <Check className="h-9 w-9 text-green-600" />
             </div>
-            <h2 className="text-xl font-semibold">Pagamento confirmado!</h2>
+            <h2 className="text-xl font-semibold">
+              Pagamento confirmado! Acesso liberado 🎉
+            </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Seu acesso ao plano {selectedPlanDetails?.name} foi liberado.
+              Faça login com o email e senha que você acabou de criar para
+              acessar o painel.
             </p>
             <Button
               className="mt-6 w-full"
-              onClick={() => navigate({ to: "/dashboard" })}
+              onClick={() => navigate({ to: "/login" })}
             >
-              Acessar o painel
+              Ir para o login
             </Button>
           </Card>
         ) : paymentResult === "failed" ? (
@@ -488,6 +541,7 @@ function CheckoutPage() {
               </div>
             )}
             <form onSubmit={handleSubmitData} className="mt-6 space-y-4">
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nome completo</Label>
                 <Input
@@ -497,6 +551,8 @@ function CheckoutPage() {
                   required
                 />
               </div>
+              )}
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -507,6 +563,8 @@ function CheckoutPage() {
                   required
                 />
               </div>
+              )}
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="password">Senha</Label>
                 <Input
@@ -518,6 +576,8 @@ function CheckoutPage() {
                   required
                 />
               </div>
+              )}
+              {!isLogged && (
               <div className="space-y-1.5">
                 <Label htmlFor="confirm">Confirmar senha</Label>
                 <Input
@@ -527,6 +587,21 @@ function CheckoutPage() {
                   onChange={(e) => setConfirmPwd(e.target.value)}
                   required
                 />
+              </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="document">CPF ou CNPJ</Label>
+                <Input
+                  id="document"
+                  inputMode="numeric"
+                  value={docValue}
+                  onChange={(e) => setDocValue(maskCpfCnpj(e.target.value))}
+                  placeholder="000.000.000-00"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Usado na emissão da cobrança (Pix / Boleto).
+                </p>
               </div>
               <label className="flex items-start gap-2 text-sm">
                 <Checkbox
@@ -591,54 +666,140 @@ function CheckoutPage() {
 
             <Card className="rounded-2xl p-6 shadow-sm">
               <h2 className="text-lg font-semibold">Forma de pagamento</h2>
-              <div className="mt-4 space-y-4">
-                <div className="rounded-xl border-2 border-primary p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">PIX</span>
-                    <span className="text-xs text-muted-foreground">
-                      Expira em {timerLabel}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex h-44 items-center justify-center rounded-lg bg-slate-100 p-4 text-center text-xs text-muted-foreground">
-                    {checkout?.pix_qr_code ??
-                      "QR Code será gerado ao configurar o gateway de pagamento no painel Admin → Config. API"}
-                  </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Escaneie o QR Code com seu app bancário
-                  </p>
-                  <div className="mt-3 space-y-1.5">
-                    <Label htmlFor="pix-code" className="text-xs">
-                      Código PIX copia e cola
-                    </Label>
-                    <Input
-                      id="pix-code"
-                      readOnly
-                      value={checkout?.pix_copy_paste ?? ""}
-                      placeholder="Disponível após configurar o gateway"
-                    />
-                  </div>
+              <div className="mt-4">
+                <div className="mb-4 flex gap-2 rounded-lg bg-muted p-1">
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("pix")}
+                    className={cn(
+                      "flex-1 rounded-md px-3 py-2 text-sm font-medium transition",
+                      payMethod === "pix"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    Pix
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("boleto")}
+                    className={cn(
+                      "flex-1 rounded-md px-3 py-2 text-sm font-medium transition",
+                      payMethod === "boleto"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    Boleto
+                  </button>
                 </div>
-                <div className="rounded-xl border border-dashed p-4 opacity-60">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Cartão de Crédito</span>
-                    <span className="text-xs text-muted-foreground">Em breve</span>
+
+                {payMethod === "pix" ? (
+                  <div className="rounded-xl border-2 border-primary p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">PIX</span>
+                      <span className="text-xs text-muted-foreground">
+                        Expira em {timerLabel}
+                      </span>
+                    </div>
+                    {(() => {
+                      const pix =
+                        checkout?.pix_code || checkout?.pix_copy_paste || "";
+                      if (!pix) {
+                        return (
+                          <div className="mt-4 flex h-44 flex-col items-center justify-center rounded-lg bg-slate-100 p-4 text-center text-sm text-muted-foreground">
+                            <Loader2 className="mb-2 h-6 w-6 animate-spin" />
+                            Gerando Pix...
+                          </div>
+                        );
+                      }
+                      return (
+                        <>
+                          <div className="mt-4 flex items-center justify-center rounded-lg bg-white p-4">
+                            <QRCodeCanvas value={pix} size={176} />
+                          </div>
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            Escaneie o QR Code com seu app bancário
+                          </p>
+                          <div className="mt-3 space-y-1.5">
+                            <Label htmlFor="pix-code" className="text-xs">
+                              Código PIX copia e cola
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input id="pix-code" readOnly value={pix} />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => copyToClipboard(pix, "Código Pix")}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
+                ) : (
+                  <div className="rounded-xl border-2 border-primary p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Boleto bancário</span>
+                      <span className="text-xs text-muted-foreground">
+                        Vence em breve
+                      </span>
+                    </div>
+                    {checkout?.boleto_url ? (
+                      <Button
+                        type="button"
+                        className="mt-4 w-full"
+                        onClick={() =>
+                          window.open(checkout.boleto_url!, "_blank")
+                        }
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Baixar boleto
+                      </Button>
+                    ) : (
+                      <div className="mt-4 flex h-16 items-center justify-center rounded-lg bg-slate-100 text-sm text-muted-foreground">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Gerando boleto...
+                      </div>
+                    )}
+                    {checkout?.digitable && (
+                      <div className="mt-4 space-y-1.5">
+                        <Label htmlFor="digitable" className="text-xs">
+                          Linha digitável
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="digitable"
+                            readOnly
+                            value={checkout.digitable}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              copyToClipboard(
+                                checkout.digitable!,
+                                "Linha digitável",
+                              )
+                            }
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-4 flex items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Aguardando confirmação do pagamento...
                 </div>
-                <Button
-                  size="lg"
-                  className="w-full bg-green-600 text-white hover:bg-green-700"
-                  onClick={handleConfirmPayment}
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verificando...
-                    </>
-                  ) : (
-                    "Já fiz o pagamento"
-                  )}
-                </Button>
               </div>
             </Card>
           </div>

@@ -1147,21 +1147,30 @@ export interface CheckoutCreateInput {
   email?: string;
   password?: string;
   phone?: string;
+  document?: string;
 }
 
 export interface CheckoutCreateResponse {
   invoice_id: string;
   pix_qr_code?: string;
-  pix_copy_paste?: string;
+  pix_copy_paste?: string | null;
   amount?: number;
   expires_at?: string;
-  type?: "paid" | "free_trial";
+  type?: "paid" | "free_trial" | "payment";
+  gateway?: string;
+  pix_code?: string | null;
+  boleto_url?: string | null;
+  digitable?: string | null;
+  invoice?: { id: string; [k: string]: unknown };
   token?: string;
   user?: { id: string; name: string; email: string; is_admin?: boolean };
 }
 
 export interface CheckoutConfirmResponse {
   status: "paid" | "pending" | "failed";
+  pix_code?: string | null;
+  boleto_url?: string | null;
+  digitable?: string | null;
   token?: string;
   user?: { id: string; name: string; email: string; is_admin?: boolean };
 }
