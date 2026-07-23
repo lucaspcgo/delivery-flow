@@ -433,15 +433,18 @@ function CheckoutPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <Check className="h-9 w-9 text-green-600" />
             </div>
-            <h2 className="text-xl font-semibold">Pagamento confirmado!</h2>
+            <h2 className="text-xl font-semibold">
+              Pagamento confirmado! Acesso liberado 🎉
+            </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Seu acesso ao plano {selectedPlanDetails?.name} foi liberado.
+              Faça login com o email e senha que você acabou de criar para
+              acessar o painel.
             </p>
             <Button
               className="mt-6 w-full"
-              onClick={() => navigate({ to: "/dashboard" })}
+              onClick={() => navigate({ to: "/login" })}
             >
-              Acessar o painel
+              Ir para o login
             </Button>
           </Card>
         ) : paymentResult === "failed" ? (
