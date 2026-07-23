@@ -663,54 +663,140 @@ function CheckoutPage() {
 
             <Card className="rounded-2xl p-6 shadow-sm">
               <h2 className="text-lg font-semibold">Forma de pagamento</h2>
-              <div className="mt-4 space-y-4">
-                <div className="rounded-xl border-2 border-primary p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">PIX</span>
-                    <span className="text-xs text-muted-foreground">
-                      Expira em {timerLabel}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex h-44 items-center justify-center rounded-lg bg-slate-100 p-4 text-center text-xs text-muted-foreground">
-                    {checkout?.pix_qr_code ??
-                      "QR Code será gerado ao configurar o gateway de pagamento no painel Admin → Config. API"}
-                  </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Escaneie o QR Code com seu app bancário
-                  </p>
-                  <div className="mt-3 space-y-1.5">
-                    <Label htmlFor="pix-code" className="text-xs">
-                      Código PIX copia e cola
-                    </Label>
-                    <Input
-                      id="pix-code"
-                      readOnly
-                      value={checkout?.pix_copy_paste ?? ""}
-                      placeholder="Disponível após configurar o gateway"
-                    />
-                  </div>
+              <div className="mt-4">
+                <div className="mb-4 flex gap-2 rounded-lg bg-muted p-1">
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("pix")}
+                    className={cn(
+                      "flex-1 rounded-md px-3 py-2 text-sm font-medium transition",
+                      payMethod === "pix"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    Pix
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("boleto")}
+                    className={cn(
+                      "flex-1 rounded-md px-3 py-2 text-sm font-medium transition",
+                      payMethod === "boleto"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    Boleto
+                  </button>
                 </div>
-                <div className="rounded-xl border border-dashed p-4 opacity-60">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Cartão de Crédito</span>
-                    <span className="text-xs text-muted-foreground">Em breve</span>
+
+                {payMethod === "pix" ? (
+                  <div className="rounded-xl border-2 border-primary p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">PIX</span>
+                      <span className="text-xs text-muted-foreground">
+                        Expira em {timerLabel}
+                      </span>
+                    </div>
+                    {(() => {
+                      const pix =
+                        checkout?.pix_code || checkout?.pix_copy_paste || "";
+                      if (!pix) {
+                        return (
+                          <div className="mt-4 flex h-44 flex-col items-center justify-center rounded-lg bg-slate-100 p-4 text-center text-sm text-muted-foreground">
+                            <Loader2 className="mb-2 h-6 w-6 animate-spin" />
+                            Gerando Pix...
+                          </div>
+                        );
+                      }
+                      return (
+                        <>
+                          <div className="mt-4 flex items-center justify-center rounded-lg bg-white p-4">
+                            <QRCodeCanvas value={pix} size={176} />
+                          </div>
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            Escaneie o QR Code com seu app bancário
+                          </p>
+                          <div className="mt-3 space-y-1.5">
+                            <Label htmlFor="pix-code" className="text-xs">
+                              Código PIX copia e cola
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input id="pix-code" readOnly value={pix} />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => copyToClipboard(pix, "Código Pix")}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
+                ) : (
+                  <div className="rounded-xl border-2 border-primary p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Boleto bancário</span>
+                      <span className="text-xs text-muted-foreground">
+                        Vence em breve
+                      </span>
+                    </div>
+                    {checkout?.boleto_url ? (
+                      <Button
+                        type="button"
+                        className="mt-4 w-full"
+                        onClick={() =>
+                          window.open(checkout.boleto_url!, "_blank")
+                        }
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Baixar boleto
+                      </Button>
+                    ) : (
+                      <div className="mt-4 flex h-16 items-center justify-center rounded-lg bg-slate-100 text-sm text-muted-foreground">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Gerando boleto...
+                      </div>
+                    )}
+                    {checkout?.digitable && (
+                      <div className="mt-4 space-y-1.5">
+                        <Label htmlFor="digitable" className="text-xs">
+                          Linha digitável
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="digitable"
+                            readOnly
+                            value={checkout.digitable}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              copyToClipboard(
+                                checkout.digitable!,
+                                "Linha digitável",
+                              )
+                            }
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-4 flex items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Aguardando confirmação do pagamento...
                 </div>
-                <Button
-                  size="lg"
-                  className="w-full bg-green-600 text-white hover:bg-green-700"
-                  onClick={handleConfirmPayment}
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verificando...
-                    </>
-                  ) : (
-                    "Já fiz o pagamento"
-                  )}
-                </Button>
               </div>
             </Card>
           </div>
