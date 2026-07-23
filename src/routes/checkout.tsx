@@ -385,10 +385,13 @@ function CheckoutPage() {
   async function handleSubmitData(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedPlan) return;
-    if (!isValidDocLength(docValue)) {
-      toast.error("Informe um CPF ou CNPJ válido");
+    const docErr = validateDocument(docValue);
+    if (docErr) {
+      setDocError(docErr);
+      toast.error(docErr);
       return;
     }
+    setDocError(null);
     if (!isLogged && password !== confirmPwd) {
       toast.error("As senhas não coincidem");
       return;
