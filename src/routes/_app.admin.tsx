@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1342,23 +1342,51 @@ function AuditTab() {
   const [sortKey, setSortKey] = useState<AuditSortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [planFilter, setPlanFilter] = useState<string>("all");
+  const [recalculating, setRecalculating] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
+  const loadAudit = useCallback((signal?: { alive: boolean }) => {
     setLoading(true);
-    http
+    return http
       .get<AuditResponse>("/admin/audit")
       .then((res) => {
-        if (alive) setData(res);
+        if (!signal || signal.alive) setData(res);
       })
       .catch(() => {})
       .finally(() => {
-        if (alive) setLoading(false);
+        if (!signal || signal.alive) setLoading(false);
       });
-    return () => {
-      alive = false;
-    };
   }, []);
+
+  useEffect(() => {
+    const signal = { alive: true };
+    loadAudit(signal);
+    return () => {
+      signal.alive = false;
+    };
+  }, [loadAudit]);
+
+  async function handleRecalculate() {
+    if (
+      !window.confirm(
+        "Recalcular a data de validade de todos os clientes com base na data de criação + ciclo do plano?",
+      )
+    )
+      return;
+    setRecalculating(true);
+    try {
+      const res = await http.post<{ success?: boolean; updated?: number }>(
+        "/admin/recalculate-expiry",
+        {},
+      );
+      const n = res?.updated ?? 0;
+      toast.success(`Validades recalculadas para ${n} cliente(s).`);
+      await loadAudit();
+    } catch (err: any) {
+      toast.error(err?.payload?.error || err?.message || "Erro ao recalcular validades");
+    } finally {
+      setRecalculating(false);
+    }
+  }
 
   function toggleSort(key: AuditSortKey) {
     if (sortKey === key) {
@@ -1449,6 +1477,14 @@ function AuditTab() {
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle>Usuários</CardTitle>
           <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRecalculate}
+              disabled={recalculating}
+            >
+              {recalculating ? "Recalculando..." : "Recalcular validades"}
+            </Button>
             <Select value={planFilter} onValueChange={setPlanFilter}>
               <SelectTrigger className="w-full max-w-[200px]">
                 <SelectValue placeholder="Todos os planos" />
