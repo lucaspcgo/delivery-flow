@@ -363,6 +363,9 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   const [saving, setSaving] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState<AdminUser | null>(null);
   const [resetting, setResetting] = useState<AdminUser | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [query, setQuery] = useState("");
+
 
   const load = () => {
     setLoading(true);
@@ -417,9 +420,42 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     }
   };
 
+  const q = query.trim().toLowerCase();
+  const normalizedRole = (r?: string) => (r ?? "").toLowerCase();
+  const filteredUsers = users.filter((u) => {
+    if (roleFilter !== "all" && normalizedRole(u.role) !== roleFilter) return false;
+    if (q && !(u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
   return (
     <>
     <Card className="rounded-xl shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+        <CardTitle>Usuários</CardTitle>
+        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-full max-w-[160px]">
+              <SelectValue placeholder="Todos os perfis" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os perfis</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="gerente">Gerente</SelectItem>
+              <SelectItem value="user">Cliente</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative w-full max-w-xs">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nome ou email"
+              className="pl-8"
+            />
+          </div>
+        </div>
+      </CardHeader>
       <CardContent className="p-0">
         {loading ? (
           <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
@@ -438,7 +474,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((u, i) => (
+                {filteredUsers.map((u, i) => (
                   <TableRow key={u.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
                     <TableCell className="font-medium">{u.name}</TableCell>
                     <TableCell>{u.email}</TableCell>
@@ -468,10 +504,10 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                     </TableCell>
                   </TableRow>
                 ))}
-                {users.length === 0 && (
+                {filteredUsers.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                      Nenhum usuário.
+                      Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
                 )}
@@ -481,6 +517,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         )}
       </CardContent>
     </Card>
+
 
     <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
       <DialogContent className="max-w-lg">
