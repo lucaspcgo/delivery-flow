@@ -20,6 +20,7 @@ import {
   formatPlanPrice,
 } from "@/lib/api";
 import { ApiError, safeLocalStorageSet } from "@/lib/api";
+import { TRIAL_DURATION_LABEL } from "@/lib/trial";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
@@ -296,7 +297,7 @@ function CheckoutPage() {
           return;
         }
         toast.success("Conta criada!", {
-          description: "Seu teste grátis de 7 dias começou.",
+          description: `Seu teste grátis de ${TRIAL_DURATION_LABEL} começou.`,
         });
         navigate({ to: "/dashboard" });
         return;
@@ -582,8 +583,8 @@ function CheckoutPage() {
             </p>
             {selectedPlanDetails?.is_free && (
               <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
-                Teste grátis por 7 dias. Após o período, será necessário
-                assinar um plano pago.
+                Teste grátis por {TRIAL_DURATION_LABEL}. Após o período, será
+                necessário assinar um plano pago.
               </div>
             )}
             <form onSubmit={handleSubmitData} className="mt-6 space-y-4">
