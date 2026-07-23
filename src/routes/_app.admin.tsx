@@ -21,16 +21,23 @@ import {
   auth,
   hasAdminAccess,
   hasStoredAdminAccess,
+  hasStoredManagerAccess,
+  getStoredUserRole,
   getPlansAdmin,
   createPlan,
   updatePlanDB,
   deletePlan,
   getPlansPublic,
   updateAdminUser,
+  getAdminInvoices,
+  updateAdminInvoice,
   PLAN_PERIOD_LABEL,
   type MeResponse,
   type DBPlan,
   type DBPlanInput,
+  type AppRole,
+  type AdminInvoice as ApiAdminInvoice,
+  type AdminInvoicesSummary,
 } from "@/lib/api";
 import {
   Dialog,
@@ -69,7 +76,7 @@ export const Route = createFileRoute("/_app/admin")({
 
 type Plan = "starter" | "pro" | "enterprise";
 type PaymentStatus = "active" | "pending" | "suspended" | "cancelled";
-type InvoiceStatus = "pending" | "paid" | "failed" | "cancelled";
+type InvoiceStatus = "pending" | "paid" | "failed" | "cancelled" | "overdue";
 
 interface AdminUser {
   id: string;
@@ -82,17 +89,10 @@ interface AdminUser {
   created_at?: string;
   phone?: string;
   plan_expires_at?: string | null;
+  role?: AppRole | string;
 }
 
-interface AdminInvoice {
-  id: string;
-  user_name?: string;
-  user_email?: string;
-  plan: Plan;
-  amount: number;
-  status: InvoiceStatus;
-  due_date: string;
-}
+type AdminInvoice = ApiAdminInvoice;
 
 type AdminPlanRow = DBPlan;
 
@@ -164,16 +164,18 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
     paid: "bg-green-100 text-green-700",
     failed: "bg-red-100 text-red-700",
     cancelled: "bg-gray-200 text-gray-700",
+    overdue: "bg-red-100 text-red-700",
   };
   const label: Record<InvoiceStatus, string> = {
     pending: "Pendente",
     paid: "Paga",
     failed: "Falhou",
     cancelled: "Cancelada",
+    overdue: "Em atraso",
   };
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status]}`}>
-      {label[status]}
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status] ?? "bg-muted text-muted-foreground"}`}>
+      {label[status] ?? status}
     </span>
   );
 }
