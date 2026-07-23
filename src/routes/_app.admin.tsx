@@ -936,9 +936,27 @@ function UserEditForm({
           </Button>
         </div>
       </DialogFooter>
+
+      <AlertDialog open={roleChangeConfirmOpen} onOpenChange={(o) => !o && setRoleChangeConfirmOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar perfil do usuário?</AlertDialogHeader>
+          <AlertDialogDescription>
+            Você está alterando o perfil de <span className="font-medium">{user.name ?? user.email}</span> de{" "}
+            <RoleBadge role={initialRole} /> para <RoleBadge role={role} />.
+            Essa mudança afeta os acessos no painel administrativo. Deseja continuar?
+          </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRoleChangeConfirmOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRoleChange}>Confirmar alteração</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
 function ResetPasswordDialog({
   user,
