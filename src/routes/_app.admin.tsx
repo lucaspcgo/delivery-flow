@@ -304,6 +304,7 @@ function AdminPage() {
             <TabsTrigger value="invoices">Faturas</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="plans">Planos</TabsTrigger>}
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
+          <TabsTrigger value="automation-audit">Automação</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="settings">Configurações</TabsTrigger>}
           </TabsList>
 
@@ -323,6 +324,9 @@ function AdminPage() {
           )}
           <TabsContent value="audit">
             <AuditTab />
+          </TabsContent>
+          <TabsContent value="automation-audit">
+            <AutomationAuditTab />
           </TabsContent>
           {isSuperAdmin && (
             <TabsContent value="settings">
