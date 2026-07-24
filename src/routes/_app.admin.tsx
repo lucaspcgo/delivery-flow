@@ -2206,11 +2206,15 @@ function AuditTab() {
 // ============ Automation Audit Tab ============
 interface AutomationAuditPorLoja {
   loja?: string;
+  loja_nome?: string;
   store?: string;
   store_id?: string;
+  app_shop_id?: string;
   total?: number;
   prontos?: number;
+  prontos_automacao?: number;
   pct?: number;
+  prontos_pct?: number;
   ultimo_pronto?: string | null;
 }
 interface AutomationAuditPedido {
@@ -2218,7 +2222,9 @@ interface AutomationAuditPedido {
   order_id?: string;
   platform_order_id?: string;
   loja?: string;
+  loja_nome?: string;
   store?: string;
+  app_shop_id?: string;
   criado?: string;
   created_at?: string;
   pronto_via?: string;
@@ -2236,6 +2242,7 @@ interface AutomationAuditResp {
     tempo_medio_ate_pronto_seg?: number;
     ultimo_pronto_automacao?: string | null;
     total_pedidos?: number;
+    sem_pronto_automacao?: number;
   };
   automacao_config?: {
     alguma_ligada?: boolean;
@@ -2363,13 +2370,17 @@ function AutomationAuditTab() {
         autoTable(pdf, {
           startY: cursor,
           head: [["Loja", "Total", "Prontos", "%", "Último pronto"]],
-          body: data.por_loja.map((l) => [
-            l.loja ?? l.store ?? l.store_id ?? "—",
-            String(l.total ?? 0),
-            String(l.prontos ?? 0),
-            l.pct != null ? `${l.pct.toFixed(1)}%` : "—",
-            fmtDateTimeBR(l.ultimo_pronto),
-          ]),
+          body: data.por_loja.map((l) => {
+            const nome = l.loja_nome ?? l.loja ?? l.store ?? l.store_id ?? "—";
+            const id = l.app_shop_id ?? "";
+            return [
+              id ? `${nome}\nID: ${id}` : nome,
+              String(l.total ?? 0),
+              String(l.prontos_automacao ?? l.prontos ?? 0),
+              l.prontos_pct != null ? `${l.prontos_pct.toFixed(1)}%` : (l.pct != null ? `${l.pct.toFixed(1)}%` : "—"),
+              fmtDateTimeBR(l.ultimo_pronto),
+            ];
+          }),
           theme: "striped",
           styles: { fontSize: 8, cellPadding: 2 },
           headStyles: { fillColor: [59, 130, 246], textColor: 255 },
@@ -2385,13 +2396,17 @@ function AutomationAuditTab() {
         autoTable(pdf, {
           startY: cursor,
           head: [["Nº", "Loja", "Criado", "Pronto via", "Pronto em"]],
-          body: data.pedidos.map((p) => [
-            p.numero ?? p.platform_order_id ?? p.order_id ?? "—",
-            p.loja ?? p.store ?? "—",
-            fmtDateTimeBR(p.criado ?? p.created_at),
-            p.pronto_via ?? p.ready_via ?? "—",
-            fmtDateTimeBR(p.pronto_em ?? p.ready_at),
-          ]),
+          body: data.pedidos.map((p) => {
+            const nome = p.loja_nome ?? p.loja ?? p.store ?? "—";
+            const id = p.app_shop_id ?? "";
+            return [
+              p.numero ?? p.platform_order_id ?? p.order_id ?? "—",
+              id ? `${nome}\nID: ${id}` : nome,
+              fmtDateTimeBR(p.criado ?? p.created_at),
+              p.pronto_via ?? p.ready_via ?? "—",
+              fmtDateTimeBR(p.pronto_em ?? p.ready_at),
+            ];
+          }),
           theme: "striped",
           styles: { fontSize: 8, cellPadding: 2 },
           headStyles: { fillColor: [59, 130, 246], textColor: 255 },
@@ -2500,7 +2515,7 @@ function AutomationAuditTab() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
             <Card>
               <CardContent className="space-y-2 p-4">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">% Pronto</p>
@@ -2543,6 +2558,17 @@ function AutomationAuditTab() {
                 </p>
               </CardContent>
             </Card>
+            <Card>
+              <CardContent className="space-y-2 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Sem pronto pela automação
+                </p>
+                <p className="text-2xl font-bold">
+                  {r.sem_pronto_automacao != null ? r.sem_pronto_automacao : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">Pedidos que não tiveram pronto automático</p>
+              </CardContent>
+            </Card>
           </div>
 
           <Card>
@@ -2569,14 +2595,19 @@ function AutomationAuditTab() {
                     </TableRow>
                   ) : (
                     (data.por_loja ?? []).map((l, i) => (
-                      <TableRow key={`${l.loja ?? l.store ?? l.store_id ?? i}-${i}`}>
-                        <TableCell className="font-medium">
-                          {l.loja ?? l.store ?? l.store_id ?? "—"}
+                      <TableRow key={`${l.app_shop_id ?? l.store_id ?? l.store ?? i}-${i}`}>
+                        <TableCell>
+                          <div className="font-medium">
+                            {l.loja_nome ?? l.loja ?? l.store ?? l.store_id ?? "—"}
+                          </div>
+                          {l.app_shop_id && (
+                            <div className="text-xs text-muted-foreground">ID: {l.app_shop_id}</div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">{l.total ?? 0}</TableCell>
-                        <TableCell className="text-right">{l.prontos ?? 0}</TableCell>
+                        <TableCell className="text-right">{l.prontos_automacao ?? l.prontos ?? 0}</TableCell>
                         <TableCell className="text-right">
-                          {l.pct != null ? `${l.pct.toFixed(1)}%` : "—"}
+                          {l.prontos_pct != null ? `${l.prontos_pct.toFixed(1)}%` : (l.pct != null ? `${l.pct.toFixed(1)}%` : "—")}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {fmtDateTimeBR(l.ultimo_pronto)}
@@ -2623,7 +2654,14 @@ function AutomationAuditTab() {
                           <TableCell className="font-mono text-xs">
                             {p.numero ?? p.platform_order_id ?? p.order_id ?? "—"}
                           </TableCell>
-                          <TableCell>{p.loja ?? p.store ?? "—"}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">
+                              {p.loja_nome ?? p.loja ?? p.store ?? "—"}
+                            </div>
+                            {p.app_shop_id && (
+                              <div className="text-xs text-muted-foreground">ID: {p.app_shop_id}</div>
+                            )}
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {fmtDateTimeBR(p.criado ?? p.created_at)}
                           </TableCell>
