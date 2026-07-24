@@ -2595,14 +2595,19 @@ function AutomationAuditTab() {
                     </TableRow>
                   ) : (
                     (data.por_loja ?? []).map((l, i) => (
-                      <TableRow key={`${l.loja ?? l.store ?? l.store_id ?? i}-${i}`}>
-                        <TableCell className="font-medium">
-                          {l.loja ?? l.store ?? l.store_id ?? "—"}
+                      <TableRow key={`${l.app_shop_id ?? l.store_id ?? l.store ?? i}-${i}`}>
+                        <TableCell>
+                          <div className="font-medium">
+                            {l.loja_nome ?? l.loja ?? l.store ?? l.store_id ?? "—"}
+                          </div>
+                          {l.app_shop_id && (
+                            <div className="text-xs text-muted-foreground">ID: {l.app_shop_id}</div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">{l.total ?? 0}</TableCell>
-                        <TableCell className="text-right">{l.prontos ?? 0}</TableCell>
+                        <TableCell className="text-right">{l.prontos_automacao ?? l.prontos ?? 0}</TableCell>
                         <TableCell className="text-right">
-                          {l.pct != null ? `${l.pct.toFixed(1)}%` : "—"}
+                          {l.prontos_pct != null ? `${l.prontos_pct.toFixed(1)}%` : (l.pct != null ? `${l.pct.toFixed(1)}%` : "—")}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {fmtDateTimeBR(l.ultimo_pronto)}
