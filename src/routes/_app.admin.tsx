@@ -2206,11 +2206,15 @@ function AuditTab() {
 // ============ Automation Audit Tab ============
 interface AutomationAuditPorLoja {
   loja?: string;
+  loja_nome?: string;
   store?: string;
   store_id?: string;
+  app_shop_id?: string;
   total?: number;
   prontos?: number;
+  prontos_automacao?: number;
   pct?: number;
+  prontos_pct?: number;
   ultimo_pronto?: string | null;
 }
 interface AutomationAuditPedido {
@@ -2218,7 +2222,9 @@ interface AutomationAuditPedido {
   order_id?: string;
   platform_order_id?: string;
   loja?: string;
+  loja_nome?: string;
   store?: string;
+  app_shop_id?: string;
   criado?: string;
   created_at?: string;
   pronto_via?: string;
@@ -2236,6 +2242,7 @@ interface AutomationAuditResp {
     tempo_medio_ate_pronto_seg?: number;
     ultimo_pronto_automacao?: string | null;
     total_pedidos?: number;
+    sem_pronto_automacao?: number;
   };
   automacao_config?: {
     alguma_ligada?: boolean;
