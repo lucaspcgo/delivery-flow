@@ -2396,13 +2396,17 @@ function AutomationAuditTab() {
         autoTable(pdf, {
           startY: cursor,
           head: [["Nº", "Loja", "Criado", "Pronto via", "Pronto em"]],
-          body: data.pedidos.map((p) => [
-            p.numero ?? p.platform_order_id ?? p.order_id ?? "—",
-            p.loja ?? p.store ?? "—",
-            fmtDateTimeBR(p.criado ?? p.created_at),
-            p.pronto_via ?? p.ready_via ?? "—",
-            fmtDateTimeBR(p.pronto_em ?? p.ready_at),
-          ]),
+          body: data.pedidos.map((p) => {
+            const nome = p.loja_nome ?? p.loja ?? p.store ?? "—";
+            const id = p.app_shop_id ?? "";
+            return [
+              p.numero ?? p.platform_order_id ?? p.order_id ?? "—",
+              id ? `${nome}\nID: ${id}` : nome,
+              fmtDateTimeBR(p.criado ?? p.created_at),
+              p.pronto_via ?? p.ready_via ?? "—",
+              fmtDateTimeBR(p.pronto_em ?? p.ready_at),
+            ];
+          }),
           theme: "striped",
           styles: { fontSize: 8, cellPadding: 2 },
           headStyles: { fillColor: [59, 130, 246], textColor: 255 },
