@@ -2654,7 +2654,14 @@ function AutomationAuditTab() {
                           <TableCell className="font-mono text-xs">
                             {p.numero ?? p.platform_order_id ?? p.order_id ?? "—"}
                           </TableCell>
-                          <TableCell>{p.loja ?? p.store ?? "—"}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">
+                              {p.loja_nome ?? p.loja ?? p.store ?? "—"}
+                            </div>
+                            {p.app_shop_id && (
+                              <div className="text-xs text-muted-foreground">ID: {p.app_shop_id}</div>
+                            )}
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {fmtDateTimeBR(p.criado ?? p.created_at)}
                           </TableCell>
