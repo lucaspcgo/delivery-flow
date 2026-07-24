@@ -2515,7 +2515,7 @@ function AutomationAuditTab() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
             <Card>
               <CardContent className="space-y-2 p-4">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">% Pronto</p>
@@ -2556,6 +2556,17 @@ function AutomationAuditTab() {
                 <p className="text-xs text-muted-foreground">
                   Último pronto (automação): {fmtDateTimeBR(r.ultimo_pronto_automacao)}
                 </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-2 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Sem pronto pela automação
+                </p>
+                <p className="text-2xl font-bold">
+                  {r.sem_pronto_automacao != null ? r.sem_pronto_automacao : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">Pedidos que não tiveram pronto automático</p>
               </CardContent>
             </Card>
           </div>
