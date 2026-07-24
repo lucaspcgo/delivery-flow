@@ -2700,3 +2700,201 @@ function AutomationAuditTab() {
     </div>
   );
 }
+
+interface AutomationLog {
+  quando?: string;
+  created_at?: string;
+  acao?: string;
+  acao_label?: string;
+  resultado?: string;
+  platform_order_id?: string;
+  loja_nome?: string;
+  app_shop_id?: string;
+  platform?: string;
+  status_atual?: string;
+}
+
+interface AutomationLogsResp {
+  logs?: AutomationLog[];
+  total?: number;
+}
+
+function AutomationLogsTab() {
+  const [users, setUsers] = useState<AuditUser[]>([]);
+  const [userId, setUserId] = useState<string>("");
+  const [store, setStore] = useState<string>("");
+  const [days, setDays] = useState<string>("30");
+  const [acao, setAcao] = useState<string>("all");
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<AutomationLogsResp | null>(null);
+
+  useEffect(() => {
+    http
+      .get<AuditResponse>("/admin/audit")
+      .then((res) => {
+        const list = res?.users ?? [];
+        setUsers(list);
+        if (list.length && !userId) setUserId(list[0].id);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function generate() {
+    if (!userId) {
+      toast.error("Selecione um usuário");
+      return;
+    }
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ user_id: userId, days });
+      if (store.trim()) params.set("store", store.trim());
+      if (acao !== "all") params.set("acao", acao);
+      const res = await http.get<AutomationLogsResp>(
+        `/admin/automation-logs?${params.toString()}`,
+      );
+      setData(res);
+    } catch (err: any) {
+      toast.error(err?.payload?.error || err?.message || "Erro ao carregar logs");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const logs = (data?.logs ?? []).slice().sort((a, b) => {
+    const ta = new Date(a.quando ?? a.created_at ?? 0).getTime();
+    const tb = new Date(b.quando ?? b.created_at ?? 0).getTime();
+    return tb - ta;
+  });
+  const total = data?.total ?? logs.length;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Logs da Automação</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-5">
+            <div className="md:col-span-2">
+              <Label>Usuário</Label>
+              <Select value={userId} onValueChange={setUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um usuário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name} — {u.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Loja (opcional)</Label>
+              <Input
+                value={store}
+                onChange={(e) => setStore(e.target.value)}
+                placeholder="app_shop_id"
+              />
+            </div>
+            <div>
+              <Label>Janela</Label>
+              <Select value={days} onValueChange={setDays}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 dias</SelectItem>
+                  <SelectItem value="30">30 dias</SelectItem>
+                  <SelectItem value="90">90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Ação</Label>
+              <Select value={acao} onValueChange={setAcao}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="aceito">Aceito</SelectItem>
+                  <SelectItem value="pronto">Pronto</SelectItem>
+                  <SelectItem value="despachado">Despachado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <Button onClick={generate} disabled={loading}>
+              {loading ? "Carregando..." : "Buscar logs"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {data && (
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle>Eventos</CardTitle>
+            <Badge variant="secondary">Total: {total}</Badge>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data/hora</TableHead>
+                  <TableHead>Ação</TableHead>
+                  <TableHead>Resultado</TableHead>
+                  <TableHead>Pedido</TableHead>
+                  <TableHead>Loja</TableHead>
+                  <TableHead>Plataforma</TableHead>
+                  <TableHead>Status atual</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                      Nenhum evento encontrado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  logs.map((l, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="whitespace-nowrap">
+                        {fmtDateTimeBR(l.quando ?? l.created_at)}
+                      </TableCell>
+                      <TableCell>{l.acao_label ?? l.acao ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-600 hover:bg-green-600 text-white">
+                          {l.resultado ?? "Aprovado"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {l.platform_order_id ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{l.loja_nome ?? "—"}</div>
+                        {l.app_shop_id && (
+                          <div className="text-xs text-muted-foreground">
+                            {l.app_shop_id}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{l.platform ?? "—"}</TableCell>
+                      <TableCell>{l.status_atual ?? "—"}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
