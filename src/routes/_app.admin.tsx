@@ -304,6 +304,7 @@ function AdminPage() {
             <TabsTrigger value="invoices">Faturas</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="plans">Planos</TabsTrigger>}
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
+          <TabsTrigger value="automation-audit">Automação</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="settings">Configurações</TabsTrigger>}
           </TabsList>
 
@@ -323,6 +324,9 @@ function AdminPage() {
           )}
           <TabsContent value="audit">
             <AuditTab />
+          </TabsContent>
+          <TabsContent value="automation-audit">
+            <AutomationAuditTab />
           </TabsContent>
           {isSuperAdmin && (
             <TabsContent value="settings">
@@ -2195,6 +2199,462 @@ function AuditTab() {
           </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// ============ Automation Audit Tab ============
+interface AutomationAuditPorLoja {
+  loja?: string;
+  store?: string;
+  store_id?: string;
+  total?: number;
+  prontos?: number;
+  pct?: number;
+  ultimo_pronto?: string | null;
+}
+interface AutomationAuditPedido {
+  numero?: string;
+  order_id?: string;
+  platform_order_id?: string;
+  loja?: string;
+  store?: string;
+  criado?: string;
+  created_at?: string;
+  pronto_via?: string;
+  ready_via?: string;
+  pronto_em?: string;
+  ready_at?: string;
+}
+interface AutomationAuditResp {
+  resumo?: {
+    veredito?: string;
+    aprovado?: boolean;
+    prontos_pct?: number;
+    aceitos_pct?: number;
+    despachados_pct?: number;
+    tempo_medio_ate_pronto_seg?: number;
+    ultimo_pronto_automacao?: string | null;
+    total_pedidos?: number;
+  };
+  automacao_config?: {
+    alguma_ligada?: boolean;
+  };
+  por_loja?: AutomationAuditPorLoja[];
+  pedidos?: AutomationAuditPedido[];
+}
+
+function fmtSecondsToMin(sec?: number) {
+  if (sec == null || !isFinite(sec)) return "—";
+  const s = Math.max(0, Math.round(sec));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  if (m === 0) return `${r}s`;
+  return `${m}min ${r.toString().padStart(2, "0")}s`;
+}
+
+function fmtDateTimeBR(iso?: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function AutomationAuditTab() {
+  const [users, setUsers] = useState<AuditUser[]>([]);
+  const [userId, setUserId] = useState<string>("");
+  const [store, setStore] = useState<string>("");
+  const [days, setDays] = useState<string>("30");
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<AutomationAuditResp | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    http
+      .get<AuditResponse>("/admin/audit")
+      .then((res) => {
+        const list = res?.users ?? [];
+        setUsers(list);
+        if (list.length && !userId) setUserId(list[0].id);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function generate() {
+    if (!userId) {
+      toast.error("Selecione um usuário");
+      return;
+    }
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ user_id: userId, days });
+      if (store.trim()) params.set("store", store.trim());
+      const res = await http.get<AutomationAuditResp>(
+        `/admin/automation-audit?${params.toString()}`,
+      );
+      setData(res);
+    } catch (err: any) {
+      toast.error(err?.payload?.error || err?.message || "Erro ao carregar auditoria");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const selectedUser = users.find((u) => u.id === userId);
+
+  async function exportPdf() {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const [{ default: JsPDF }, autoTableMod] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const autoTable = (autoTableMod as { default: (doc: unknown, opts: unknown) => void }).default;
+      const pdf = new JsPDF({ orientation: "p", unit: "mm", format: "a4" });
+      const marginX = 12;
+      let y = 14;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.text("Auditoria da Automação", marginX, y);
+      y += 6;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.text(
+        `Cliente: ${selectedUser ? `${selectedUser.name} (${selectedUser.email})` : userId}`,
+        marginX,
+        y,
+      );
+      y += 5;
+      pdf.text(`Período: últimos ${days} dias${store ? ` · Loja: ${store}` : ""}`, marginX, y);
+      y += 5;
+      pdf.text(`Gerado em ${new Date().toLocaleString("pt-BR")}`, marginX, y);
+      y += 6;
+      const r = data.resumo;
+      if (r?.veredito) {
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`Veredito: ${r.veredito}`, marginX, y);
+        y += 6;
+      }
+      autoTable(pdf, {
+        startY: y,
+        head: [["Métrica", "Valor"]],
+        body: [
+          ["% Pronto", r?.prontos_pct != null ? `${r.prontos_pct.toFixed(1)}%` : "—"],
+          ["% Aceito", r?.aceitos_pct != null ? `${r.aceitos_pct.toFixed(1)}%` : "—"],
+          ["% Despachado", r?.despachados_pct != null ? `${r.despachados_pct.toFixed(1)}%` : "—"],
+          ["Tempo médio até pronto", fmtSecondsToMin(r?.tempo_medio_ate_pronto_seg)],
+          ["Último pronto (automação)", fmtDateTimeBR(r?.ultimo_pronto_automacao)],
+          ["Total de pedidos", String(r?.total_pedidos ?? 0)],
+        ],
+        theme: "striped",
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+      });
+      let cursor = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+
+      if (data.por_loja?.length) {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text("Por loja", marginX, cursor);
+        cursor += 3;
+        autoTable(pdf, {
+          startY: cursor,
+          head: [["Loja", "Total", "Prontos", "%", "Último pronto"]],
+          body: data.por_loja.map((l) => [
+            l.loja ?? l.store ?? l.store_id ?? "—",
+            String(l.total ?? 0),
+            String(l.prontos ?? 0),
+            l.pct != null ? `${l.pct.toFixed(1)}%` : "—",
+            fmtDateTimeBR(l.ultimo_pronto),
+          ]),
+          theme: "striped",
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        });
+        cursor = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+      }
+
+      if (data.pedidos?.length) {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text("Pedidos", marginX, cursor);
+        cursor += 3;
+        autoTable(pdf, {
+          startY: cursor,
+          head: [["Nº", "Loja", "Criado", "Pronto via", "Pronto em"]],
+          body: data.pedidos.map((p) => [
+            p.numero ?? p.platform_order_id ?? p.order_id ?? "—",
+            p.loja ?? p.store ?? "—",
+            fmtDateTimeBR(p.criado ?? p.created_at),
+            p.pronto_via ?? p.ready_via ?? "—",
+            fmtDateTimeBR(p.pronto_em ?? p.ready_at),
+          ]),
+          theme: "striped",
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        });
+      }
+
+      const fileName = `auditoria-automacao-${selectedUser?.name?.replace(/\s+/g, "-").toLowerCase() ?? userId}-${days}d.pdf`;
+      pdf.save(fileName);
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao exportar PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const r = data?.resumo;
+  const aprovado = r?.aprovado;
+  const automacaoDesligada = data?.automacao_config?.alguma_ligada === false;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Auditoria da Automação</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label>Usuário</Label>
+              <Select value={userId} onValueChange={setUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um usuário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name} — {u.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Loja (opcional)</Label>
+              <Input
+                value={store}
+                onChange={(e) => setStore(e.target.value)}
+                placeholder="ID da loja"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Janela</Label>
+              <Select value={days} onValueChange={setDays}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90">Últimos 90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2">
+              <Button onClick={generate} disabled={loading || !userId} className="w-full">
+                {loading ? "Gerando..." : "Gerar auditoria"}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {automacaoDesligada && (
+        <Card className="border-yellow-300 bg-yellow-50">
+          <CardContent className="flex items-start gap-3 p-4 text-yellow-900">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <div className="font-semibold">Automação DESLIGADA para este usuário</div>
+              <div className="text-sm">Nenhuma regra de automação está ativa no período.</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data && r && (
+        <>
+          <Card>
+            <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <Badge
+                  className={
+                    aprovado
+                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                      : "bg-red-100 text-red-700 hover:bg-red-100"
+                  }
+                >
+                  {aprovado ? "Aprovado" : "Atenção"}
+                </Badge>
+                <p className="text-base font-medium text-foreground">
+                  {r.veredito ?? "Sem veredito disponível."}
+                </p>
+              </div>
+              <Button variant="outline" onClick={exportPdf} disabled={exporting}>
+                {exporting ? "Exportando..." : "Exportar PDF"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <Card>
+              <CardContent className="space-y-2 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">% Pronto</p>
+                <p className="text-2xl font-bold">
+                  {r.prontos_pct != null ? `${r.prontos_pct.toFixed(1)}%` : "—"}
+                </p>
+                <Progress value={Math.max(0, Math.min(100, r.prontos_pct ?? 0))} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-2 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">% Aceito</p>
+                <p className="text-2xl font-bold">
+                  {r.aceitos_pct != null ? `${r.aceitos_pct.toFixed(1)}%` : "—"}
+                </p>
+                <Progress value={Math.max(0, Math.min(100, r.aceitos_pct ?? 0))} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-2 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  % Despachado
+                </p>
+                <p className="text-2xl font-bold">
+                  {r.despachados_pct != null ? `${r.despachados_pct.toFixed(1)}%` : "—"}
+                </p>
+                <Progress value={Math.max(0, Math.min(100, r.despachados_pct ?? 0))} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-2 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Tempo médio até pronto
+                </p>
+                <p className="text-2xl font-bold">
+                  {fmtSecondsToMin(r.tempo_medio_ate_pronto_seg)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Último pronto (automação): {fmtDateTimeBR(r.ultimo_pronto_automacao)}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Por loja</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Loja</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right">Prontos</TableHead>
+                    <TableHead className="text-right">%</TableHead>
+                    <TableHead>Último pronto</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.por_loja ?? []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        Sem dados por loja.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    (data.por_loja ?? []).map((l, i) => (
+                      <TableRow key={`${l.loja ?? l.store ?? l.store_id ?? i}-${i}`}>
+                        <TableCell className="font-medium">
+                          {l.loja ?? l.store ?? l.store_id ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-right">{l.total ?? 0}</TableCell>
+                        <TableCell className="text-right">{l.prontos ?? 0}</TableCell>
+                        <TableCell className="text-right">
+                          {l.pct != null ? `${l.pct.toFixed(1)}%` : "—"}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {fmtDateTimeBR(l.ultimo_pronto)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Pedidos</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nº do pedido</TableHead>
+                    <TableHead>Loja</TableHead>
+                    <TableHead>Criado</TableHead>
+                    <TableHead>Pronto via</TableHead>
+                    <TableHead>Pronto em</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.pedidos ?? []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        Sem pedidos no período.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    (data.pedidos ?? []).map((p, i) => {
+                      const via = (p.pronto_via ?? p.ready_via ?? "").toLowerCase();
+                      const isAuto =
+                        via.includes("auto") || via.includes("api");
+                      return (
+                        <TableRow
+                          key={`${p.numero ?? p.order_id ?? p.platform_order_id ?? i}-${i}`}
+                        >
+                          <TableCell className="font-mono text-xs">
+                            {p.numero ?? p.platform_order_id ?? p.order_id ?? "—"}
+                          </TableCell>
+                          <TableCell>{p.loja ?? p.store ?? "—"}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {fmtDateTimeBR(p.criado ?? p.created_at)}
+                          </TableCell>
+                          <TableCell>
+                            {p.pronto_via || p.ready_via ? (
+                              <Badge
+                                className={
+                                  isAuto
+                                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                    : "bg-muted text-muted-foreground hover:bg-muted"
+                                }
+                              >
+                                {isAuto ? "automação (API)" : "manual/gestor"}
+                              </Badge>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {fmtDateTimeBR(p.pronto_em ?? p.ready_at)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
