@@ -2370,13 +2370,17 @@ function AutomationAuditTab() {
         autoTable(pdf, {
           startY: cursor,
           head: [["Loja", "Total", "Prontos", "%", "Último pronto"]],
-          body: data.por_loja.map((l) => [
-            l.loja ?? l.store ?? l.store_id ?? "—",
-            String(l.total ?? 0),
-            String(l.prontos ?? 0),
-            l.pct != null ? `${l.pct.toFixed(1)}%` : "—",
-            fmtDateTimeBR(l.ultimo_pronto),
-          ]),
+          body: data.por_loja.map((l) => {
+            const nome = l.loja_nome ?? l.loja ?? l.store ?? l.store_id ?? "—";
+            const id = l.app_shop_id ?? "";
+            return [
+              id ? `${nome}\nID: ${id}` : nome,
+              String(l.total ?? 0),
+              String(l.prontos_automacao ?? l.prontos ?? 0),
+              l.prontos_pct != null ? `${l.prontos_pct.toFixed(1)}%` : (l.pct != null ? `${l.pct.toFixed(1)}%` : "—"),
+              fmtDateTimeBR(l.ultimo_pronto),
+            ];
+          }),
           theme: "striped",
           styles: { fontSize: 8, cellPadding: 2 },
           headStyles: { fillColor: [59, 130, 246], textColor: 255 },
