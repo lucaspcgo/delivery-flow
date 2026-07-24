@@ -432,7 +432,7 @@ function LandingPage() {
           </div>
         </div>
         <div className="mx-auto mt-10 max-w-6xl border-t pt-6 text-center text-xs text-white/40" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          © {new Date().getFullYear()} Zero Tempo. Todos os direitos reservados.
+          © {new Date().getFullYear()} Zero Tempo. Todos os direitos reservados. Feito pela Bs Soluções.
         </div>
       </footer>
     </div>
