@@ -305,6 +305,7 @@ function AdminPage() {
             {isSuperAdmin && <TabsTrigger value="plans">Planos</TabsTrigger>}
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
           <TabsTrigger value="automation-audit">Automação</TabsTrigger>
+          <TabsTrigger value="automation-logs">Logs</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="settings">Configurações</TabsTrigger>}
           </TabsList>
 
@@ -327,6 +328,9 @@ function AdminPage() {
           </TabsContent>
           <TabsContent value="automation-audit">
             <AutomationAuditTab />
+          </TabsContent>
+          <TabsContent value="automation-logs">
+            <AutomationLogsTab />
           </TabsContent>
           {isSuperAdmin && (
             <TabsContent value="settings">
