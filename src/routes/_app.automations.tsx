@@ -154,24 +154,27 @@ function RuleCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">
-            Tempo antes de aceitar (segundos)
+            Aguardar impressão antes de aceitar (segundos)
           </Label>
           <Input
             type="number"
             min={0}
+            max={900}
             value={acceptDelay}
             onChange={(e) => setAcceptDelay(e.target.value)}
             disabled={!enabled || saving}
             className="bg-background"
           />
           <p className="text-[11px] text-muted-foreground leading-snug">
-            Tempo que o pedido fica como novo antes de ser aceito. Aumente
-            (ex.: 60s) para dar tempo do gestor da 99 imprimir o pedido.
+            Tempo que o pedido fica como "novo" no Gestor de Pedidos antes da
+            automação aceitar — dá tempo do pedido IMPRIMIR. Ex.: 60 = espera 1
+            minuto para imprimir e depois aceita. 0 = aceita na hora. (0 a 900
+            segundos)
           </p>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">
-            Tempo antes de marcar Pronto (segundos)
+            Tempo até marcar pronto (segundos)
           </Label>
           <Input
             type="number"
