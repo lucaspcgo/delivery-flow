@@ -91,7 +91,7 @@ function RuleCard({
     try {
       const payload = {
         enabled,
-        accept_delay_seconds: Math.max(0, Number(acceptDelay) || 0),
+        accept_delay_seconds: Math.min(900, Math.max(0, Number(acceptDelay) || 0)),
         delay_seconds: Math.max(0, Number(readyDelay) || 0),
       };
       const updated = await updateAutomation(rule.id, payload);
