@@ -252,6 +252,7 @@ function IntegrationsPage() {
   }, [refreshIfoodStatus]);
 
   // Countdown do userCode
+
   useEffect(() => {
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
