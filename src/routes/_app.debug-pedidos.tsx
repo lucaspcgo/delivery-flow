@@ -455,7 +455,7 @@ function DebugPedidosPage() {
       />
 
       <Card>
-        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-muted-foreground">Plataforma</label>
             <div className="inline-flex rounded-md border bg-muted p-1">
@@ -521,7 +521,7 @@ function DebugPedidosPage() {
                 value={store}
                 onChange={(e) => setStore(e.target.value)}
                 placeholder="Todas"
-                className="w-48"
+                className="w-full sm:w-48"
                 list="debug-store-options"
               />
               <datalist id="debug-store-options">
@@ -544,10 +544,10 @@ function DebugPedidosPage() {
               max={50}
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value))}
-              className="w-32"
+              className="w-full sm:w-32"
             />
           </div>
-          <Button onClick={apply} disabled={isLoading || isFetchingMore}>
+          <Button className="w-full sm:w-auto" onClick={apply} disabled={isLoading || isFetchingMore}>
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -556,7 +556,7 @@ function DebugPedidosPage() {
             Atualizar
           </Button>
           {meta && (
-            <div className="ml-auto text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground sm:ml-auto">
               {orders.length} de {meta.total} · plataforma <strong>{meta.platform}</strong>
             </div>
           )}

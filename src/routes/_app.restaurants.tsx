@@ -157,7 +157,7 @@ function RestaurantsPage() {
             {Array.from({ length: 2 }).map((_, i) => (
               <Card key={i} className="p-6 space-y-3">
                 <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-4 w-full max-w-56" />
                 <Skeleton className="h-4 w-48" />
                 <Skeleton className="h-9 w-32" />
               </Card>

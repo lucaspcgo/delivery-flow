@@ -243,7 +243,7 @@ function MenuManager() {
           <CardHeader>
             <CardTitle className="text-base">1. Selecionar loja de origem</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-end lg:grid-cols-[1fr_1fr_auto]">
             <div>
               <Label>Restaurante origem</Label>
               <Select value={fromRest} onValueChange={setFromRest} disabled={loadingRests}>
@@ -271,7 +271,7 @@ function MenuManager() {
             <Button
               onClick={fetchMenu}
               disabled={fetching || !fromRest || !fromPlatform || !menuSyncEnabled}
-              className={primaryBtn}
+              className={`w-full sm:col-span-2 lg:col-span-1 lg:w-auto ${primaryBtn}`}
               title={!menuSyncEnabled ? "Sincronização de cardápio disponível em planos superiores" : undefined}
             >
               {fetching ? (

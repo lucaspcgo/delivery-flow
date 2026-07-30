@@ -299,7 +299,7 @@ function AdminPage() {
       />
       <div className="p-4 sm:p-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 flex flex-wrap">
+          <TabsList className="mb-6 w-full">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="invoices">Faturas</TabsTrigger>

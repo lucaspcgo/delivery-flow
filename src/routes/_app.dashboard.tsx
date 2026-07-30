@@ -82,22 +82,23 @@ function DashboardPage() {
         title="Dashboard"
         description="Visão geral operacional do seu restaurante hoje."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="h-9 rounded-md border bg-background px-3 text-sm"
+              className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm sm:flex-none"
             />
             <Button
               variant="outline"
               size="sm"
+              className="shrink-0"
               onClick={() => setDate(todayStr())}
             >
               Hoje
             </Button>
             <Select value={platform} onValueChange={setPlatform}>
-              <SelectTrigger className="h-9 w-[140px]">
+              <SelectTrigger className="h-9 w-full min-w-0 sm:w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
