@@ -784,7 +784,13 @@ function IntegrationsPage() {
                     <p className="flex-1 font-mono text-2xl font-bold tracking-widest">
                       {ifoodCode.userCode}
                     </p>
-                    <Button size="icon" variant="outline" onClick={() => void copyUserCode()} title="Copiar código">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => void copyUserCode()}
+                      title="Copiar código"
+                      aria-label="Copiar código"
+                    >
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>

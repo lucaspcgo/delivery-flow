@@ -1380,7 +1380,13 @@ function ResetPasswordDialog({
               >
                 {showTemp ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
-              <Button type="button" variant="outline" size="icon" onClick={copy}>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label={copied ? "Senha copiada" : "Copiar senha"}
+                onClick={copy}
+              >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
