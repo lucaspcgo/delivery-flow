@@ -198,6 +198,17 @@
     outline-offset: 2px;
   }
 
+  /*
+   * Radix menu/select/command items set `outline-none` and rely on the
+   * highlighted state for keyboard navigation. Reinforce it with an inset
+   * ring so the active option stays obvious for keyboard users.
+   */
+  [data-highlighted],
+  [data-radix-collection-item][data-state="checked"]:focus,
+  [cmdk-item][data-selected="true"] {
+    box-shadow: inset 0 0 0 2px var(--color-ring);
+  }
+
   /* Comfortable line height for body copy */
   p {
     line-height: 1.65;

@@ -55,7 +55,7 @@ export function AppSidebar() {
     .toUpperCase();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" aria-label="Navegação principal">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-3">
           <img
@@ -84,7 +84,11 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                      <Link to={item.url} className="flex items-center gap-2">
+                      <Link
+                        to={item.url}
+                        aria-current={active ? "page" : undefined}
+                        className="flex items-center gap-2"
+                      >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>
@@ -106,7 +110,13 @@ export function AppSidebar() {
                     isActive={pathname === "/admin" || pathname.startsWith("/admin/")}
                     tooltip="Admin"
                   >
-                    <Link to="/admin" className="flex items-center gap-2">
+                    <Link
+                      to="/admin"
+                      aria-current={
+                        pathname === "/admin" || pathname.startsWith("/admin/") ? "page" : undefined
+                      }
+                      className="flex items-center gap-2"
+                    >
                       <Shield className="h-4 w-4" />
                       <span>Admin</span>
                     </Link>
@@ -119,7 +129,11 @@ export function AppSidebar() {
                     isActive={pathname.startsWith("/menu-manager")}
                     tooltip="Cardápios"
                   >
-                    <Link to="/menu-manager" className="flex items-center gap-2">
+                    <Link
+                      to="/menu-manager"
+                      aria-current={pathname.startsWith("/menu-manager") ? "page" : undefined}
+                      className="flex items-center gap-2"
+                    >
                       <BookOpen className="h-4 w-4" />
                       <span>Cardápios</span>
                     </Link>
@@ -131,7 +145,11 @@ export function AppSidebar() {
                     isActive={pathname.startsWith("/buscar-loja")}
                     tooltip="Buscar Loja"
                   >
-                    <Link to="/buscar-loja" className="flex items-center gap-2">
+                    <Link
+                      to="/buscar-loja"
+                      aria-current={pathname.startsWith("/buscar-loja") ? "page" : undefined}
+                      className="flex items-center gap-2"
+                    >
                       <Search className="h-4 w-4" />
                       <span>Buscar Loja</span>
                     </Link>
@@ -143,7 +161,11 @@ export function AppSidebar() {
                     isActive={pathname.startsWith("/debug-pedidos")}
                     tooltip="Depuração de Pedidos"
                   >
-                    <Link to="/debug-pedidos" className="flex items-center gap-2">
+                    <Link
+                      to="/debug-pedidos"
+                      aria-current={pathname.startsWith("/debug-pedidos") ? "page" : undefined}
+                      className="flex items-center gap-2"
+                    >
                       <Bug className="h-4 w-4" />
                       <span>Depuração de Pedidos</span>
                     </Link>

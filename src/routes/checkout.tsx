@@ -792,6 +792,7 @@ function CheckoutPage() {
                                 type="button"
                                 variant="outline"
                                 size="icon"
+                                aria-label="Copiar código Pix"
                                 onClick={() => copyToClipboard(pix, "Código Pix")}
                               >
                                 <Copy className="h-4 w-4" />
@@ -842,6 +843,7 @@ function CheckoutPage() {
                             type="button"
                             variant="outline"
                             size="icon"
+                            aria-label="Copiar linha digitável"
                             onClick={() =>
                               copyToClipboard(
                                 checkout.digitable!,
