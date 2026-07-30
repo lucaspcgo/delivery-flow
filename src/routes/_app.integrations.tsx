@@ -112,6 +112,7 @@ function IntegrationsPage() {
   const [removeStore, setRemoveStore] = useState<{ id: string; name: string; merchant_id: string; platform: string } | null>(null);
   const [removeLoading, setRemoveLoading] = useState(false);
   const [dedupeLoading, setDedupeLoading] = useState(false);
+  const [ifoodRefreshing, setIfoodRefreshing] = useState(false);
   const [storeCounts, setStoreCounts] = useState<Record<Platform, number>>({
     ifood: 0,
     keeta: 0,
