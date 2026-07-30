@@ -590,6 +590,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
       phone?: string;
       role?: string;
       previous_role?: string;
+      notes?: string;
     },
   ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
@@ -676,6 +677,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                   <TableHead>Plano</TableHead>
                   <TableHead>Status Pgto</TableHead>
                   <TableHead>Perfil</TableHead>
+                  <TableHead>Observações</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -696,6 +698,15 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                      <TableCell>
                        <RoleBadge role={u.role} isAdmin={u.is_admin} />
                      </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      {u.notes ? (
+                        <span className="block truncate text-sm text-muted-foreground" title={u.notes}>
+                          {u.notes}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
