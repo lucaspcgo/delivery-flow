@@ -45,6 +45,7 @@ import {
   type NotesAuditEntry,
 } from "@/lib/api";
 import {
+  getLocalNotes,
   getLocalNotesHistory,
   mergeNotesHistory,
   recordLocalNotesChange,
