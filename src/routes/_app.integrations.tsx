@@ -616,6 +616,17 @@ function IntegrationsPage() {
                       Desconectar
                     </Button>
                   )}
+                  {ifoodConnected && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setDedupeOpen(true)}
+                      disabled={dedupeLoading}
+                    >
+                      {dedupeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Limpar lojas duplicadas
+                    </Button>
+                  )}
                 </div>
               ) : i.platform === "99food" ? (
                 <div className="mt-5">
