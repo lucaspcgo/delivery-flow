@@ -34,6 +34,7 @@ import {
 } from "@/lib/api";
 import { nineNineFoodApi } from "@/lib/api";
 import { KEETA_ENABLED } from "@/lib/feature-flags";
+import { IfoodStoreManager } from "@/components/ifood-store-manager";
 
 export const Route = createFileRoute("/_app/integrations")({
   head: () => ({ meta: [{ title: "Integrações — Zero Tempo" }] }),
@@ -610,6 +611,10 @@ function IntegrationsPage() {
           </Card>
         );
         })}
+      </div>
+
+      <div className="px-4 pb-4 sm:px-8 sm:pb-8">
+        <IfoodStoreManager />
       </div>
 
       <Dialog open={ifoodOpen} onOpenChange={(open) => {
