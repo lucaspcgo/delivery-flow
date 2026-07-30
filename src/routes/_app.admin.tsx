@@ -827,6 +827,7 @@ function UserEditForm({
     previous_role?: string;
   }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
+  onNotesSaved?: (notes: string) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
 }) {
@@ -915,11 +916,13 @@ function UserEditForm({
       phone?: string;
       role?: string;
       previous_role?: string;
+      notes?: string;
     } = {
       plan,
       active,
       payment_status: paymentStatus,
       phone: phone.trim() ? phone : "",
+      notes: notes.trim(),
     };
     if (isSuperAdmin) {
       payload.role = role;
@@ -999,6 +1002,21 @@ function UserEditForm({
           onChange={(e) => setPhone(maskBrPhoneAdmin(e.target.value))}
           maxLength={16}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-notes">Observações</Label>
+        <Textarea
+          id="edit-notes"
+          rows={3}
+          maxLength={1000}
+          placeholder="Anotações internas sobre este usuário (visível apenas no painel admin)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          {notes.trim().length}/1000 — aparece na coluna "Observações" da lista de usuários.
+        </p>
       </div>
 
       <div className="space-y-2">
