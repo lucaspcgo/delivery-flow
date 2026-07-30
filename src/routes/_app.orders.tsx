@@ -441,9 +441,7 @@ function OrdersKanban() {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-background">
-      {/* Garantia: o body nunca rola horizontalmente por causa do KDS */}
-      <style>{`body{overflow-x:hidden}`}</style>
+    <div className="w-full min-w-0 max-w-full min-h-[calc(100vh-3.5rem)] overflow-x-hidden bg-background">
       <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
           <h1 className="text-xl font-black text-foreground sm:text-2xl">Pedidos ao Vivo</h1>
@@ -602,7 +600,7 @@ function OrdersKanban() {
           }}
           role="region"
           aria-label="Painel de pedidos ao vivo"
-          className="kds-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth p-4 md:snap-none"
+          className="kds-scroll flex w-full min-w-0 max-w-full snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth p-4 md:snap-none"
           style={{
             ["--kds-cols" as string]: visibleColumns.length,
           }}
