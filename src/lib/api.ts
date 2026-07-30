@@ -511,6 +511,88 @@ export const ifoodAuth = {
     >("/integrations/ifood/stores", { silent: true }),
 };
 
+// ---------- iFood merchant management (status / pausas / horários) ----------
+
+export interface IfoodMerchantValidation {
+  id?: string;
+  title?: string;
+  message?: string;
+  state?: string;
+  type?: string;
+  [k: string]: unknown;
+}
+
+export interface IfoodMerchantStatus {
+  state?: string;
+  operation?: string;
+  message?: { title?: string; subtitle?: string; description?: string } | string | null;
+  validations?: IfoodMerchantValidation[];
+  [k: string]: unknown;
+}
+
+export interface IfoodInterruption {
+  id: string;
+  description?: string | null;
+  start?: string | null;
+  end?: string | null;
+  [k: string]: unknown;
+}
+
+export interface IfoodShift {
+  id?: string;
+  dayOfWeek: string;
+  start: string;
+  duration: number;
+  [k: string]: unknown;
+}
+
+export interface IfoodOpeningHours {
+  id?: string;
+  shifts?: IfoodShift[];
+  [k: string]: unknown;
+}
+
+const merchantBase = (merchantId: string) =>
+  `/integrations/ifood/merchants/${encodeURIComponent(merchantId)}`;
+
+export const ifoodMerchant = {
+  status: (merchantId: string) =>
+    http.get<IfoodMerchantStatus | IfoodMerchantStatus[]>(
+      `${merchantBase(merchantId)}/status`,
+      { silent: true },
+    ),
+  listInterruptions: (merchantId: string) =>
+    http.get<IfoodInterruption[] | { interruptions?: IfoodInterruption[] }>(
+      `${merchantBase(merchantId)}/interruptions`,
+      { silent: true },
+    ),
+  createInterruption: (
+    merchantId: string,
+    body: { description: string; start: string; end: string },
+  ) =>
+    http.post<IfoodInterruption>(
+      `${merchantBase(merchantId)}/interruptions`,
+      body,
+      { silent: true },
+    ),
+  removeInterruption: (merchantId: string, id: string) =>
+    http.delete<unknown>(
+      `${merchantBase(merchantId)}/interruptions/${encodeURIComponent(id)}`,
+      { silent: true },
+    ),
+  openingHours: (merchantId: string) =>
+    http.get<IfoodOpeningHours | IfoodShift[]>(
+      `${merchantBase(merchantId)}/opening-hours`,
+      { silent: true },
+    ),
+  updateOpeningHours: (merchantId: string, shifts: IfoodShift[]) =>
+    http.put<unknown>(
+      `${merchantBase(merchantId)}/opening-hours`,
+      { shifts },
+      { silent: true },
+    ),
+};
+
 // ---------- 99Food connect shop ----------
 
 export interface NineNineFoodConnectResponse {
