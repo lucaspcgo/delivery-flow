@@ -986,6 +986,16 @@ function UserEditForm({
   };
 
 
+  // Foco automático no primeiro campo editável quando o modal termina de abrir.
+  // rAF evita competir com a animação de entrada do Radix (e o scroll-jump).
+  const phoneRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      phoneRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
