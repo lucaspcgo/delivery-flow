@@ -112,6 +112,7 @@ function IntegrationsPage() {
   const [removeStore, setRemoveStore] = useState<{ id: string; name: string; merchant_id: string; platform: string } | null>(null);
   const [removeLoading, setRemoveLoading] = useState(false);
   const [dedupeLoading, setDedupeLoading] = useState(false);
+  const [ifoodRefreshing, setIfoodRefreshing] = useState(false);
   const [storeCounts, setStoreCounts] = useState<Record<Platform, number>>({
     ifood: 0,
     keeta: 0,
@@ -232,9 +233,18 @@ function IntegrationsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void refreshIfoodStatus();
+  const handleRefreshIfood = useCallback(async () => {
+    setIfoodRefreshing(true);
+    try {
+      await refreshIfoodStatus();
+    } finally {
+      setIfoodRefreshing(false);
+    }
   }, [refreshIfoodStatus]);
+
+  useEffect(() => {
+    void handleRefreshIfood();
+  }, [handleRefreshIfood]);
 
   const runDedupe = useCallback(async () => {
     setDedupeLoading(true);
@@ -243,13 +253,13 @@ function IntegrationsPage() {
       const removed = res?.removed ?? res?.duplicates_removed ?? res?.deleted ?? 0;
       toast.success(`${removed} loja(s) duplicada(s) removida(s)`);
       setDedupeOpen(false);
-      await refreshIfoodStatus();
+      await handleRefreshIfood();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Não foi possível limpar as duplicadas");
     } finally {
       setDedupeLoading(false);
     }
-  }, [refreshIfoodStatus]);
+  }, [handleRefreshIfood]);
 
   // Countdown do userCode
   const confirmRemoveStore = useCallback(async () => {
@@ -259,14 +269,14 @@ function IntegrationsPage() {
       await ifoodAuth.removeStore(removeStore.merchant_id || removeStore.id);
       toast.success("Loja removida da integração");
       setRemoveStore(null);
-      await refreshIfoodStatus();
+      await handleRefreshIfood();
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Não foi possível remover a loja");
     } finally {
       setRemoveLoading(false);
     }
-  }, [removeStore, refreshIfoodStatus, load]);
+  }, [removeStore, handleRefreshIfood, load]);
 
   useEffect(() => {
     if (countdownRef.current) {
@@ -682,7 +692,13 @@ function IntegrationsPage() {
       </div>
 
       <div className="px-4 pb-4 sm:px-8 sm:pb-8">
-        <IfoodStoreManager />
+        <IfoodStoreManager
+          stores={storesByPlatform.ifood
+            .filter((s) => Boolean(s.merchant_id))
+            .map((s) => ({ merchantId: s.merchant_id, name: s.name }))}
+          loading={ifoodRefreshing}
+          onRefresh={handleRefreshIfood}
+        />
       </div>
 
       <AlertDialog open={dedupeOpen} onOpenChange={setDedupeOpen}>

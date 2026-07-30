@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   ApiError,
-  ifoodAuth,
   ifoodMerchant,
   type IfoodInterruption,
   type IfoodMerchantStatus,
@@ -147,9 +146,17 @@ function StateBadge({ state }: { state?: string }) {
 
 // ---------- Componente principal ----------
 
-export function IfoodStoreManager() {
-  const [stores, setStores] = useState<IfoodStoreOption[]>([]);
-  const [storesLoading, setStoresLoading] = useState(true);
+interface IfoodStoreManagerProps {
+  stores: IfoodStoreOption[];
+  loading?: boolean;
+  onRefresh?: () => void | Promise<void>;
+}
+
+export function IfoodStoreManager({
+  stores,
+  loading = false,
+  onRefresh,
+}: IfoodStoreManagerProps) {
   const [merchantId, setMerchantId] = useState<string>("");
 
   const selectedStore = useMemo(
@@ -157,27 +164,11 @@ export function IfoodStoreManager() {
     [stores, merchantId],
   );
 
-  const loadStores = useCallback(async () => {
-    setStoresLoading(true);
-    try {
-      const res = await ifoodAuth.stores();
-      const opts = (Array.isArray(res) ? res : [])
-        .filter((s) => Boolean(s.merchant_id))
-        .map((s) => ({
-          merchantId: String(s.merchant_id),
-          name: s.name ?? String(s.merchant_id),
-        }));
-      setStores(opts);
-    } catch {
-      setStores([]);
-    } finally {
-      setStoresLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void loadStores();
-  }, [loadStores]);
+    if (merchantId && !stores.some((s) => s.merchantId === merchantId)) {
+      setMerchantId("");
+    }
+  }, [merchantId, stores]);
 
   return (
     <Card className="p-5">
@@ -194,10 +185,10 @@ export function IfoodStoreManager() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => void loadStores()}
-          disabled={storesLoading}
+          onClick={() => void onRefresh?.()}
+          disabled={loading}
         >
-          {storesLoading ? (
+          {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <RefreshCw className="h-4 w-4" />
@@ -212,7 +203,7 @@ export function IfoodStoreManager() {
           <SelectTrigger className="mt-1">
             <SelectValue
               placeholder={
-                storesLoading ? "Carregando lojas..." : "Selecione a loja iFood"
+                loading ? "Carregando lojas..." : "Selecione a loja iFood"
               }
             />
           </SelectTrigger>
@@ -224,7 +215,7 @@ export function IfoodStoreManager() {
             ))}
           </SelectContent>
         </Select>
-        {!storesLoading && stores.length === 0 && (
+        {!loading && stores.length === 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
             Nenhuma loja iFood com merchant_id encontrada. Conecte uma loja
             primeiro.
