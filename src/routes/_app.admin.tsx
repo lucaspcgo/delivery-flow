@@ -738,8 +738,8 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 
 
     <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90svh] max-w-lg flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Editar usuário</DialogTitle>
           <DialogDescription>Ajuste plano e status da conta.</DialogDescription>
         </DialogHeader>
