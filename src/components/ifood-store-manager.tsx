@@ -31,7 +31,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   ApiError,
-  ifoodAuth,
   ifoodMerchant,
   type IfoodInterruption,
   type IfoodMerchantStatus,
