@@ -827,7 +827,6 @@ function UserEditForm({
     previous_role?: string;
   }) => Promise<import("@/lib/api").AdminUser | null>;
   onDeactivateAsk: (u: AdminUser) => void;
-  onNotesSaved?: (notes: string) => void;
   onResetPassword: (u: AdminUser) => void;
   onRenewed: (planExpiresAt: string | null) => void;
 }) {
