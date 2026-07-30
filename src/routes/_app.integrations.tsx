@@ -269,14 +269,14 @@ function IntegrationsPage() {
       await ifoodAuth.removeStore(removeStore.merchant_id || removeStore.id);
       toast.success("Loja removida da integração");
       setRemoveStore(null);
-      await refreshIfoodStatus();
+      await handleRefreshIfood();
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Não foi possível remover a loja");
     } finally {
       setRemoveLoading(false);
     }
-  }, [removeStore, refreshIfoodStatus, load]);
+  }, [removeStore, handleRefreshIfood, load]);
 
   useEffect(() => {
     if (countdownRef.current) {
