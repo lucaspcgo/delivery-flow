@@ -1050,6 +1050,74 @@ function UserEditForm({
         <p className="text-xs text-muted-foreground">
           {notes.trim().length}/1000 — aparece na coluna "Observações" da lista de usuários.
         </p>
+
+        <div className="rounded-lg border bg-muted/20 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">Histórico de observações</p>
+              <p className="text-xs text-muted-foreground">
+                Quem alterou as observações e quando.
+                {notesHistory.length > 0 ? ` (${notesHistory.length})` : ""}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => void loadNotesHistory()}
+                disabled={notesHistoryLoading}
+              >
+                {notesHistoryLoading ? "Atualizando..." : "Atualizar"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setNotesHistoryOpen((o) => !o)}
+              >
+                {notesHistoryOpen ? "Ocultar" : "Ver histórico"}
+              </Button>
+            </div>
+          </div>
+
+          {notesHistoryOpen ? (
+            notesHistoryLoading && notesHistory.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">Carregando...</p>
+            ) : notesHistory.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Nenhuma alteração registrada.
+              </p>
+            ) : (
+              <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto text-xs">
+                {notesHistory.map((h, idx) => {
+                  const who =
+                    h.changed_by_name || h.changed_by_email || h.changed_by || "—";
+                  return (
+                    <li
+                      key={h.id ?? `${h.changed_at ?? ""}-${idx}`}
+                      className="rounded border bg-background p-2"
+                    >
+                      <p className="text-muted-foreground">
+                        por{" "}
+                        <span className="font-medium text-foreground">{who}</span> em{" "}
+                        {fmtBrDate(h.changed_at)}
+                      </p>
+                      <p className="mt-1 break-words text-muted-foreground">
+                        <span className="font-medium text-foreground">Antes:</span>{" "}
+                        {h.previous_notes?.trim() ? h.previous_notes : "(vazio)"}
+                      </p>
+                      <p className="break-words text-muted-foreground">
+                        <span className="font-medium text-foreground">Depois:</span>{" "}
+                        {h.new_notes?.trim() ? h.new_notes : "(vazio)"}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+        </div>
       </div>
 
       <div className="space-y-2">
