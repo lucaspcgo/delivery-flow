@@ -135,14 +135,14 @@ function ReportsPage() {
 
   useEffect(() => {
     getRestaurants()
-      .then(setRestaurants)
+      .then((r) => setRestaurants(Array.isArray(r) ? r : []))
       .catch(() => setRestaurants([]));
   }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
     getAdminUsers()
-      .then(setUsers)
+      .then((u) => setUsers(Array.isArray(u) ? u : []))
       .catch(() => setUsers([]));
   }, [isAdmin]);
 
@@ -558,7 +558,7 @@ function ReportsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os usuários</SelectItem>
-                    {users.map((u) => (
+                    {(Array.isArray(users) ? users : []).map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.name} — {u.email}
                       </SelectItem>
