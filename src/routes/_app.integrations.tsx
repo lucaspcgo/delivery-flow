@@ -846,6 +846,16 @@ function IntegrationsPage() {
             </DialogDescription>
           </DialogHeader>
 
+          <div className="aspect-video w-full overflow-hidden rounded-lg border bg-black">
+            <iframe
+              className="h-full w-full"
+              src="https://www.youtube.com/embed/od5cVEBHBus"
+              title="Tutorial: Conectar loja 99Food"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+
           {nnfStep === 1 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
