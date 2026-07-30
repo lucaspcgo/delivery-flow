@@ -233,9 +233,18 @@ function IntegrationsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void refreshIfoodStatus();
+  const handleRefreshIfood = useCallback(async () => {
+    setIfoodRefreshing(true);
+    try {
+      await refreshIfoodStatus();
+    } finally {
+      setIfoodRefreshing(false);
+    }
   }, [refreshIfoodStatus]);
+
+  useEffect(() => {
+    void handleRefreshIfood();
+  }, [handleRefreshIfood]);
 
   const runDedupe = useCallback(async () => {
     setDedupeLoading(true);
