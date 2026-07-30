@@ -509,6 +509,12 @@ export const ifoodAuth = {
         automation_enabled?: boolean;
       }>
     >("/integrations/ifood/stores", { silent: true }),
+  dedupeStores: () =>
+    http.post<{ removed?: number; duplicates_removed?: number; deleted?: number }>(
+      "/integrations/ifood/stores/dedupe",
+      {},
+      { silent: true },
+    ),
 };
 
 // ---------- iFood merchant management (status / pausas / horários) ----------

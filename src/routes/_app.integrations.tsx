@@ -16,6 +16,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -98,6 +108,8 @@ function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [pending, setPending] = useState<Platform | null>(null);
+  const [dedupeOpen, setDedupeOpen] = useState(false);
+  const [dedupeLoading, setDedupeLoading] = useState(false);
   const [storeCounts, setStoreCounts] = useState<Record<Platform, number>>({
     ifood: 0,
     keeta: 0,
@@ -220,6 +232,21 @@ function IntegrationsPage() {
 
   useEffect(() => {
     void refreshIfoodStatus();
+  }, [refreshIfoodStatus]);
+
+  const runDedupe = useCallback(async () => {
+    setDedupeLoading(true);
+    try {
+      const res = await ifoodAuth.dedupeStores();
+      const removed = res?.removed ?? res?.duplicates_removed ?? res?.deleted ?? 0;
+      toast.success(`${removed} loja(s) duplicada(s) removida(s)`);
+      setDedupeOpen(false);
+      await refreshIfoodStatus();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Não foi possível limpar as duplicadas");
+    } finally {
+      setDedupeLoading(false);
+    }
   }, [refreshIfoodStatus]);
 
   // Countdown do userCode
@@ -589,6 +616,17 @@ function IntegrationsPage() {
                       Desconectar
                     </Button>
                   )}
+                  {ifoodConnected && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setDedupeOpen(true)}
+                      disabled={dedupeLoading}
+                    >
+                      {dedupeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Limpar lojas duplicadas
+                    </Button>
+                  )}
                 </div>
               ) : i.platform === "99food" ? (
                 <div className="mt-5">
@@ -616,6 +654,30 @@ function IntegrationsPage() {
       <div className="px-4 pb-4 sm:px-8 sm:pb-8">
         <IfoodStoreManager />
       </div>
+
+      <AlertDialog open={dedupeOpen} onOpenChange={setDedupeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar lojas duplicadas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso remove as lojas repetidas, mantendo uma de cada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dedupeLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void runDedupe();
+              }}
+              disabled={dedupeLoading}
+            >
+              {dedupeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Limpar duplicadas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={ifoodOpen} onOpenChange={(open) => {
         setIfoodOpen(open);
