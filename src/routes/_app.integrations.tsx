@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle2, Copy, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getIntegrations,
@@ -109,6 +109,8 @@ function IntegrationsPage() {
   const [error, setError] = useState(false);
   const [pending, setPending] = useState<Platform | null>(null);
   const [dedupeOpen, setDedupeOpen] = useState(false);
+  const [removeStore, setRemoveStore] = useState<{ id: string; name: string; merchant_id: string; platform: string } | null>(null);
+  const [removeLoading, setRemoveLoading] = useState(false);
   const [dedupeLoading, setDedupeLoading] = useState(false);
   const [storeCounts, setStoreCounts] = useState<Record<Platform, number>>({
     ifood: 0,
