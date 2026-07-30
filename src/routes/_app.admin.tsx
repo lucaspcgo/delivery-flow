@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -676,7 +677,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
           <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
         ) : (
           <div className="w-full overflow-x-auto">
-            <Table>
+            <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
@@ -686,7 +687,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                   <TableHead>Status Pgto</TableHead>
                   <TableHead>Perfil</TableHead>
                   <TableHead>Observações</TableHead>
-                  <TableHead>Ações</TableHead>
+                  <TableHead className="sticky right-0 z-10 bg-card text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -715,14 +716,33 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
-                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                    <TableCell
+                      className={cn(
+                        "sticky right-0 z-10 bg-card",
+                        i % 2 === 1 && "bg-muted/30 backdrop-blur-sm",
+                      )}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          aria-label={`Editar ${u.name}`}
+                          title="Editar"
+                          onClick={() => setEditing(u)}
+                        >
+                          <Pencil className="h-4 w-4" />
                         </Button>
                         {isSuperAdmin && (
-                          <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
-                            <KeyRound className="h-3 w-3 mr-1" /> Redefinir senha
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            aria-label={`Redefinir senha de ${u.name}`}
+                            title="Redefinir senha"
+                            onClick={() => setResetting(u)}
+                          >
+                            <KeyRound className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
