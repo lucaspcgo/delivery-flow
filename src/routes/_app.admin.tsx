@@ -1353,8 +1353,8 @@ function ResetPasswordDialog({
 
   return (
     <Dialog open={!!user} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90svh] max-w-md flex-col overflow-y-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Redefinir senha</DialogTitle>
           <DialogDescription>
             Usuário: <span className="font-medium">{user.email}</span>
@@ -1362,7 +1362,7 @@ function ResetPasswordDialog({
         </DialogHeader>
 
         {tempPassword ? (
-          <div className="space-y-3">
+          <div className="-mr-2 min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
             <Label>Senha temporária</Label>
             <div className="flex items-center gap-2">
               <Input
@@ -1393,12 +1393,12 @@ function ResetPasswordDialog({
             <p className="text-xs text-muted-foreground">
               Repasse esta senha ao usuário. Peça para ele trocá-la depois em Configurações.
             </p>
-            <DialogFooter>
+            <DialogFooter className="shrink-0 border-t pt-4">
               <Button onClick={() => onOpenChange(false)}>Fechar</Button>
             </DialogFooter>
           </div>
         ) : mode === "choose" ? (
-          <div className="space-y-3">
+          <div className="-mr-2 min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
             <Button
               className="w-full justify-start"
               variant="outline"
@@ -1417,7 +1417,7 @@ function ResetPasswordDialog({
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="-mr-2 min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
             <div className="space-y-2">
               <Label htmlFor="new-password">Nova senha</Label>
               <div className="relative">
@@ -1441,7 +1441,7 @@ function ResetPasswordDialog({
                 </button>
               </div>
             </div>
-            <DialogFooter className="gap-2">
+            <DialogFooter className="shrink-0 gap-2 border-t pt-4">
               <Button variant="outline" onClick={() => setMode("choose")}>
                 Voltar
               </Button>
@@ -1810,8 +1810,8 @@ function PlansTab() {
       </Card>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90svh] max-w-2xl flex-col overflow-y-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle>{editing === "new" ? "Novo plano" : "Editar plano"}</DialogTitle>
           </DialogHeader>
           {editing && (
@@ -1905,7 +1905,8 @@ function PlanForm({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>Nome</Label>
@@ -1986,8 +1987,9 @@ function PlanForm({
           <Input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(e.target.value)} />
         </div>
       </div>
+      </div>
 
-      <DialogFooter>
+      <DialogFooter className="mt-4 shrink-0 gap-2 border-t pt-4">
         <Button variant="outline" onClick={onCancel}>Cancelar</Button>
         <Button onClick={submit} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
       </DialogFooter>
