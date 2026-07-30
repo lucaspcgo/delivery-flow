@@ -834,6 +834,7 @@ function UserEditForm({
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
   const [phone, setPhone] = useState<string>(user.phone ?? "");
+  const [notes, setNotes] = useState<string>(user.notes ?? "");
   const initialRole: string =
     typeof user.role === "string" && user.role
       ? user.role
