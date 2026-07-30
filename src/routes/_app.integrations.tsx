@@ -252,6 +252,21 @@ function IntegrationsPage() {
   }, [refreshIfoodStatus]);
 
   // Countdown do userCode
+  const confirmRemoveStore = useCallback(async () => {
+    if (!removeStore) return;
+    setRemoveLoading(true);
+    try {
+      await ifoodAuth.removeStore(removeStore.merchant_id || removeStore.id);
+      toast.success("Loja removida da integração");
+      setRemoveStore(null);
+      await refreshIfoodStatus();
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Não foi possível remover a loja");
+    } finally {
+      setRemoveLoading(false);
+    }
+  }, [removeStore, refreshIfoodStatus, load]);
 
   useEffect(() => {
     if (countdownRef.current) {
