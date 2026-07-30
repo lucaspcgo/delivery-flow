@@ -93,6 +93,7 @@ interface AdminUser {
   phone?: string;
   plan_expires_at?: string | null;
   role?: AppRole | string;
+  notes?: string | null;
 }
 
 type AdminInvoice = ApiAdminInvoice;
