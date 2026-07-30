@@ -843,6 +843,7 @@ function CheckoutPage() {
                             type="button"
                             variant="outline"
                             size="icon"
+                            aria-label="Copiar linha digitável"
                             onClick={() =>
                               copyToClipboard(
                                 checkout.digitable!,
