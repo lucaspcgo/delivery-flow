@@ -1028,6 +1028,7 @@ function UserEditForm({
         <Label htmlFor="edit-phone">Telefone</Label>
         <Input
           id="edit-phone"
+          ref={phoneRef}
           type="tel"
           inputMode="tel"
           placeholder="(00) 00000-0000"
