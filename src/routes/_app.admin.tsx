@@ -45,9 +45,12 @@ import {
   type NotesAuditEntry,
 } from "@/lib/api";
 import {
+  getLocalNotes,
   getLocalNotesHistory,
   mergeNotesHistory,
   recordLocalNotesChange,
+  setLocalNotes,
+  withLocalNotes,
 } from "@/lib/notes-audit";
 import {
   Dialog,
@@ -573,7 +576,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     setLoading(true);
     http
       .get<AdminUser[]>("/admin/users", { silent: true })
-      .then((d) => setUsers(Array.isArray(d) ? d : []))
+      .then((d) => setUsers(withLocalNotes(Array.isArray(d) ? d : [])))
       .catch(() => toast.error("Erro ao carregar usuários"))
       .finally(() => setLoading(false));
   };
@@ -605,6 +608,16 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     setSaving(true);
     try {
       const updated = await updateAdminUser(userId, data as Partial<import("@/lib/api").AdminUser>);
+      // Keep a local copy: some backends drop unknown fields silently.
+      if (data.notes !== undefined) setLocalNotes(userId, data.notes);
+      // Optimistic merge so the table reflects the note even before the reload.
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? { ...u, ...(updated ?? {}), ...(data.notes !== undefined ? { notes: data.notes } : {}) }
+            : u,
+        ),
+      );
       const newExpiry = updated?.plan_expires_at ?? null;
       if (data.plan && newExpiry) {
         const d = new Date(newExpiry);
@@ -861,7 +874,7 @@ function UserEditForm({
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
   const [phone, setPhone] = useState<string>(user.phone ?? "");
-  const [notes, setNotes] = useState<string>(user.notes ?? "");
+  const [notes, setNotes] = useState<string>(user.notes ?? getLocalNotes(user.id) ?? "");
   const initialRole: string =
     typeof user.role === "string" && user.role
       ? user.role
