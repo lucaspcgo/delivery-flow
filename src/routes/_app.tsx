@@ -26,26 +26,32 @@ function AppLayout() {
   }, []);
   return (
     <UsageProvider>
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full overflow-x-hidden bg-muted/30">
-        <AppSidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur sm:gap-3 sm:px-6">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger />
-            </div>
-            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-              {isAdmin && <AdminNotificationsBell />}
-            </div>
-          </header>
-          <TrialBanner />
-          <main className="min-w-0 flex-1">
-            <Outlet />
-          </main>
+      <SidebarProvider>
+        <div className="flex min-h-dvh w-full overflow-x-hidden bg-muted/30">
+          <AppSidebar />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <a
+              href="#conteudo"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-elevated"
+            >
+              Ir para o conteúdo
+            </a>
+            <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/85 px-2 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:gap-3 sm:px-6">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger />
+              </div>
+              <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+                {isAdmin && <AdminNotificationsBell />}
+              </div>
+            </header>
+            <TrialBanner />
+            <main id="conteudo" className="min-w-0 flex-1 pb-10">
+              <Outlet />
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
-    <PlanLimitModal />
+      </SidebarProvider>
+      <PlanLimitModal />
     </UsageProvider>
   );
 }
