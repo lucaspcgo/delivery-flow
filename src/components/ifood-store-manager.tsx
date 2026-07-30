@@ -273,36 +273,46 @@ export function IfoodStoreManager({
 
 function StatusBlock({ merchantId }: { merchantId: string }) {
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<IfoodMerchantStatus | null>(null);
+  const [entries, setEntries] = useState<IfoodMerchantStatus[] | null>(null);
   const [feedback, setFeedback] = useState<ApiFeedback | null>(null);
 
   const fetchStatus = async () => {
     setLoading(true);
     try {
       const res = await ifoodMerchant.status(merchantId);
-      const first = Array.isArray(res) ? (res[0] ?? null) : res;
-      setStatus(first);
-      setFeedback({ ok: true, status: 200, message: "Status consultado com sucesso." });
+      // A API pode responder um array, um objeto único ou um erro { error, code, details }.
+      const maybeError = res as { error?: unknown; code?: unknown; details?: unknown };
+      if (!Array.isArray(res) && maybeError?.error) {
+        setEntries(null);
+        setFeedback({
+          ok: false,
+          status: typeof maybeError.code === "number" ? maybeError.code : 0,
+          message:
+            typeof maybeError.error === "string"
+              ? maybeError.error
+              : "A API do iFood retornou um erro ao consultar o status.",
+          payload: maybeError.details,
+        });
+        return;
+      }
+      const list: IfoodMerchantStatus[] = Array.isArray(res)
+        ? res.filter((item): item is IfoodMerchantStatus => !!item && typeof item === "object")
+        : res && typeof res === "object"
+          ? [res]
+          : [];
+      setEntries(list);
+      setFeedback({
+        ok: true,
+        status: 200,
+        message: `${list.length} registro(s) de status retornado(s).`,
+      });
     } catch (err) {
-      setStatus(null);
+      setEntries(null);
       setFeedback(toFeedback(err, "Falha ao consultar status"));
     } finally {
       setLoading(false);
     }
   };
-
-  const validations: IfoodMerchantValidation[] = Array.isArray(status?.validations)
-    ? status!.validations!
-    : [];
-
-  const rawMessage =
-    typeof status?.message === "string"
-      ? status.message
-      : status?.message
-        ? [status.message.title, status.message.subtitle, status.message.description]
-            .filter(Boolean)
-            .join(" — ")
-        : null;
 
   return (
     <section className="rounded-xl border p-4">
@@ -314,45 +324,81 @@ function StatusBlock({ merchantId }: { merchantId: string }) {
         </Button>
       </div>
 
-      {status && (
-        <div className="mt-4 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <StateBadge state={status.state} />
-            {status.operation && (
-              <Badge variant="outline" className="text-[11px]">
-                {String(status.operation)}
-              </Badge>
-            )}
-          </div>
-          {rawMessage && <p className="text-sm text-muted-foreground">{rawMessage}</p>}
+      {entries && entries.length === 0 && (
+        <p className="mt-4 text-xs text-muted-foreground">
+          A API não retornou nenhum status para esta loja.
+        </p>
+      )}
 
-          {validations.length > 0 ? (
-            <ul className="space-y-2">
-              {validations.map((v, idx) => (
-                <li
-                  key={v.id ?? idx}
-                  className="rounded-lg border bg-muted/40 px-3 py-2 text-xs"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StateBadge state={v.state} />
-                    <span className="font-semibold">{v.title ?? v.id ?? "Validação"}</span>
-                  </div>
-                  {v.message && (
-                    <p className="mt-1 text-muted-foreground">{v.message}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Nenhuma validação retornada pela API.
-            </p>
-          )}
+      {entries && entries.length > 0 && (
+        <div className="mt-4 grid gap-3">
+          {entries.map((item, i) => (
+            <StatusEntryCard key={`${String(item?.operation ?? "op")}-${i}`} item={item} />
+          ))}
         </div>
       )}
 
       <ApiFeedbackPanel feedback={feedback} />
     </section>
+  );
+}
+
+function StatusEntryCard({ item }: { item: IfoodMerchantStatus }) {
+  const validations: IfoodMerchantValidation[] = Array.isArray(item?.validations)
+    ? item.validations
+    : [];
+
+  const message =
+    typeof item?.message === "string"
+      ? item.message
+      : item?.message
+        ? [item.message?.title, item.message?.subtitle, item.message?.description]
+            .filter(Boolean)
+            .join(" — ")
+        : null;
+
+  const available = item?.available;
+
+  return (
+    <div className="rounded-lg border bg-muted/20 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <StateBadge state={item?.state} />
+        <Badge variant="outline" className="text-[11px]">
+          {String(item?.operation ?? "OPERAÇÃO —")}
+        </Badge>
+        <span className="text-xs text-muted-foreground">
+          Disponível:{" "}
+          <span className="font-semibold text-foreground">
+            {available === true ? "Sim" : available === false ? "Não" : "—"}
+          </span>
+        </span>
+      </div>
+
+      {message && <p className="mt-2 text-sm text-muted-foreground">{message}</p>}
+
+      {validations.length > 0 ? (
+        <ul className="mt-2 space-y-2">
+          {validations.map((v, idx) => (
+            <li
+              key={v?.id ?? idx}
+              className="rounded-lg border bg-background px-3 py-2 text-xs"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <StateBadge state={v?.state} />
+                <span className="font-semibold">
+                  {v?.title ?? v?.id ?? "Validação"}
+                </span>
+              </div>
+              {v?.message && <p className="mt-1 text-muted-foreground">{v.message}</p>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Nenhuma validação retornada.
+        </p>
+      )}
+    </div>
   );
 }
 
