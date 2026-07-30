@@ -135,14 +135,14 @@ function ReportsPage() {
 
   useEffect(() => {
     getRestaurants()
-      .then(setRestaurants)
+      .then((r) => setRestaurants(Array.isArray(r) ? r : []))
       .catch(() => setRestaurants([]));
   }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
     getAdminUsers()
-      .then(setUsers)
+      .then((u) => setUsers(Array.isArray(u) ? u : []))
       .catch(() => setUsers([]));
   }, [isAdmin]);
 
