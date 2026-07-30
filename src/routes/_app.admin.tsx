@@ -44,6 +44,11 @@ import {
   type NotesAuditEntry,
 } from "@/lib/api";
 import {
+  getLocalNotesHistory,
+  mergeNotesHistory,
+  recordLocalNotesChange,
+} from "@/lib/notes-audit";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
