@@ -655,6 +655,30 @@ function IntegrationsPage() {
         <IfoodStoreManager />
       </div>
 
+      <AlertDialog open={dedupeOpen} onOpenChange={setDedupeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar lojas duplicadas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso remove as lojas repetidas, mantendo uma de cada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dedupeLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void runDedupe();
+              }}
+              disabled={dedupeLoading}
+            >
+              {dedupeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Limpar duplicadas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={ifoodOpen} onOpenChange={(open) => {
         setIfoodOpen(open);
         if (!open) {
