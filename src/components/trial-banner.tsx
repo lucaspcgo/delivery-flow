@@ -32,15 +32,13 @@ export function TrialBanner() {
       className={cn(
         "flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2.5 text-sm sm:px-6",
         urgent
-          ? "border-red-200 bg-red-50 text-red-900"
-          : "border-yellow-200 bg-yellow-50 text-yellow-900",
+          ? "bg-destructive-muted text-destructive"
+          : "bg-warning-muted text-warning-foreground",
       )}
     >
-      <div className="flex items-center gap-2">
-        <AlertTriangle
-          className={cn("h-4 w-4", urgent ? "text-red-600" : "text-yellow-600")}
-        />
-        <span>
+      <div className="flex min-w-0 items-center gap-2">
+        <AlertTriangle className="h-4 w-4 shrink-0" />
+        <span className="font-medium">
           {urgent
             ? `Atenção: seu teste grátis termina em ${days} dia${days === 1 ? "" : "s"}. `
             : `Período de teste: ${days} dias restantes. `}
@@ -49,11 +47,7 @@ export function TrialBanner() {
       </div>
       <Button
         size="sm"
-        className={cn(
-          urgent
-            ? "bg-red-600 text-white hover:bg-red-700"
-            : "bg-yellow-600 text-white hover:bg-yellow-700",
-        )}
+        variant={urgent ? "destructive" : "default"}
         onClick={() => navigate({ to: "/checkout" })}
       >
         Assinar agora

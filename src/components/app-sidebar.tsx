@@ -61,11 +61,15 @@ export function AppSidebar() {
           <img
             src={logoAsset.url}
             alt="Zero Tempo"
-            className="h-9 w-9 rounded-lg object-contain"
+            className="h-9 w-9 shrink-0 rounded-lg object-contain"
           />
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold leading-tight">Zero Tempo</span>
-            <span className="text-[11px] text-muted-foreground">Painel do restaurante</span>
+          <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+            <span className="truncate text-sm font-bold leading-tight tracking-tight">
+              Zero Tempo
+            </span>
+            <span className="truncate text-[11px] text-muted-foreground">
+              Painel do restaurante
+            </span>
           </div>
         </div>
       </SidebarHeader>
@@ -154,7 +158,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t">
         <div className="flex items-center gap-2 px-2 py-2 group-data-[collapsible=icon]:hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
             {initials}
           </div>
           <div className="flex min-w-0 flex-col text-xs">

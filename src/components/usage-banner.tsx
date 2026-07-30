@@ -13,9 +13,9 @@ export function UsageCounter({ kind }: { kind: "restaurants" | "orders" }) {
   const unlimited = !max || max === 0;
   const reached = !unlimited && current >= max;
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="text-muted-foreground">{label}:</span>
-      <span className="font-medium">
+      <span className="font-semibold tabular-nums">
         {current} / {unlimited ? "Ilimitado" : max}
       </span>
       {reached && <Badge variant="destructive">Limite atingido</Badge>}
@@ -28,9 +28,9 @@ export function OverLimitBanner() {
   const navigate = useNavigate();
   if (!usage?.over_limit) return null;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4" />
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive-muted p-3 text-sm text-destructive">
+      <div className="flex min-w-0 items-center gap-2">
+        <AlertTriangle className="h-4 w-4 shrink-0" />
         <span>
           Você atingiu o limite do plano {usage.plan_name ?? usage.plan}. Faça upgrade
           {usage.next_tier ? ` para ${usage.next_tier}` : ""} para aumentar a capacidade.
