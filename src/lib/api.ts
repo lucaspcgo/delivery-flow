@@ -536,6 +536,7 @@ export interface IfoodMerchantValidation {
 export interface IfoodMerchantStatus {
   state?: string;
   operation?: string;
+  available?: boolean | null;
   message?: { title?: string; subtitle?: string; description?: string } | string | null;
   validations?: IfoodMerchantValidation[];
   [k: string]: unknown;
