@@ -41,6 +41,7 @@ import {
   type AdminInvoice as ApiAdminInvoice,
   type AdminInvoicesSummary,
   type RoleAuditEntry,
+  type NotesAuditEntry,
 } from "@/lib/api";
 import {
   Dialog,
@@ -849,6 +850,27 @@ function UserEditForm({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [roleChangeConfirmOpen, setRoleChangeConfirmOpen] = useState(false);
+  const [notesHistory, setNotesHistory] = useState<NotesAuditEntry[]>([]);
+  const [notesHistoryLoading, setNotesHistoryLoading] = useState(false);
+  const [notesHistoryOpen, setNotesHistoryOpen] = useState(false);
+
+  const loadNotesHistory = useCallback(async () => {
+    setNotesHistoryLoading(true);
+    let server: NotesAuditEntry[] = [];
+    try {
+      const res = await getUserNotesHistory(user.id);
+      server = Array.isArray(res) ? res : res?.history ?? [];
+    } catch {
+      // Endpoint may not exist yet — fall back to the local trail only.
+      server = [];
+    }
+    setNotesHistory(mergeNotesHistory(server, getLocalNotesHistory(user.id)));
+    setNotesHistoryLoading(false);
+  }, [user.id]);
+
+  useEffect(() => {
+    void loadNotesHistory();
+  }, [loadNotesHistory]);
 
 
   const loadHistory = useCallback(async () => {
@@ -931,6 +953,11 @@ function UserEditForm({
       }
     }
     const updated = await onSave(payload);
+    if (updated) {
+      // Register who changed the notes and when (server trail + local fallback).
+      recordLocalNotesChange(user.id, user.notes ?? "", notes.trim());
+      void loadNotesHistory();
+    }
     if (updated && updated.plan_expires_at !== undefined) {
       setExpiresAt(updated.plan_expires_at ?? null);
     }
