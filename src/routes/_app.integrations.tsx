@@ -595,6 +595,18 @@ function IntegrationsPage() {
                             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openManage(s)}>
                               Gerenciar
                             </Button>
+                            {i.platform === "ifood" && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                aria-label="Remover loja"
+                                title="Remover loja"
+                                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                onClick={() => setRemoveStore(s)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </li>
                       ))}
