@@ -605,6 +605,7 @@ function InterruptionsBlock({ merchantId }: { merchantId: string }) {
             <Label className="text-xs">Início</Label>
             <Input
               type="datetime-local"
+              step={60}
               value={start}
               onChange={(e) => setStart(e.target.value)}
               className="mt-1"
@@ -614,6 +615,8 @@ function InterruptionsBlock({ merchantId }: { merchantId: string }) {
             <Label className="text-xs">Fim</Label>
             <Input
               type="datetime-local"
+              step={60}
+              min={start || undefined}
               value={end}
               onChange={(e) => setEnd(e.target.value)}
               className="mt-1"
