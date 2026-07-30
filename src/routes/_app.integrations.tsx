@@ -234,6 +234,21 @@ function IntegrationsPage() {
     void refreshIfoodStatus();
   }, [refreshIfoodStatus]);
 
+  const runDedupe = useCallback(async () => {
+    setDedupeLoading(true);
+    try {
+      const res = await ifoodAuth.dedupeStores();
+      const removed = res?.removed ?? res?.duplicates_removed ?? res?.deleted ?? 0;
+      toast.success(`${removed} loja(s) duplicada(s) removida(s)`);
+      setDedupeOpen(false);
+      await refreshIfoodStatus();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Não foi possível limpar as duplicadas");
+    } finally {
+      setDedupeLoading(false);
+    }
+  }, [refreshIfoodStatus]);
+
   // Countdown do userCode
   useEffect(() => {
     if (countdownRef.current) {
