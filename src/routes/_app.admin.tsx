@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -986,6 +986,16 @@ function UserEditForm({
   };
 
 
+  // Foco automático no primeiro campo editável quando o modal termina de abrir.
+  // rAF evita competir com a animação de entrada do Radix (e o scroll-jump).
+  const phoneRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      phoneRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
@@ -1028,6 +1038,7 @@ function UserEditForm({
         <Label htmlFor="edit-phone">Telefone</Label>
         <Input
           id="edit-phone"
+          ref={phoneRef}
           type="tel"
           inputMode="tel"
           placeholder="(00) 00000-0000"
