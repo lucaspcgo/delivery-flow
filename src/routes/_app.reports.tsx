@@ -558,7 +558,7 @@ function ReportsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os usuários</SelectItem>
-                    {users.map((u) => (
+                    {(Array.isArray(users) ? users : []).map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.name} — {u.email}
                       </SelectItem>
