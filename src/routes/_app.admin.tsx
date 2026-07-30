@@ -954,8 +954,9 @@ function UserEditForm({
 
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 text-sm">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
+      <div className="grid grid-cols-1 gap-3 rounded-lg border bg-muted/20 p-3 text-sm sm:grid-cols-2">
         <div>
           <Label className="text-xs text-muted-foreground">ID</Label>
           <p className="truncate">{user.id}</p>
@@ -978,7 +979,7 @@ function UserEditForm({
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 p-3">
         <div>
           <p className="text-sm font-medium">Renovar acesso</p>
           <p className="text-xs text-muted-foreground">
@@ -1129,7 +1130,7 @@ function UserEditForm({
         </div>
       )}
 
-      <div className="flex items-center justify-between rounded-lg border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
         <div>
           <p className="text-sm font-medium">Conta ativa</p>
           <p className="text-xs text-muted-foreground">
@@ -1138,8 +1139,9 @@ function UserEditForm({
         </div>
         <Switch checked={active} onCheckedChange={setActive} />
       </div>
+      </div>
 
-      <DialogFooter className="gap-2 sm:justify-between">
+      <DialogFooter className="mt-4 shrink-0 gap-2 border-t pt-4 sm:justify-between">
         {isSuperAdmin ? (
           <Button
             variant="outline"
