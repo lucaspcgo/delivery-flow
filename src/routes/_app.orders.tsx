@@ -444,9 +444,9 @@ function OrdersKanban() {
     <div className="w-full min-h-[calc(100vh-3.5rem)] bg-background">
       {/* Garantia: o body nunca rola horizontalmente por causa do KDS */}
       <style>{`body{overflow-x:hidden}`}</style>
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-background/95 px-6 py-4 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black text-foreground">Pedidos ao Vivo</h1>
+      <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
+          <h1 className="text-xl font-black text-foreground sm:text-2xl">Pedidos ao Vivo</h1>
           <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">
             {totalFiltered}
           </span>
@@ -454,11 +454,11 @@ function OrdersKanban() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none sm:flex-none"
           />
           <button
             onClick={() => setSelectedDate(todayStr())}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Selecionar data de hoje"
           >
             Hoje
@@ -466,7 +466,7 @@ function OrdersKanban() {
           <select
             value={storeFilter}
             onChange={(e) => setStoreFilter(e.target.value)}
-            className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none max-w-[220px]"
+            className="min-w-0 max-w-full flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground focus:border-primary focus:outline-none sm:max-w-[220px] sm:flex-none"
             aria-label="Filtrar por loja"
           >
             <option value="__all__">Todas as lojas</option>
@@ -478,7 +478,7 @@ function OrdersKanban() {
             )}
           </select>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end sm:gap-3">
           {refreshing && !loading && (
             <span
               role="status"
@@ -510,7 +510,7 @@ function OrdersKanban() {
               Atualizado {lastUpdatedAt.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
             </span>
           )}
-          <span className="font-mono text-xl font-bold tabular-nums text-muted-foreground">
+          <span className="font-mono text-base font-bold tabular-nums text-muted-foreground sm:text-xl">
             {now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" })}
           </span>
           <button
@@ -584,7 +584,7 @@ function OrdersKanban() {
         </div>
       </header>
 
-      <div className="border-b bg-muted/20 px-6 py-2 space-y-2">
+      <div className="border-b bg-muted/20 px-4 py-2 space-y-2 sm:px-6">
         <OrdersUsageBlock />
       </div>
 

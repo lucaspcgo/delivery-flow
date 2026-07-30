@@ -109,7 +109,7 @@ function SettingsPage() {
       />
       <div className="p-4 sm:p-8">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="w-full max-w-2xl sm:grid sm:grid-cols-4">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="plan">Planos</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
