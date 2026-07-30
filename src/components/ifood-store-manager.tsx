@@ -462,24 +462,34 @@ function InterruptionsBlock({ merchantId }: { merchantId: string }) {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
 
-  const load = async () => {
+  const load = async (options?: { silent?: boolean }) => {
     setLoading(true);
     try {
       const res = await ifoodMerchant.listInterruptions(merchantId);
       const list = Array.isArray(res) ? res : (res?.interruptions ?? []);
       setItems(list);
-      setFeedback({
-        ok: true,
-        status: 200,
-        message: `${list.length} pausa(s) encontrada(s).`,
-      });
+      if (!options?.silent) {
+        setFeedback({
+          ok: true,
+          status: 200,
+          message: `${list.length} pausa(s) encontrada(s).`,
+        });
+      }
     } catch (err) {
       setItems(null);
-      setFeedback(toFeedback(err, "Falha ao listar pausas"));
+      if (!options?.silent) setFeedback(toFeedback(err, "Falha ao listar pausas"));
     } finally {
       setLoading(false);
     }
   };
+
+  // Carrega a lista automaticamente ao abrir / trocar de loja.
+  useEffect(() => {
+    setItems(null);
+    setFeedback(null);
+    void load({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantId]);
 
   const create = async () => {
     const startIso = localToIso(start);
@@ -503,11 +513,11 @@ function InterruptionsBlock({ merchantId }: { merchantId: string }) {
         start: startIso,
         end: endIso,
       });
-      setFeedback({ ok: true, status: 201, message: "Pausa criada com sucesso." });
+      setFeedback({ ok: true, status: 201, message: "Pausa criada" });
       setDescription("");
       setStart("");
       setEnd("");
-      await load();
+      await load({ silent: true });
     } catch (err) {
       setFeedback(toFeedback(err, "Falha ao criar pausa"));
     } finally {
@@ -519,8 +529,8 @@ function InterruptionsBlock({ merchantId }: { merchantId: string }) {
     setRemoving(id);
     try {
       await ifoodMerchant.removeInterruption(merchantId, id);
-      setFeedback({ ok: true, status: 200, message: "Pausa removida." });
-      await load();
+      setFeedback({ ok: true, status: 204, message: "Pausa removida" });
+      await load({ silent: true });
     } catch (err) {
       setFeedback(toFeedback(err, "Falha ao remover pausa"));
     } finally {
