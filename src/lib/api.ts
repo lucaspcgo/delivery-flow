@@ -525,19 +525,20 @@ export const ifoodAuth = {
 // ---------- iFood merchant management (status / pausas / horários) ----------
 
 export interface IfoodMerchantValidation {
-  id?: string;
-  title?: string;
-  message?: string;
-  state?: string;
-  type?: string;
+  id?: unknown;
+  code?: unknown;
+  title?: unknown;
+  message?: unknown;
+  state?: unknown;
+  type?: unknown;
   [k: string]: unknown;
 }
 
 export interface IfoodMerchantStatus {
-  state?: string;
-  operation?: string;
+  state?: unknown;
+  operation?: unknown;
   available?: boolean | null;
-  message?: { title?: string; subtitle?: string; description?: string } | string | null;
+  message?: unknown;
   validations?: IfoodMerchantValidation[];
   [k: string]: unknown;
 }

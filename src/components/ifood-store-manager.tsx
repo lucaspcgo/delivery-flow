@@ -343,28 +343,50 @@ function StatusBlock({ merchantId }: { merchantId: string }) {
   );
 }
 
+/**
+ * Extrai texto renderizável de um valor desconhecido.
+ * Objetos como { title, subtitle, description } são achatados nos seus textos.
+ * Nunca retorna um objeto — evita "Objects are not valid as a React child".
+ */
+function safeText(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string") return value.trim() || null;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) {
+    const parts = value.map(safeText).filter(Boolean) as string[];
+    return parts.length ? parts.join(" — ") : null;
+  }
+  if (typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    const parts = [o.title, o.subtitle, o.description, o.message, o.code]
+      .map((v) => (typeof v === "object" ? null : safeText(v)))
+      .filter(Boolean) as string[];
+    return parts.length ? parts.join(" — ") : null;
+  }
+  return null;
+}
+
 function StatusEntryCard({ item }: { item: IfoodMerchantStatus }) {
   const validations: IfoodMerchantValidation[] = Array.isArray(item?.validations)
     ? item.validations
     : [];
 
-  const message =
-    typeof item?.message === "string"
-      ? item.message
-      : item?.message
-        ? [item.message?.title, item.message?.subtitle, item.message?.description]
-            .filter(Boolean)
-            .join(" — ")
-        : null;
-
+  const msg = (item?.message ?? null) as Record<string, unknown> | string | null;
+  const messageLines =
+    typeof msg === "string"
+      ? [msg]
+      : msg && typeof msg === "object"
+        ? [safeText(msg?.title), safeText(msg?.subtitle), safeText(msg?.description)]
+        : [];
+  const lines = messageLines.filter(Boolean) as string[];
   const available = item?.available;
 
   return (
     <div className="rounded-lg border bg-muted/20 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <StateBadge state={item?.state} />
+        <StateBadge state={safeText(item?.state) ?? undefined} />
         <Badge variant="outline" className="text-[11px]">
-          {String(item?.operation ?? "OPERAÇÃO —")}
+          {safeText(item?.operation) ?? "OPERAÇÃO —"}
         </Badge>
         <span className="text-xs text-muted-foreground">
           Disponível:{" "}
@@ -374,24 +396,49 @@ function StatusEntryCard({ item }: { item: IfoodMerchantStatus }) {
         </span>
       </div>
 
-      {message && <p className="mt-2 text-sm text-muted-foreground">{message}</p>}
+      {lines.length > 0 && (
+        <div className="mt-2 space-y-0.5">
+          {lines.map((line, i) => (
+            <p
+              key={i}
+              className={cn(
+                "text-muted-foreground",
+                i === 0 ? "text-sm font-medium text-foreground" : "text-xs",
+              )}
+            >
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
 
       {validations.length > 0 ? (
         <ul className="mt-2 space-y-2">
-          {validations.map((v, idx) => (
-            <li
-              key={v?.id ?? idx}
-              className="rounded-lg border bg-background px-3 py-2 text-xs"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <StateBadge state={v?.state} />
-                <span className="font-semibold">
-                  {v?.title ?? v?.id ?? "Validação"}
-                </span>
-              </div>
-              {v?.message && <p className="mt-1 text-muted-foreground">{v.message}</p>}
-            </li>
-          ))}
+          {validations.map((v, idx) => {
+            const title =
+              safeText(v?.title) ??
+              safeText((v?.message as Record<string, unknown>)?.title) ??
+              safeText(v?.code) ??
+              safeText(v?.id) ??
+              "Validação";
+            const detail =
+              safeText((v?.message as Record<string, unknown>)?.description) ??
+              safeText(v?.message);
+            return (
+              <li
+                key={safeText(v?.id) ?? idx}
+                className="rounded-lg border bg-background px-3 py-2 text-xs"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <StateBadge state={safeText(v?.state) ?? undefined} />
+                  <span className="font-semibold">{title}</span>
+                </div>
+                {detail && detail !== title && (
+                  <p className="mt-1 text-muted-foreground">{detail}</p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="mt-2 text-xs text-muted-foreground">
