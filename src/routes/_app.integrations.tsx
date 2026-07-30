@@ -692,7 +692,13 @@ function IntegrationsPage() {
       </div>
 
       <div className="px-4 pb-4 sm:px-8 sm:pb-8">
-        <IfoodStoreManager />
+        <IfoodStoreManager
+          stores={storesByPlatform.ifood
+            .filter((s) => Boolean(s.merchant_id))
+            .map((s) => ({ merchantId: s.merchant_id, name: s.name }))}
+          loading={ifoodRefreshing}
+          onRefresh={handleRefreshIfood}
+        />
       </div>
 
       <AlertDialog open={dedupeOpen} onOpenChange={setDedupeOpen}>
