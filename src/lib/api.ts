@@ -1242,6 +1242,24 @@ export const getUserRoleHistory = (id: string) =>
     { silent: true },
   );
 
+/** Audit entry for changes made to the internal "notes" field of a user. */
+export interface NotesAuditEntry {
+  id?: string;
+  user_id?: string;
+  previous_notes?: string | null;
+  new_notes?: string | null;
+  changed_by?: string | null;
+  changed_by_name?: string | null;
+  changed_by_email?: string | null;
+  changed_at?: string | null;
+}
+
+export const getUserNotesHistory = (id: string) =>
+  http.get<{ history?: NotesAuditEntry[] } | NotesAuditEntry[]>(
+    `/admin/users/${id}/notes-history`,
+    { silent: true },
+  );
+
 export const createAdminUser = (data: {
   name: string;
   email: string;

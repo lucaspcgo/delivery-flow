@@ -32,6 +32,7 @@ import {
   getAdminInvoices,
   updateAdminInvoice,
   getUserRoleHistory,
+  getUserNotesHistory,
   PLAN_PERIOD_LABEL,
   type MeResponse,
   type DBPlan,
@@ -40,7 +41,13 @@ import {
   type AdminInvoice as ApiAdminInvoice,
   type AdminInvoicesSummary,
   type RoleAuditEntry,
+  type NotesAuditEntry,
 } from "@/lib/api";
+import {
+  getLocalNotesHistory,
+  mergeNotesHistory,
+  recordLocalNotesChange,
+} from "@/lib/notes-audit";
 import {
   Dialog,
   DialogContent,
@@ -848,6 +855,27 @@ function UserEditForm({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [roleChangeConfirmOpen, setRoleChangeConfirmOpen] = useState(false);
+  const [notesHistory, setNotesHistory] = useState<NotesAuditEntry[]>([]);
+  const [notesHistoryLoading, setNotesHistoryLoading] = useState(false);
+  const [notesHistoryOpen, setNotesHistoryOpen] = useState(false);
+
+  const loadNotesHistory = useCallback(async () => {
+    setNotesHistoryLoading(true);
+    let server: NotesAuditEntry[] = [];
+    try {
+      const res = await getUserNotesHistory(user.id);
+      server = Array.isArray(res) ? res : res?.history ?? [];
+    } catch {
+      // Endpoint may not exist yet — fall back to the local trail only.
+      server = [];
+    }
+    setNotesHistory(mergeNotesHistory(server, getLocalNotesHistory(user.id)));
+    setNotesHistoryLoading(false);
+  }, [user.id]);
+
+  useEffect(() => {
+    void loadNotesHistory();
+  }, [loadNotesHistory]);
 
 
   const loadHistory = useCallback(async () => {
@@ -930,6 +958,11 @@ function UserEditForm({
       }
     }
     const updated = await onSave(payload);
+    if (updated) {
+      // Register who changed the notes and when (server trail + local fallback).
+      recordLocalNotesChange(user.id, user.notes ?? "", notes.trim());
+      void loadNotesHistory();
+    }
     if (updated && updated.plan_expires_at !== undefined) {
       setExpiresAt(updated.plan_expires_at ?? null);
     }
@@ -1017,6 +1050,74 @@ function UserEditForm({
         <p className="text-xs text-muted-foreground">
           {notes.trim().length}/1000 — aparece na coluna "Observações" da lista de usuários.
         </p>
+
+        <div className="rounded-lg border bg-muted/20 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">Histórico de observações</p>
+              <p className="text-xs text-muted-foreground">
+                Quem alterou as observações e quando.
+                {notesHistory.length > 0 ? ` (${notesHistory.length})` : ""}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => void loadNotesHistory()}
+                disabled={notesHistoryLoading}
+              >
+                {notesHistoryLoading ? "Atualizando..." : "Atualizar"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setNotesHistoryOpen((o) => !o)}
+              >
+                {notesHistoryOpen ? "Ocultar" : "Ver histórico"}
+              </Button>
+            </div>
+          </div>
+
+          {notesHistoryOpen ? (
+            notesHistoryLoading && notesHistory.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">Carregando...</p>
+            ) : notesHistory.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Nenhuma alteração registrada.
+              </p>
+            ) : (
+              <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto text-xs">
+                {notesHistory.map((h, idx) => {
+                  const who =
+                    h.changed_by_name || h.changed_by_email || h.changed_by || "—";
+                  return (
+                    <li
+                      key={h.id ?? `${h.changed_at ?? ""}-${idx}`}
+                      className="rounded border bg-background p-2"
+                    >
+                      <p className="text-muted-foreground">
+                        por{" "}
+                        <span className="font-medium text-foreground">{who}</span> em{" "}
+                        {fmtBrDate(h.changed_at)}
+                      </p>
+                      <p className="mt-1 break-words text-muted-foreground">
+                        <span className="font-medium text-foreground">Antes:</span>{" "}
+                        {h.previous_notes?.trim() ? h.previous_notes : "(vazio)"}
+                      </p>
+                      <p className="break-words text-muted-foreground">
+                        <span className="font-medium text-foreground">Depois:</span>{" "}
+                        {h.new_notes?.trim() ? h.new_notes : "(vazio)"}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+        </div>
       </div>
 
       <div className="space-y-2">
