@@ -186,10 +186,10 @@ export function IfoodStoreManager({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => void loadStores()}
-          disabled={storesLoading}
+          onClick={() => void onRefresh?.()}
+          disabled={loading}
         >
-          {storesLoading ? (
+          {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <RefreshCw className="h-4 w-4" />
@@ -204,7 +204,7 @@ export function IfoodStoreManager({
           <SelectTrigger className="mt-1">
             <SelectValue
               placeholder={
-                storesLoading ? "Carregando lojas..." : "Selecione a loja iFood"
+                loading ? "Carregando lojas..." : "Selecione a loja iFood"
               }
             />
           </SelectTrigger>
@@ -216,7 +216,7 @@ export function IfoodStoreManager({
             ))}
           </SelectContent>
         </Select>
-        {!storesLoading && stores.length === 0 && (
+        {!loading && stores.length === 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
             Nenhuma loja iFood com merchant_id encontrada. Conecte uma loja
             primeiro.
