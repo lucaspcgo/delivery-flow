@@ -709,6 +709,30 @@ function IntegrationsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!removeStore} onOpenChange={(o) => !o && setRemoveStore(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover esta loja da integração?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {removeStore?.name} deixará de receber pedidos até ser conectada novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmRemoveStore();
+              }}
+              disabled={removeLoading}
+            >
+              {removeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={ifoodOpen} onOpenChange={(open) => {
         setIfoodOpen(open);
         if (!open) {
