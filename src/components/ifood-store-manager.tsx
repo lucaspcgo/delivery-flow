@@ -147,9 +147,17 @@ function StateBadge({ state }: { state?: string }) {
 
 // ---------- Componente principal ----------
 
-export function IfoodStoreManager() {
-  const [stores, setStores] = useState<IfoodStoreOption[]>([]);
-  const [storesLoading, setStoresLoading] = useState(true);
+interface IfoodStoreManagerProps {
+  stores: IfoodStoreOption[];
+  loading?: boolean;
+  onRefresh?: () => void | Promise<void>;
+}
+
+export function IfoodStoreManager({
+  stores,
+  loading = false,
+  onRefresh,
+}: IfoodStoreManagerProps) {
   const [merchantId, setMerchantId] = useState<string>("");
 
   const selectedStore = useMemo(
@@ -157,27 +165,11 @@ export function IfoodStoreManager() {
     [stores, merchantId],
   );
 
-  const loadStores = useCallback(async () => {
-    setStoresLoading(true);
-    try {
-      const res = await ifoodAuth.stores();
-      const opts = (Array.isArray(res) ? res : [])
-        .filter((s) => Boolean(s.merchant_id))
-        .map((s) => ({
-          merchantId: String(s.merchant_id),
-          name: s.name ?? String(s.merchant_id),
-        }));
-      setStores(opts);
-    } catch {
-      setStores([]);
-    } finally {
-      setStoresLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void loadStores();
-  }, [loadStores]);
+    if (merchantId && !stores.some((s) => s.merchantId === merchantId)) {
+      setMerchantId("");
+    }
+  }, [merchantId, stores]);
 
   return (
     <Card className="p-5">
