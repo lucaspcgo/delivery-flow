@@ -93,6 +93,7 @@ interface AdminUser {
   phone?: string;
   plan_expires_at?: string | null;
   role?: AppRole | string;
+  notes?: string | null;
 }
 
 type AdminInvoice = ApiAdminInvoice;
@@ -590,6 +591,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
       phone?: string;
       role?: string;
       previous_role?: string;
+      notes?: string;
     },
   ): Promise<import("@/lib/api").AdminUser | null> => {
     setSaving(true);
@@ -676,6 +678,7 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                   <TableHead>Plano</TableHead>
                   <TableHead>Status Pgto</TableHead>
                   <TableHead>Perfil</TableHead>
+                  <TableHead>Observações</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -696,6 +699,15 @@ function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                      <TableCell>
                        <RoleBadge role={u.role} isAdmin={u.is_admin} />
                      </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      {u.notes ? (
+                        <span className="block truncate text-sm text-muted-foreground" title={u.notes}>
+                          {u.notes}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
@@ -822,6 +834,7 @@ function UserEditForm({
   const [active, setActive] = useState<boolean>(user.active ?? true);
   const [paymentStatus, setPaymentStatus] = useState<string>(user.payment_status);
   const [phone, setPhone] = useState<string>(user.phone ?? "");
+  const [notes, setNotes] = useState<string>(user.notes ?? "");
   const initialRole: string =
     typeof user.role === "string" && user.role
       ? user.role
@@ -902,11 +915,13 @@ function UserEditForm({
       phone?: string;
       role?: string;
       previous_role?: string;
+      notes?: string;
     } = {
       plan,
       active,
       payment_status: paymentStatus,
       phone: phone.trim() ? phone : "",
+      notes: notes.trim(),
     };
     if (isSuperAdmin) {
       payload.role = role;
@@ -986,6 +1001,21 @@ function UserEditForm({
           onChange={(e) => setPhone(maskBrPhoneAdmin(e.target.value))}
           maxLength={16}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-notes">Observações</Label>
+        <Textarea
+          id="edit-notes"
+          rows={3}
+          maxLength={1000}
+          placeholder="Anotações internas sobre este usuário (visível apenas no painel admin)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          {notes.trim().length}/1000 — aparece na coluna "Observações" da lista de usuários.
+        </p>
       </div>
 
       <div className="space-y-2">

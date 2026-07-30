@@ -1173,6 +1173,7 @@ export interface AdminUser {
   phone?: string;
   plan_expires_at?: string | null;
   role?: "user" | "gerente" | "admin" | string;
+  notes?: string | null;
 }
 
 export interface AdminInvoice {
