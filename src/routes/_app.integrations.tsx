@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle2, Copy, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getIntegrations,
@@ -109,6 +109,8 @@ function IntegrationsPage() {
   const [error, setError] = useState(false);
   const [pending, setPending] = useState<Platform | null>(null);
   const [dedupeOpen, setDedupeOpen] = useState(false);
+  const [removeStore, setRemoveStore] = useState<{ id: string; name: string; merchant_id: string; platform: string } | null>(null);
+  const [removeLoading, setRemoveLoading] = useState(false);
   const [dedupeLoading, setDedupeLoading] = useState(false);
   const [storeCounts, setStoreCounts] = useState<Record<Platform, number>>({
     ifood: 0,
@@ -250,6 +252,22 @@ function IntegrationsPage() {
   }, [refreshIfoodStatus]);
 
   // Countdown do userCode
+  const confirmRemoveStore = useCallback(async () => {
+    if (!removeStore) return;
+    setRemoveLoading(true);
+    try {
+      await ifoodAuth.removeStore(removeStore.merchant_id || removeStore.id);
+      toast.success("Loja removida da integração");
+      setRemoveStore(null);
+      await refreshIfoodStatus();
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Não foi possível remover a loja");
+    } finally {
+      setRemoveLoading(false);
+    }
+  }, [removeStore, refreshIfoodStatus, load]);
+
   useEffect(() => {
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
@@ -593,6 +611,18 @@ function IntegrationsPage() {
                             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openManage(s)}>
                               Gerenciar
                             </Button>
+                            {i.platform === "ifood" && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                aria-label="Remover loja"
+                                title="Remover loja"
+                                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                onClick={() => setRemoveStore(s)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </li>
                       ))}
@@ -674,6 +704,30 @@ function IntegrationsPage() {
             >
               {dedupeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Limpar duplicadas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!removeStore} onOpenChange={(o) => !o && setRemoveStore(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover esta loja da integração?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {removeStore?.name} deixará de receber pedidos até ser conectada novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmRemoveStore();
+              }}
+              disabled={removeLoading}
+            >
+              {removeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Remover
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

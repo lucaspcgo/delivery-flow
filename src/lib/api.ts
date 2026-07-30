@@ -515,6 +515,11 @@ export const ifoodAuth = {
       {},
       { silent: true },
     ),
+  removeStore: (merchantId: string) =>
+    http.delete<{ ok?: boolean }>(
+      `/integrations/ifood/stores/${encodeURIComponent(merchantId)}`,
+      { silent: true },
+    ),
 };
 
 // ---------- iFood merchant management (status / pausas / horários) ----------
