@@ -32,6 +32,7 @@ import {
   getAdminInvoices,
   updateAdminInvoice,
   getUserRoleHistory,
+  getUserNotesHistory,
   PLAN_PERIOD_LABEL,
   type MeResponse,
   type DBPlan,
