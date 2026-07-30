@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -144,6 +144,34 @@ function StateBadge({ state }: { state?: string }) {
   );
 }
 
+// ---------- Error boundary local ----------
+
+class StatusErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state: { error: Error | null } = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <section className="rounded-xl border p-4">
+          <h3 className="text-sm font-semibold">1. Status da loja</h3>
+          <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            Não foi possível exibir o status desta loja:{" "}
+            {this.state.error.message || "resposta inesperada da API."}
+          </div>
+        </section>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ---------- Componente principal ----------
 
 interface IfoodStoreManagerProps {
@@ -230,7 +258,9 @@ export function IfoodStoreManager({
 
       {merchantId && (
         <div className="mt-6 grid gap-4">
-          <StatusBlock key={`st-${merchantId}`} merchantId={merchantId} />
+          <StatusErrorBoundary key={`st-${merchantId}`}>
+            <StatusBlock merchantId={merchantId} />
+          </StatusErrorBoundary>
           <InterruptionsBlock key={`in-${merchantId}`} merchantId={merchantId} />
           <OpeningHoursBlock key={`oh-${merchantId}`} merchantId={merchantId} />
         </div>
