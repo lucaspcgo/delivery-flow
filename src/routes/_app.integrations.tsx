@@ -253,13 +253,13 @@ function IntegrationsPage() {
       const removed = res?.removed ?? res?.duplicates_removed ?? res?.deleted ?? 0;
       toast.success(`${removed} loja(s) duplicada(s) removida(s)`);
       setDedupeOpen(false);
-      await refreshIfoodStatus();
+      await handleRefreshIfood();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Não foi possível limpar as duplicadas");
     } finally {
       setDedupeLoading(false);
     }
-  }, [refreshIfoodStatus]);
+  }, [handleRefreshIfood]);
 
   // Countdown do userCode
   const confirmRemoveStore = useCallback(async () => {
