@@ -1799,7 +1799,7 @@ function PlanForm({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>Nome</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
@@ -1827,7 +1827,7 @@ function PlanForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex items-center justify-between rounded-lg border p-2">
           <Label className="text-sm">Ativo</Label>
           <Switch checked={active} onCheckedChange={setActive} />
@@ -1842,7 +1842,7 @@ function PlanForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex items-center justify-between rounded-lg border p-2">
           <Label className="text-sm">Menu Sync</Label>
           <Switch checked={menuSync} onCheckedChange={setMenuSync} />
@@ -1863,7 +1863,7 @@ function PlanForm({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="space-y-1">
           <Label>Max Restaurantes</Label>
           <Input type="number" min="0" value={maxRest} onChange={(e) => setMaxRest(e.target.value)} />

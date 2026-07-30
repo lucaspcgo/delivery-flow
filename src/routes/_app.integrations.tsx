@@ -591,7 +591,7 @@ function IntegrationsPage() {
             </div>
             <div className="p-5">
               <p className="text-sm text-muted-foreground">{i.description}</p>
-              <dl className="mt-4 grid grid-cols-3 gap-3 border-t pt-4 text-sm">
+              <dl className="mt-4 grid grid-cols-2 gap-3 border-t sm:grid-cols-3 pt-4 text-sm">
                 <div>
                   <dt className="text-[10px] text-muted-foreground uppercase tracking-wider">Lojas</dt>
                   <dd className="font-semibold">
