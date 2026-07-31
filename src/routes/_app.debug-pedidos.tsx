@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useEffect, useState, useCallback } from "react";
 import { http } from "@/lib/api";
-import { getUser } from "@/lib/auth";
 import { getAdminUsers, type AdminUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -351,14 +351,8 @@ function DebugCard({ order }: { order: DebugOrder }) {
 }
 
 function DebugPedidosPage() {
-  const navigate = useNavigate();
-  const user = getUser() as { is_admin?: boolean } | null;
-  const isAdmin = user?.is_admin === true;
-  useEffect(() => {
-    if (!isAdmin) {
-      navigate({ to: "/dashboard", replace: true });
-    }
-  }, [isAdmin, navigate]);
+  const { status: accessStatus } = useAdminAccess("admin");
+  const isAdmin = accessStatus === "allowed";
   const [platform, setPlatform] = useState<Platform>("99food");
   const [limit, setLimit] = useState<number>(10);
   const [userId, setUserId] = useState<string>("");

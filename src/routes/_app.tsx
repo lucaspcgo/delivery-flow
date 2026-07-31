@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { isAuthenticated } from "@/lib/auth";
-import { hasAdminAccess, getStoredUser } from "@/lib/api";
+import { verifyUserRole } from "@/lib/api";
 import { AdminNotificationsBell } from "@/components/admin-notifications-bell";
 import { useEffect, useState } from "react";
 import { TrialBanner } from "@/components/trial-banner";
@@ -22,7 +22,17 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
-    setIsAdmin(hasAdminAccess(getStoredUser()));
+    let alive = true;
+    verifyUserRole(true)
+      .then((role) => {
+        if (alive) setIsAdmin(role === "admin" || role === "gerente");
+      })
+      .catch(() => {
+        if (alive) setIsAdmin(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
   return (
     <UsageProvider>

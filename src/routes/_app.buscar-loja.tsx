@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { http, ApiError, getMeCached, hasAdminAccess, hasStoredAdminAccess } from "@/lib/api";
+import { http, ApiError, getMeCached, hasAdminAccess } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,23 +30,16 @@ export const Route = createFileRoute("/_app/buscar-loja")({
 
 function BuscarLojaGuard() {
   const navigate = useNavigate();
-  const storedAdmin = hasStoredAdminAccess();
   const [status, setStatus] = useState<"checking" | "ok" | "denied">(
-    storedAdmin ? "ok" : "checking",
+    "checking",
   );
 
   useEffect(() => {
     let alive = true;
-    if (hasStoredAdminAccess()) {
-      setStatus("ok");
-      return () => {
-        alive = false;
-      };
-    }
     getMeCached(true)
       .then((me) => {
         if (!alive) return;
-        if (hasAdminAccess(me) || hasStoredAdminAccess()) setStatus("ok");
+        if (hasAdminAccess(me)) setStatus("ok");
         else {
           setStatus("denied");
           toast.error("Acesso negado", {
@@ -57,19 +50,15 @@ function BuscarLojaGuard() {
       })
       .catch(() => {
         if (!alive) return;
-        if (hasStoredAdminAccess()) {
-          setStatus("ok");
-          return;
-        }
         setStatus("denied");
-        navigate({ to: "/login" });
+        navigate({ to: "/dashboard", replace: true });
       });
     return () => {
       alive = false;
     };
   }, [navigate]);
 
-  if (!storedAdmin && status !== "ok") {
+  if (status !== "ok") {
     return (
       <div className="p-6 text-sm text-muted-foreground">
         {status === "checking" ? "Verificando permissões..." : "Redirecionando..."}
