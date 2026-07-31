@@ -707,6 +707,14 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
       });
       return;
     }
+    if (shifts.some((s) => shiftOverflowsDay(s.start, s.duration))) {
+      setFeedback({
+        ok: false,
+        status: 0,
+        message: "O turno ultrapassa o dia — reduza a duração ou o horário de início",
+      });
+      return;
+    }
     setSaving(true);
     try {
       await ifoodMerchant.updateOpeningHours(
