@@ -694,6 +694,19 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
   const removeShift = (idx: number) =>
     setShifts((prev) => (prev ? prev.filter((_, i) => i !== idx) : prev));
 
+  /**
+   * Um turno é inválido quando (minutos do início + duração) passa de 1440,
+   * pois a API do iFood rejeita turnos que atravessam a virada do dia (400).
+   */
+  const shiftOverflowsDay = (start: string, duration: number): boolean => {
+    const m = /^(\d{2}):(\d{2})$/.exec(start);
+    if (!m) return false;
+    const startMinutes = Number(m[1]) * 60 + Number(m[2]);
+    const dur = Number(duration);
+    if (!Number.isFinite(dur)) return false;
+    return startMinutes + dur > 1440;
+  };
+
   const save = async () => {
     if (!shifts) return;
     const invalid = shifts.some(
