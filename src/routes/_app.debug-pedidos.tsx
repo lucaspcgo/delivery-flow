@@ -351,14 +351,8 @@ function DebugCard({ order }: { order: DebugOrder }) {
 }
 
 function DebugPedidosPage() {
-  const navigate = useNavigate();
-  const user = getUser() as { is_admin?: boolean } | null;
-  const isAdmin = user?.is_admin === true;
-  useEffect(() => {
-    if (!isAdmin) {
-      navigate({ to: "/dashboard", replace: true });
-    }
-  }, [isAdmin, navigate]);
+  const { status: accessStatus } = useAdminAccess("admin");
+  const isAdmin = accessStatus === "allowed";
   const [platform, setPlatform] = useState<Platform>("99food");
   const [limit, setLimit] = useState<number>(10);
   const [userId, setUserId] = useState<string>("");
