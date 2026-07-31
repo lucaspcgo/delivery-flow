@@ -68,18 +68,10 @@ function MenuManagerPage() {
 
   useEffect(() => {
     let alive = true;
-    if (hasStoredAdminAccess()) {
-      setStatus("ok");
-      return () => {
-        alive = false;
-      };
-    }
-
     getMeCached(true)
       .then((me) => {
         if (!alive) return;
         if (hasAdminAccess(me)) setStatus("ok");
-        else if (hasStoredAdminAccess()) setStatus("ok");
         else {
           setStatus("denied");
           toast.error("Acesso negado", {
@@ -90,12 +82,8 @@ function MenuManagerPage() {
       })
       .catch(() => {
         if (!alive) return;
-        if (hasStoredAdminAccess()) {
-          setStatus("ok");
-          return;
-        }
         setStatus("denied");
-        navigate({ to: "/login" });
+        navigate({ to: "/dashboard", replace: true });
       });
     return () => {
       alive = false;
