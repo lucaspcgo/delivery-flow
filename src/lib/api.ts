@@ -465,10 +465,20 @@ export function syncStoredUserFromMe(me: MeResponse): void {
  * de exibição e nunca concede acesso por si só.
  */
 export async function verifyUserRole(force = true): Promise<AppRole> {
-  const me = await getMeCached(force);
-  const role = getUserRole(me) ?? "user";
-  syncStoredUserFromMe(me);
-  return role;
+  try {
+    const me = await getMeCached(force);
+    const role = getUserRole(me) ?? "user";
+    syncStoredUserFromMe(me);
+    return role;
+  } catch (err) {
+    // Resposta explícita de não autorizado => cliente comum, sem exceção.
+    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      return "user";
+    }
+    // Falha de rede: usa apenas as claims do token assinado pelo servidor.
+    // O objeto `auth_user` do localStorage NUNCA concede acesso.
+    return getUserRole(getStoredTokenClaims()) ?? "user";
+  }
 }
 
 // ---------- Recursos ----------
