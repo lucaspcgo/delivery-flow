@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useEffect, useState, useCallback } from "react";
 import { http } from "@/lib/api";
 import { getUser } from "@/lib/auth";
