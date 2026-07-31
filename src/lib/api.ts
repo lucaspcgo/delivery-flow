@@ -438,6 +438,39 @@ export function clearMeCache() {
   _mePromise = null;
 }
 
+/**
+ * Sincroniza o usuário armazenado com a resposta autoritativa de /auth/me.
+ * Evita que um `auth_user` desatualizado (ou manipulado) conceda acesso admin.
+ */
+export function syncStoredUserFromMe(me: MeResponse): void {
+  if (typeof window === "undefined") return;
+  try {
+    const current = getStoredUser() ?? ({} as MeResponse);
+    const merged = {
+      ...current,
+      ...me,
+      role: getUserRole(me) ?? "user",
+      is_admin: hasAdminAccess(me),
+    };
+    window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(merged));
+    window.dispatchEvent(new Event("auth-user-updated"));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Fonte única de verdade para permissão administrativa.
+ * SEMPRE valida com o backend (/auth/me) — o localStorage é apenas cache
+ * de exibição e nunca concede acesso por si só.
+ */
+export async function verifyUserRole(force = true): Promise<AppRole> {
+  const me = await getMeCached(force);
+  const role = getUserRole(me) ?? "user";
+  syncStoredUserFromMe(me);
+  return role;
+}
+
 // ---------- Recursos ----------
 
 export const restaurantsApi = {
