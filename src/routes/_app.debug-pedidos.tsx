@@ -1,8 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useAdminAccess } from "@/hooks/use-admin-access";
 import { useEffect, useState, useCallback } from "react";
 import { http } from "@/lib/api";
-import { getUser } from "@/lib/auth";
 import { getAdminUsers, type AdminUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
