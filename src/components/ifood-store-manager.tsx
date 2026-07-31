@@ -833,7 +833,13 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
             <Button variant="outline" size="sm" onClick={addShift}>
               <Plus className="h-4 w-4" /> Adicionar turno
             </Button>
-            <Button size="sm" onClick={() => void save()} disabled={saving}>
+            <Button
+              size="sm"
+              onClick={() => void save()}
+              disabled={
+                saving || shifts.some((s) => shiftOverflowsDay(s.start, s.duration))
+              }
+            >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               Atualizar horários
             </Button>
