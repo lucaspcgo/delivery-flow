@@ -48,7 +48,7 @@ import {
   type ApiRestaurant,
   type AdminUser,
 } from "@/lib/api";
-import { hasStoredAdminAccess } from "@/lib/api";
+import { verifyUserRole } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/reports")({
@@ -131,7 +131,20 @@ function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
-  const isAdmin = useMemo(() => hasStoredAdminAccess(), []);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    verifyUserRole(true)
+      .then((role) => {
+        if (alive) setIsAdmin(role === "admin" || role === "gerente");
+      })
+      .catch(() => {
+        if (alive) setIsAdmin(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     getRestaurants()
