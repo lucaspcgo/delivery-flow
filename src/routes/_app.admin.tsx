@@ -244,57 +244,12 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
 
 function AdminPage() {
   const navigate = useNavigate();
-  const storedAdmin = hasStoredManagerAccess();
-  const [status, setStatus] = useState<"checking" | "ok" | "denied">(
-    storedAdmin ? "ok" : "checking",
-  );
-  const [role, setRole] = useState<AppRole | null>(() => getStoredUserRole());
+  const { status, role, isSuperAdmin } = useAdminAccess("manager");
   const [activeTab, setActiveTab] = useState<string>("overview");
-  const isSuperAdmin = role === "admin";
+  void navigate;
+  void role;
 
-  useEffect(() => {
-    let alive = true;
-    if (hasStoredManagerAccess()) {
-      setStatus("ok");
-      setRole(getStoredUserRole());
-      return () => {
-        alive = false;
-      };
-    }
-
-    auth
-      .me()
-      .then((me: MeResponse) => {
-        if (!alive) return;
-        if (hasAdminAccess(me) || (me as { role?: string }).role === "gerente") {
-          setStatus("ok");
-          setRole(getStoredUserRole());
-        } else if (hasStoredManagerAccess()) {
-          setStatus("ok");
-          setRole(getStoredUserRole());
-        } else {
-          setStatus("denied");
-          toast.error("Acesso negado", {
-            description: "Você não tem permissão para acessar o painel administrativo.",
-          });
-          navigate({ to: "/dashboard" });
-        }
-      })
-      .catch(() => {
-        if (!alive) return;
-        if (hasStoredManagerAccess()) {
-          setStatus("ok");
-          return;
-        }
-        setStatus("denied");
-        navigate({ to: "/login" });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [navigate]);
-
-  if (!storedAdmin && status !== "ok") {
+  if (status !== "allowed") {
     return (
       <div className="p-6 text-sm text-muted-foreground">
         {status === "checking" ? "Verificando permissões..." : "Redirecionando..."}
