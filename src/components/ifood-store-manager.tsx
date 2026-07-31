@@ -811,6 +811,12 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   {dayLabel(s.dayOfWeek)} • {minutesToHuman(Number(s.duration))}
                 </p>
+                {shiftOverflowsDay(s.start, s.duration) && (
+                  <p className="mt-1 text-[11px] font-medium text-destructive">
+                    O turno ultrapassa o dia — reduza a duração ou o horário de
+                    início
+                  </p>
+                )}
               </div>
               <Button
                 variant="ghost"
