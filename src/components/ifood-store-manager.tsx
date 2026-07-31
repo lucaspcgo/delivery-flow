@@ -694,6 +694,19 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
   const removeShift = (idx: number) =>
     setShifts((prev) => (prev ? prev.filter((_, i) => i !== idx) : prev));
 
+  /**
+   * Um turno é inválido quando (minutos do início + duração) passa de 1440,
+   * pois a API do iFood rejeita turnos que atravessam a virada do dia (400).
+   */
+  const shiftOverflowsDay = (start: string, duration: number): boolean => {
+    const m = /^(\d{2}):(\d{2})$/.exec(start);
+    if (!m) return false;
+    const startMinutes = Number(m[1]) * 60 + Number(m[2]);
+    const dur = Number(duration);
+    if (!Number.isFinite(dur)) return false;
+    return startMinutes + dur > 1440;
+  };
+
   const save = async () => {
     if (!shifts) return;
     const invalid = shifts.some(
@@ -704,6 +717,14 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
         ok: false,
         status: 0,
         message: "Verifique os turnos: hora no formato HH:MM e duração maior que 0.",
+      });
+      return;
+    }
+    if (shifts.some((s) => shiftOverflowsDay(s.start, s.duration))) {
+      setFeedback({
+        ok: false,
+        status: 0,
+        message: "O turno ultrapassa o dia — reduza a duração ou o horário de início",
       });
       return;
     }
@@ -790,6 +811,12 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   {dayLabel(s.dayOfWeek)} • {minutesToHuman(Number(s.duration))}
                 </p>
+                {shiftOverflowsDay(s.start, s.duration) && (
+                  <p className="mt-1 text-[11px] font-medium text-destructive">
+                    O turno ultrapassa o dia — reduza a duração ou o horário de
+                    início
+                  </p>
+                )}
               </div>
               <Button
                 variant="ghost"
@@ -806,7 +833,13 @@ function OpeningHoursBlock({ merchantId }: { merchantId: string }) {
             <Button variant="outline" size="sm" onClick={addShift}>
               <Plus className="h-4 w-4" /> Adicionar turno
             </Button>
-            <Button size="sm" onClick={() => void save()} disabled={saving}>
+            <Button
+              size="sm"
+              onClick={() => void save()}
+              disabled={
+                saving || shifts.some((s) => shiftOverflowsDay(s.start, s.duration))
+              }
+            >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               Atualizar horários
             </Button>
