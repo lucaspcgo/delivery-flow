@@ -89,7 +89,7 @@ function formatDateTime(value?: string | null): string {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  return d.toLocaleString("pt-BR");
 }
 
 function minutesToHuman(min: number): string {
